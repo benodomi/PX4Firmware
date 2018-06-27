@@ -1,0 +1,27 @@
+#!nsh
+#
+# @name ThunderFly G1
+#
+# @type TF-G1
+# @class Autogyro
+#
+# @output MAIN1 aileron
+# @output MAIN2 elevator
+# @output MAIN3 rudder
+# @output MAIN4 throttle
+#
+#
+# @maintainer ThunderFly
+#
+
+sh /etc/init.d/rc.fw_defaults
+
+set MAV_TYPE 0
+
+set MIXER TF_G1
+
+set PWM_RATE 50
+set PWM_AUX_RATE 50
+
+# rate must be set by group (see pwm info)
+# throttle is in the same group as servos
