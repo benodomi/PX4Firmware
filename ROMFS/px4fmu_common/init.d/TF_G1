@@ -5,11 +5,12 @@
 # @type TF-G1
 # @class Autogyro
 #
-# @output MAIN1 aileron
-# @output MAIN2 elevator
-# @output MAIN3 rudder
-# @output MAIN4 throttle
-#
+# @output MAIN1 ruddle_left
+# @output MAIN2 ruddle_right
+# @output MAIN3 rotor_left 
+# @output MAIN4 rotor_right
+# @output MAIN5 throttle
+# @output MAIN6 rotor_motor
 #
 # @maintainer ThunderFly
 #
@@ -22,6 +23,3 @@ set MIXER TF_G1
 
 set PWM_RATE 50
 set PWM_AUX_RATE 50
-
-# rate must be set by group (see pwm info)
-# throttle is in the same group as servos

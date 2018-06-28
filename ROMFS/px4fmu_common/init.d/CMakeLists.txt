@@ -115,4 +115,6 @@ px4_add_romfs_files(
 	rc.ugv_defaults
 	rc.vtol_apps
 	rc.vtol_defaults
+	
+	TF_G1
 )
