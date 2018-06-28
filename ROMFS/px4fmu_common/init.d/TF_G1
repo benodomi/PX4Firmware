@@ -17,9 +17,48 @@
 
 sh /etc/init.d/rc.fw_defaults
 
-set MAV_TYPE 0
 
 set MIXER TF_G1
 
 set PWM_RATE 50
 set PWM_AUX_RATE 50
+
+set MAV_TYPE 1
+set MAV_BROADCAST 1
+set MAV_COMP_ID 1
+
+# tady si nejsem jist, jestli tohle nebude potreba povolit..
+#set MNT_MAN_ROLL 1
+#set MNT_MAN_PITCH 2 
+#set MNT_MAN_YAW 3
+
+set COM_FLTMODE1 0
+set COM_FLTMODE1 8
+
+# Vypnuti vycitani rychlosti
+set FW_ARSP_MODE 0
+
+
+# FW launch detection
+# Myslim, ze tyto parametry by to chtelo nastavit...
+#set LAUN_ALL_ON 1
+#set LAUN_CAT_PMAX 10
+
+
+#Vypnuti omezeni na minimalni letovou rychlost
+set LAUN_CAT_PMAX 0
+set FW_AIRSPD_TRIM 15
+
+
+# logovani GPS
+set GPS_DUMP_COMM 1
+set GPS_UBX_DYNMODEL 7
+
+
+
+
+# reverzovani serv, smerovka L, smerovka P, rotor L, rotor P
+set PWM_MAIN_REV1 0 
+set PWM_MAIN_REV2 0
+set PWM_MAIN_REV3 0
+set PWM_MAIN_REV4 0
