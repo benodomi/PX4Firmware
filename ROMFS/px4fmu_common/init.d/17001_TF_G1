@@ -2,7 +2,7 @@
 #
 # @name ThunderFly G1
 #
-# @type TF-G1
+# @type AutoGyro
 # @class Autogyro
 #
 # @output MAIN1 ruddle_left
@@ -17,11 +17,11 @@
 
 sh /etc/init.d/rc.fw_defaults
 
-
 set MIXER TF_G1
 
 set PWM_RATE 50
 set PWM_AUX_RATE 50
+set PWM_OUT 12345678
 
 set MAV_TYPE 1
 set MAV_BROADCAST 1
@@ -35,15 +35,6 @@ set MAV_COMP_ID 1
 set COM_FLTMODE1 0
 set COM_FLTMODE1 8
 
-# Vypnuti vycitani rychlosti
-set FW_ARSP_MODE 0
-
-
-# FW launch detection
-# Myslim, ze tyto parametry by to chtelo nastavit...
-#set LAUN_ALL_ON 1
-#set LAUN_CAT_PMAX 10
-
 
 #Vypnuti omezeni na minimalni letovou rychlost
 set LAUN_CAT_PMAX 0
@@ -55,10 +46,34 @@ set GPS_DUMP_COMM 1
 set GPS_UBX_DYNMODEL 7
 
 
-
-
 # reverzovani serv, smerovka L, smerovka P, rotor L, rotor P
 set PWM_MAIN_REV1 0 
 set PWM_MAIN_REV2 0
 set PWM_MAIN_REV3 0
 set PWM_MAIN_REV4 0
+
+
+# vypnout airspeed senzor
+set FW_ARSP_MODE 1
+
+# Allow arming without GPS
+set COM_ARM_WO_GPS 1
+
+
+# kalibrace
+set CAL_ACC0_ID 1246218
+set CAL_ACC1_ID 1114634
+set CAL_GYRO0_ID 2163722
+set CAL_GYRO1_ID 2228490
+set CAL_MAG0_ID 131594
+
+set CAL_MAG0_EN 0
+
+# jen SW joystick
+set COM_RC_IN_MODE 2
+
+
+set CBRK_AIRSPD_CHK 162128
+set CBRK_USB_CHK 197848
+set COMARM_SWISBTN 1
+set CBRK_IO_SAFETY 22027

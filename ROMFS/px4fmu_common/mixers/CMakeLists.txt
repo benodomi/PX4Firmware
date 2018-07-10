@@ -89,4 +89,6 @@ px4_add_romfs_files(
 	zmr250.main.mix
 	
 	TF_G1.main.mix
+	TF_G1_simple.main.mix
+	gyro.main.mix
 )
