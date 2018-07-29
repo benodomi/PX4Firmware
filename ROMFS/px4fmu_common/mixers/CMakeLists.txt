@@ -88,7 +88,8 @@ px4_add_romfs_files(
 	wingwing.main.mix
 	zmr250.main.mix
 	
-	TF_G1.main.mix
-	TF_G1_simple.main.mix
+	TF-A1.main.mix
+	TF-G1.main.mix
+	TF-G1_simple.main.mix
 	gyro.main.mix
 )

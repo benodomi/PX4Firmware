@@ -1,0 +1,23 @@
+#!nsh
+#
+# @name ThunderFly airplane TF-A1
+#
+# @type Standard Plane
+# @class Plane
+#
+# @output MAIN1 aileron
+# @output MAIN2 aileron
+# @output MAIN3 rudder
+# @output MAIN4 elevator
+# @output MAIN5 throttle
+#
+#
+# @maintainer ThunderFly
+#
+
+sh /etc/init.d/rc.fw_defaults
+
+set MIXER FT-A1
+
+set PWM_RATE 50
+set PWM_AUX_RATE 50

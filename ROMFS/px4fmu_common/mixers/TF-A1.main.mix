@@ -1,0 +1,31 @@
+Aileron/Elevator/Throttle/Rudder/Gear/Flaps mixer
+==================================================
+
+Mixer for user with ThunderFly TF-A1 airplane
+
+CH1,2: Aileron mixer
+-------------
+
+M: 1
+S: 0 0   -10000   -10000      0  -10000  10000
+
+M: 1
+S: 0 0   -10000   -10000      0  -10000  10000
+
+CH3: Rudder mixer
+------------
+
+M: 1
+S: 0 2   -10000  -10000       0  -10000  10000
+
+CH4: Elevator mixer
+------------
+
+M: 1
+S: 0 1  -10000  -10000      0  -10000  10000
+
+CH5: Motor speed mixer
+-----------------
+
+M: 1
+S: 0 3       0  20000  -10000  -10000  10000
