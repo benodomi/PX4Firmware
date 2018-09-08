@@ -89,6 +89,4 @@ px4_add_romfs_files(
 	
 	TF-A1.main.mix
 	TF-G1.main.mix
-	TF-G1_simple.main.mix
-	gyro.main.mix
 )
