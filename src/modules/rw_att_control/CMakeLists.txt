@@ -31,10 +31,10 @@
 #
 ############################################################################
 px4_add_module(
-	MODULE modules__ag_att_control
-	MAIN ag_att_control
+	MODULE modules__rw_att_control
+	MAIN rw_att_control
 	SRCS
-		AutoGyroControl.cpp
+		RotorwingControl.cpp
 	DEPENDS
 		git_ecl
 		ecl_attitude_fw

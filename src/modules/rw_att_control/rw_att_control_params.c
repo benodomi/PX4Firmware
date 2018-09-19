@@ -21,18 +21,18 @@
  * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
  * FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
  * COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMRWES (INCLUDING,
  * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS
  * OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED
  * AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * POSSIBILITY OF SUCH DAMRWE.
  *
  ****************************************************************************/
 
 /**
- * @file AGb_att_control_params.c
+ * @file RWb_att_control_params.c
  *
  * Parameters defined by the fixed-wing attitude control task
  *
@@ -65,9 +65,9 @@
  * @max 100
  * @decimal 1
  * @increment 0.1
- * @group AG
+ * @group RW
  */
-PARAM_DEFINE_FLOAT(AG_ROTSPD_MIN, 10.0f);
+PARAM_DEFINE_FLOAT(RW_ROTSPD_MIN, 10.0f);
 
 /**
  * Maximum Rotorspeed
@@ -79,9 +79,9 @@ PARAM_DEFINE_FLOAT(AG_ROTSPD_MIN, 10.0f);
  * @max 100
  * @decimal 1
  * @increment 0.1
- * @group AG
+ * @group RW
  */
-PARAM_DEFINE_FLOAT(AG_ROTSPD_MAX, 20.0f);
+PARAM_DEFINE_FLOAT(RW_ROTSPD_MAX, 20.0f);
 
 
 
@@ -90,7 +90,7 @@ PARAM_DEFINE_FLOAT(AG_ROTSPD_MAX, 20.0f);
  *
  * This defines the latency between a roll step input and the achieved setpoint
  * (inverse to a P gain). Half a second is a good start value and fits for
- * most average systems. Smaller systems may require smaller values, but as
+ * most averRWe systems. Smaller systems may require smaller values, but as
  * this will wear out servos faster, the value should only be decreased as
  * needed.
  *
@@ -99,16 +99,16 @@ PARAM_DEFINE_FLOAT(AG_ROTSPD_MAX, 20.0f);
  * @max 1.0
  * @decimal 2
  * @increment 0.05
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  */
-PARAM_DEFINE_FLOAT(AGb_R_TC, 0.4f);
+PARAM_DEFINE_FLOAT(RWb_R_TC, 0.4f);
 
 /**
  * Attitude pitch time constant
  *
  * This defines the latency between a pitch step input and the achieved setpoint
  * (inverse to a P gain). Half a second is a good start value and fits for
- * most average systems. Smaller systems may require smaller values, but as
+ * most averRWe systems. Smaller systems may require smaller values, but as
  * this will wear out servos faster, the value should only be decreased as
  * needed.
  *
@@ -117,9 +117,9 @@ PARAM_DEFINE_FLOAT(AGb_R_TC, 0.4f);
  * @max 1.0
  * @decimal 2
  * @increment 0.05
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  */
-PARAM_DEFINE_FLOAT(AGb_P_TC, 0.4f);
+PARAM_DEFINE_FLOAT(RWb_P_TC, 0.4f);
 
 /**
  * Pitch rate proportional gain.
@@ -132,9 +132,9 @@ PARAM_DEFINE_FLOAT(AGb_P_TC, 0.4f);
  * @max 1.0
  * @decimal 3
  * @increment 0.005
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  */
-PARAM_DEFINE_FLOAT(AGb_PR_P, 0.08f);
+PARAM_DEFINE_FLOAT(RWb_PR_P, 0.08f);
 
 /**
  * Pitch rate integrator gain.
@@ -147,9 +147,9 @@ PARAM_DEFINE_FLOAT(AGb_PR_P, 0.08f);
  * @max 0.5
  * @decimal 3
  * @increment 0.005
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  */
-PARAM_DEFINE_FLOAT(AGb_PR_I, 0.02f);
+PARAM_DEFINE_FLOAT(RWb_PR_I, 0.02f);
 
 /**
  * Maximum positive / up pitch rate.
@@ -162,9 +162,9 @@ PARAM_DEFINE_FLOAT(AGb_PR_I, 0.02f);
  * @max 90.0
  * @decimal 1
  * @increment 0.5
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  */
-PARAM_DEFINE_FLOAT(AGb_P_RMAX_POS, 60.0f);
+PARAM_DEFINE_FLOAT(RWb_P_RMAX_POS, 60.0f);
 
 /**
  * Maximum negative / down pitch rate.
@@ -177,9 +177,9 @@ PARAM_DEFINE_FLOAT(AGb_P_RMAX_POS, 60.0f);
  * @max 90.0
  * @decimal 1
  * @increment 0.5
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  */
-PARAM_DEFINE_FLOAT(AGb_P_RMAX_NEG, 60.0f);
+PARAM_DEFINE_FLOAT(RWb_P_RMAX_NEG, 60.0f);
 
 /**
  * Pitch rate integrator limit
@@ -191,9 +191,9 @@ PARAM_DEFINE_FLOAT(AGb_P_RMAX_NEG, 60.0f);
  * @max 1.0
  * @decimal 2
  * @increment 0.05
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  */
-PARAM_DEFINE_FLOAT(AGb_PR_IMAX, 0.4f);
+PARAM_DEFINE_FLOAT(RWb_PR_IMAX, 0.4f);
 
 /**
  * Roll rate proportional Gain
@@ -206,9 +206,9 @@ PARAM_DEFINE_FLOAT(AGb_PR_IMAX, 0.4f);
  * @max 1.0
  * @decimal 3
  * @increment 0.005
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  */
-PARAM_DEFINE_FLOAT(AGb_RR_P, 0.05f);
+PARAM_DEFINE_FLOAT(RWb_RR_P, 0.05f);
 
 /**
  * Roll rate integrator Gain
@@ -221,9 +221,9 @@ PARAM_DEFINE_FLOAT(AGb_RR_P, 0.05f);
  * @max 0.2
  * @decimal 3
  * @increment 0.005
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  */
-PARAM_DEFINE_FLOAT(AGb_RR_I, 0.01f);
+PARAM_DEFINE_FLOAT(RWb_RR_I, 0.01f);
 
 /**
  * Roll integrator anti-windup
@@ -234,9 +234,9 @@ PARAM_DEFINE_FLOAT(AGb_RR_I, 0.01f);
  * @max 1.0
  * @decimal 2
  * @increment 0.05
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  */
-PARAM_DEFINE_FLOAT(AGb_RR_IMAX, 0.2f);
+PARAM_DEFINE_FLOAT(RWb_RR_IMAX, 0.2f);
 
 /**
  * Maximum roll rate
@@ -249,9 +249,9 @@ PARAM_DEFINE_FLOAT(AGb_RR_IMAX, 0.2f);
  * @max 90.0
  * @decimal 1
  * @increment 0.5
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  */
-PARAM_DEFINE_FLOAT(AGb_R_RMAX, 70.0f);
+PARAM_DEFINE_FLOAT(RWb_R_RMAX, 70.0f);
 
 /**
  * Yaw rate proportional gain
@@ -264,9 +264,9 @@ PARAM_DEFINE_FLOAT(AGb_R_RMAX, 70.0f);
  * @max 1.0
  * @decimal 3
  * @increment 0.005
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  */
-PARAM_DEFINE_FLOAT(AGb_YR_P, 0.05f);
+PARAM_DEFINE_FLOAT(RWb_YR_P, 0.05f);
 
 /**
  * Yaw rate integrator gain
@@ -279,9 +279,9 @@ PARAM_DEFINE_FLOAT(AGb_YR_P, 0.05f);
  * @max 50.0
  * @decimal 1
  * @increment 0.5
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  */
-PARAM_DEFINE_FLOAT(AGb_YR_I, 0.01f);
+PARAM_DEFINE_FLOAT(RWb_YR_I, 0.01f);
 
 /**
  * Yaw rate integrator limit
@@ -293,9 +293,9 @@ PARAM_DEFINE_FLOAT(AGb_YR_I, 0.01f);
  * @max 1.0
  * @decimal 2
  * @increment 0.05
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  */
-PARAM_DEFINE_FLOAT(AGb_YR_IMAX, 0.2f);
+PARAM_DEFINE_FLOAT(RWb_YR_IMAX, 0.2f);
 
 /**
  * Maximum yaw rate
@@ -308,9 +308,9 @@ PARAM_DEFINE_FLOAT(AGb_YR_IMAX, 0.2f);
  * @max 90.0
  * @decimal 1
  * @increment 0.5
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  */
-PARAM_DEFINE_FLOAT(AGb_Y_RMAX, 50.0f);
+PARAM_DEFINE_FLOAT(RWb_Y_RMAX, 50.0f);
 
 /**
  * Roll control to yaw control feedforward gain.
@@ -323,17 +323,17 @@ PARAM_DEFINE_FLOAT(AGb_Y_RMAX, 50.0f);
  * @min 0.0
  * @decimal 1
  * @increment 0.01
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  */
-PARAM_DEFINE_FLOAT(AGb_RLL_TO_YAW_FF, 0.0f);
+PARAM_DEFINE_FLOAT(RWb_RLL_TO_YAW_FF, 0.0f);
 
 /**
  * Enable wheel steering controller
  *
  * @boolean
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  */
-PARAM_DEFINE_INT32(AGb_W_EN, 0);
+PARAM_DEFINE_INT32(RWb_W_EN, 0);
 
 
 /**
@@ -347,9 +347,9 @@ PARAM_DEFINE_INT32(AGb_W_EN, 0);
  * @max 1.0
  * @decimal 3
  * @increment 0.005
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  */
-PARAM_DEFINE_FLOAT(AGb_WR_P, 0.5f);
+PARAM_DEFINE_FLOAT(RWb_WR_P, 0.5f);
 
 /**
  * Wheel steering rate integrator gain
@@ -362,9 +362,9 @@ PARAM_DEFINE_FLOAT(AGb_WR_P, 0.5f);
  * @max 0.5
  * @decimal 3
  * @increment 0.005
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  */
-PARAM_DEFINE_FLOAT(AGb_WR_I, 0.1f);
+PARAM_DEFINE_FLOAT(RWb_WR_I, 0.1f);
 
 /**
  * Wheel steering rate integrator limit
@@ -376,9 +376,9 @@ PARAM_DEFINE_FLOAT(AGb_WR_I, 0.1f);
  * @max 1.0
  * @decimal 2
  * @increment 0.05
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  */
-PARAM_DEFINE_FLOAT(AGb_WR_IMAX, 1.0f);
+PARAM_DEFINE_FLOAT(RWb_WR_IMAX, 1.0f);
 
 /**
  * Maximum wheel steering rate
@@ -391,9 +391,9 @@ PARAM_DEFINE_FLOAT(AGb_WR_IMAX, 1.0f);
  * @max 90.0
  * @decimal 1
  * @increment 0.5
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  */
-PARAM_DEFINE_FLOAT(AGb_W_RMAX, 30.0f);
+PARAM_DEFINE_FLOAT(RWb_W_RMAX, 30.0f);
 
 /**
  * Roll rate feed forward
@@ -407,9 +407,9 @@ PARAM_DEFINE_FLOAT(AGb_W_RMAX, 30.0f);
  * @max 10.0
  * @decimal 2
  * @increment 0.05
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  */
-PARAM_DEFINE_FLOAT(AGb_RR_FF, 0.5f);
+PARAM_DEFINE_FLOAT(RWb_RR_FF, 0.5f);
 
 /**
  * Pitch rate feed forward
@@ -421,9 +421,9 @@ PARAM_DEFINE_FLOAT(AGb_RR_FF, 0.5f);
  * @max 10.0
  * @decimal 2
  * @increment 0.05
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  */
-PARAM_DEFINE_FLOAT(AGb_PR_FF, 0.5f);
+PARAM_DEFINE_FLOAT(RWb_PR_FF, 0.5f);
 
 /**
  * Yaw rate feed forward
@@ -435,9 +435,9 @@ PARAM_DEFINE_FLOAT(AGb_PR_FF, 0.5f);
  * @max 10.0
  * @decimal 2
  * @increment 0.05
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  */
-PARAM_DEFINE_FLOAT(AGb_YR_FF, 0.3f);
+PARAM_DEFINE_FLOAT(RWb_YR_FF, 0.3f);
 
 /**
  * Wheel steering rate feed forward
@@ -449,9 +449,9 @@ PARAM_DEFINE_FLOAT(AGb_YR_FF, 0.3f);
  * @max 10.0
  * @decimal 2
  * @increment 0.05
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  */
-PARAM_DEFINE_FLOAT(AGb_WR_FF, 0.2f);
+PARAM_DEFINE_FLOAT(RWb_WR_FF, 0.2f);
 
 /**
  * Roll setpoint offset
@@ -465,9 +465,9 @@ PARAM_DEFINE_FLOAT(AGb_WR_FF, 0.2f);
  * @max 90.0
  * @decimal 1
  * @increment 0.5
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  */
-PARAM_DEFINE_FLOAT(AGb_RSP_OFF, 0.0f);
+PARAM_DEFINE_FLOAT(RWb_RSP_OFF, 0.0f);
 
 /**
  * Pitch setpoint offset
@@ -481,9 +481,9 @@ PARAM_DEFINE_FLOAT(AGb_RSP_OFF, 0.0f);
  * @max 90.0
  * @decimal 1
  * @increment 0.5
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  */
-PARAM_DEFINE_FLOAT(AGb_PSP_OFF, 0.0f);
+PARAM_DEFINE_FLOAT(RWb_PSP_OFF, 0.0f);
 
 /**
  * Max manual roll
@@ -495,9 +495,9 @@ PARAM_DEFINE_FLOAT(AGb_PSP_OFF, 0.0f);
  * @max 90.0
  * @decimal 1
  * @increment 0.5
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  */
-PARAM_DEFINE_FLOAT(AGb_MAN_R_MAX, 45.0f);
+PARAM_DEFINE_FLOAT(RWb_MAN_R_MAX, 45.0f);
 
 /**
  * Max manual pitch
@@ -509,9 +509,9 @@ PARAM_DEFINE_FLOAT(AGb_MAN_R_MAX, 45.0f);
  * @max 90.0
  * @decimal 1
  * @increment 0.5
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  */
-PARAM_DEFINE_FLOAT(AGb_MAN_P_MAX, 45.0f);
+PARAM_DEFINE_FLOAT(RWb_MAN_P_MAX, 45.0f);
 
 /**
  * Scale factor for flaps
@@ -521,23 +521,23 @@ PARAM_DEFINE_FLOAT(AGb_MAN_P_MAX, 45.0f);
  * @max 1.0
  * @decimal 2
  * @increment 0.01
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  */
-PARAM_DEFINE_FLOAT(AGb_FLAPS_SCL, 1.0f);
+PARAM_DEFINE_FLOAT(RWb_FLAPS_SCL, 1.0f);
 
 /**
  * Flaps setting during take-off
  *
- * Sets a fraction of full flaps (AGb_FLAPS_SCL) during take-off
+ * Sets a fraction of full flaps (RWb_FLAPS_SCL) during take-off
  *
  * @unit norm
  * @min 0.0
  * @max 1.0
  * @decimal 2
  * @increment 0.01
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  */
-PARAM_DEFINE_FLOAT(AGb_FLAPS_TO_SCL, 0.0f);
+PARAM_DEFINE_FLOAT(RWb_FLAPS_TO_SCL, 0.0f);
 
 /**
  * Scale factor for flaperons
@@ -547,9 +547,9 @@ PARAM_DEFINE_FLOAT(AGb_FLAPS_TO_SCL, 0.0f);
  * @max 1.0
  * @decimal 2
  * @increment 0.01
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  */
-PARAM_DEFINE_FLOAT(AGb_FLAPERON_SCL, 0.0f);
+PARAM_DEFINE_FLOAT(RWb_FLAPERON_SCL, 0.0f);
 
 /**
  * Airspeed mode
@@ -559,9 +559,9 @@ PARAM_DEFINE_FLOAT(AGb_FLAPERON_SCL, 0.0f);
  *
  * @value 0 Normal (use airspeed if available)
  * @value 1 Airspeed disabled
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  */
-PARAM_DEFINE_INT32(AGb_ARSP_MODE, 0);
+PARAM_DEFINE_INT32(RWb_ARSP_MODE, 0);
 
 /**
  * Manual roll scale
@@ -574,9 +574,9 @@ PARAM_DEFINE_INT32(AGb_ARSP_MODE, 0);
  * @max 1.0
  * @decimal 2
  * @increment 0.01
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  */
-PARAM_DEFINE_FLOAT(AGb_MAN_R_SC, 1.0f);
+PARAM_DEFINE_FLOAT(RWb_MAN_R_SC, 1.0f);
 
 /**
  * Manual pitch scale
@@ -588,9 +588,9 @@ PARAM_DEFINE_FLOAT(AGb_MAN_R_SC, 1.0f);
  * @min 0.0
  * @decimal 2
  * @increment 0.01
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  */
-PARAM_DEFINE_FLOAT(AGb_MAN_P_SC, 1.0f);
+PARAM_DEFINE_FLOAT(RWb_MAN_P_SC, 1.0f);
 
 /**
  * Manual yaw scale
@@ -602,23 +602,23 @@ PARAM_DEFINE_FLOAT(AGb_MAN_P_SC, 1.0f);
  * @min 0.0
  * @decimal 2
  * @increment 0.01
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  */
-PARAM_DEFINE_FLOAT(AGb_MAN_Y_SC, 1.0f);
+PARAM_DEFINE_FLOAT(RWb_MAN_Y_SC, 1.0f);
 
 /**
  * Whether to scale throttle by battery power level
  *
- * This compensates for voltage drop of the battery over time by attempting to
+ * This compensates for voltRWe drop of the battery over time by attempting to
  * normalize performance across the operating range of the battery. The fixed wing
  * should constantly behave as if it was fully charged with reduced max thrust
- * at lower battery percentages. i.e. if cruise speed is at 0.5 throttle at 100% battery,
+ * at lower battery percentRWes. i.e. if cruise speed is at 0.5 throttle at 100% battery,
  * it will still be 0.5 at 60% battery.
  *
  * @boolean
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  */
-PARAM_DEFINE_INT32(AGb_BAT_SCALE_EN, 0);
+PARAM_DEFINE_INT32(RWb_BAT_SCALE_EN, 0);
 
 /**
  * Acro body x max rate.
@@ -629,9 +629,9 @@ PARAM_DEFINE_INT32(AGb_BAT_SCALE_EN, 0);
  * @min 45
  * @max 720
  * @unit degrees
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  */
-PARAM_DEFINE_FLOAT(AGb_ACRO_X_MAX, 90);
+PARAM_DEFINE_FLOAT(RWb_ACRO_X_MAX, 90);
 
 /**
  * Acro body y max rate.
@@ -642,9 +642,9 @@ PARAM_DEFINE_FLOAT(AGb_ACRO_X_MAX, 90);
  * @min 45
  * @max 720
  * @unit degrees
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  */
-PARAM_DEFINE_FLOAT(AGb_ACRO_Y_MAX, 90);
+PARAM_DEFINE_FLOAT(RWb_ACRO_Y_MAX, 90);
 
 /**
  * Acro body z max rate.
@@ -655,9 +655,9 @@ PARAM_DEFINE_FLOAT(AGb_ACRO_Y_MAX, 90);
  * @min 10
  * @max 180
  * @unit degrees
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  */
-PARAM_DEFINE_FLOAT(AGb_ACRO_Z_MAX, 45);
+PARAM_DEFINE_FLOAT(RWb_ACRO_Z_MAX, 45);
 
 /**
  * Threshold for Rattitude mode
@@ -669,110 +669,110 @@ PARAM_DEFINE_FLOAT(AGb_ACRO_Z_MAX, 45);
  * @max 1.0
  * @decimal 2
  * @increment 0.01
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  */
-PARAM_DEFINE_FLOAT(AGb_RATT_TH, 0.8f);
+PARAM_DEFINE_FLOAT(RWb_RATT_TH, 0.8f);
 
 /**
 * Roll trim increment at minimum airspeed
 *
-* This increment is added to TRIM_ROLL when airspeed is AGb_AIRSPD_MIN.
+* This increment is added to TRIM_ROLL when airspeed is RWb_AIRSPD_MIN.
  *
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  * @min -0.25
  * @max 0.25
  * @decimal 2
  * @increment 0.01
  */
-PARAM_DEFINE_FLOAT(AGb_DTRIM_R_VMIN, 0.0f);
+PARAM_DEFINE_FLOAT(RWb_DTRIM_R_VMIN, 0.0f);
 
 /**
 * Pitch trim increment at minimum airspeed
 *
-* This increment is added to TRIM_PITCH when airspeed is AGb_AIRSPD_MIN.
+* This increment is added to TRIM_PITCH when airspeed is RWb_AIRSPD_MIN.
  *
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  * @min -0.25
  * @max 0.25
  * @decimal 2
  * @increment 0.01
  */
-PARAM_DEFINE_FLOAT(AGb_DTRIM_P_VMIN, 0.0f);
+PARAM_DEFINE_FLOAT(RWb_DTRIM_P_VMIN, 0.0f);
 
 /**
 * Yaw trim increment at minimum airspeed
 *
-* This increment is added to TRIM_YAW when airspeed is AGb_AIRSPD_MIN.
+* This increment is added to TRIM_YAW when airspeed is RWb_AIRSPD_MIN.
  *
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  * @min -0.25
  * @max 0.25
  * @decimal 2
  * @increment 0.01
  */
-PARAM_DEFINE_FLOAT(AGb_DTRIM_Y_VMIN, 0.0f);
+PARAM_DEFINE_FLOAT(RWb_DTRIM_Y_VMIN, 0.0f);
 
 /**
 * Roll trim increment at maximum airspeed
 *
-* This increment is added to TRIM_ROLL when airspeed is AGb_AIRSP_MAX.
+* This increment is added to TRIM_ROLL when airspeed is RWb_AIRSP_MAX.
  *
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  * @min -0.25
  * @max 0.25
  * @decimal 2
  * @increment 0.01
  */
-PARAM_DEFINE_FLOAT(AGb_DTRIM_R_VMAX, 0.0f);
+PARAM_DEFINE_FLOAT(RWb_DTRIM_R_VMAX, 0.0f);
 
 /**
 * Pitch trim increment at maximum airspeed
 *
-* This increment is added to TRIM_PITCH when airspeed is AGb_AIRSP_MAX.
+* This increment is added to TRIM_PITCH when airspeed is RWb_AIRSP_MAX.
  *
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  * @min -0.25
  * @max 0.25
  * @decimal 2
  * @increment 0.01
  */
-PARAM_DEFINE_FLOAT(AGb_DTRIM_P_VMAX, 0.0f);
+PARAM_DEFINE_FLOAT(RWb_DTRIM_P_VMAX, 0.0f);
 
 /**
 * Yaw trim increment at maximum airspeed
 *
-* This increment is added to TRIM_YAW when airspeed is AGb_AIRSP_MAX.
+* This increment is added to TRIM_YAW when airspeed is RWb_AIRSP_MAX.
  *
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  * @min -0.25
  * @max 0.25
  * @decimal 2
  * @increment 0.01
  */
-PARAM_DEFINE_FLOAT(AGb_DTRIM_Y_VMAX, 0.0f);
+PARAM_DEFINE_FLOAT(RWb_DTRIM_Y_VMAX, 0.0f);
 
 /**
  * Roll trim increment for flaps configuration
  *
  * This increment is added to TRIM_ROLL whenever flaps are fully deployed.
  *
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  * @min -0.25
  * @max 0.25
  * @decimal 2
  * @increment 0.01
  */
-PARAM_DEFINE_FLOAT(AGb_DTRIM_R_FLPS, 0.0f);
+PARAM_DEFINE_FLOAT(RWb_DTRIM_R_FLPS, 0.0f);
 
 /**
  * Pitch trim increment for flaps configuration
  *
  * This increment is added to the pitch trim whenever flaps are fully deployed.
  *
- * @group AGb Attitude Control
+ * @group RWb Attitude Control
  * @min -0.25
  * @max 0.25
  * @decimal 2
  * @increment 0.01
  */
-PARAM_DEFINE_FLOAT(AGb_DTRIM_P_FLPS, 0.0f);
+PARAM_DEFINE_FLOAT(RWb_DTRIM_P_FLPS, 0.0f);

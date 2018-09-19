@@ -33,10 +33,10 @@
 
 #include <px4_module.h>
 #include <drivers/drv_hrt.h>
-#include <ecl/attitude_ag/ecl_pitch_controller.h>
-#include <ecl/attitude_ag/ecl_roll_controller.h>
-#include <ecl/attitude_ag/ecl_wheel_controller.h>
-#include <ecl/attitude_ag/ecl_yaw_controller.h>
+#include <ecl/attitude_rw/ecl_pitch_controller.h>
+#include <ecl/attitude_rw/ecl_roll_controller.h>
+#include <ecl/attitude_rw/ecl_wheel_controller.h>
+#include <ecl/attitude_rw/ecl_yaw_controller.h>
 #include <lib/ecl/geo/geo.h>
 #include <mathlib/mathlib.h>
 #include <matrix/math.hpp>
@@ -49,6 +49,7 @@
 #include <uORB/Subscription.hpp>
 #include <uORB/topics/actuator_controls.h>
 #include <uORB/topics/airspeed.h>
+//FT-TODO: #include <uORB/topics/rotorspeed.h>
 #include <uORB/topics/battery_status.h>
 #include <uORB/topics/manual_control_setpoint.h>
 #include <uORB/topics/parameter_update.h>
@@ -67,17 +68,17 @@ using matrix::Quatf;
 
 using uORB::Subscription;
 
-class AutoGyroAttitudeControl final : public ModuleBase<AutoGyroAttitudeControl>
+class RotorwingAttitudeControl final : public ModuleBase<RotorwingAttitudeControl>
 {
 public:
-	AutoGyroAttitudeControl();
-	~AutoGyroAttitudeControl() override;
+	RotorwingAttitudeControl();
+	~RotorwingAttitudeControl() override;
 
 	/** @see ModuleBase */
 	static int task_spawn(int argc, char *argv[]);
 
 	/** @see ModuleBase */
-	static AutoGyroAttitudeControl *instantiate(int argc, char *argv[]);
+	static RotorwingAttitudeControl *instantiate(int argc, char *argv[]);
 
 	/** @see ModuleBase */
 	static int custom_command(int argc, char *argv[]);
@@ -124,6 +125,7 @@ private:
 	vehicle_status_s				_vehicle_status {};	/**< vehicle status */
 
 	Subscription<airspeed_s>		_airspeed_sub;
+	// TF-TODO: Subscription for rotorspeed
 
 	perf_counter_t	_loop_perf;			/**< loop performance counter */
 	perf_counter_t	_nonfinite_input_perf;		/**< performance counter for non finite input */
@@ -169,6 +171,10 @@ private:
 		float airspeed_min;
 		float airspeed_trim;
 		float airspeed_max;
+
+		float rotorspeed_min;
+		float rotorspeed_trim;
+		float rotorspeed_max;
 
 		float trim_roll;
 		float trim_pitch;

@@ -18,7 +18,7 @@ set(config_module_list
 	#drivers/imu/bmi160
 	#drivers/barometer/bmp280
 	#drivers/bst
-	drivers/camera_trigger
+	#drivers/camera_trigger
 	#drivers/frsky_telemetry
 	drivers/gps
 	#drivers/hott
@@ -47,13 +47,13 @@ set(config_module_list
 	drivers/vmount
 
 	# distance sensors
-	drivers/distance_sensor/ll40ls
+#	drivers/distance_sensor/ll40ls
 	#drivers/distance_sensor/mb12xx
-	drivers/distance_sensor/sf0x
-	drivers/distance_sensor/sf1xx
-	drivers/distance_sensor/srf02
-	drivers/distance_sensor/teraranger
-	drivers/distance_sensor/tfmini
+#	drivers/distance_sensor/sf0x
+#	drivers/distance_sensor/sf1xx
+#	drivers/distance_sensor/srf02
+#	drivers/distance_sensor/teraranger
+#	drivers/distance_sensor/tfmini
 	#drivers/distance_sensor/ulanding
 	modules/sensors
 
@@ -123,8 +123,8 @@ set(config_module_list
 	modules/fw_att_control
 	modules/fw_pos_control_l1
 	
-	modules/ag_att_control
-	#modules/ag_pos_control_l1 #TF-TODO: tento modul jeste neexistuje.
+	modules/rw_att_control
+	#modules/rw_pos_control_l1 #TF-TODO: tento modul jeste neexistuje.
 	
 	#modules/gnd_att_control
 	#modules/gnd_pos_control

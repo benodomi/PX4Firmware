@@ -94,8 +94,8 @@ set(config_module_list
 	modules/fw_att_control
 	modules/fw_pos_control_l1
 	
-	modules/ag_att_control
-	#modules/ag_pos_control_l1 #TF-TODO: tento modul jeste neexistuje.
+	modules/rw_att_control
+	#modules/rw_pos_control_l1 #TF-TODO: tento modul jeste neexistuje.
 	
 	#modules/gnd_att_control
 	#modules/gnd_pos_control

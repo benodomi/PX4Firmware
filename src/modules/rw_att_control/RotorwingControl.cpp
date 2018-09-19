@@ -32,17 +32,17 @@
  ****************************************************************************/
 
 // TF-TODO: Připojení HPP souboru požáduje dlouhou relativní cestu... 
-//#include "AutoGyroAttitudeControl.hpp"
-#include "modules/ag_att_control/AutoGyroControl.hpp"
+//#include "RotorwingAttitudeControl.hpp"
+#include "modules/rw_att_control/RotorwingControl.hpp"
 
 /**
  * Fixedwing attitude control app start / stop handling function
  *
  * @ingroup apps
  */
-extern "C" __EXPORT int ag_att_control_main(int argc, char *argv[]);
+extern "C" __EXPORT int rw_att_control_main(int argc, char *argv[]);
 
-AutoGyroAttitudeControl::AutoGyroAttitudeControl() :
+RotorwingAttitudeControl::RotorwingAttitudeControl() :
 	_airspeed_sub(ORB_ID(airspeed)),
 
 	/* performance counters */
@@ -127,7 +127,7 @@ AutoGyroAttitudeControl::AutoGyroAttitudeControl() :
 	parameters_update();
 }
 
-AutoGyroAttitudeControl::~AutoGyroAttitudeControl()
+RotorwingAttitudeControl::~RotorwingAttitudeControl()
 {
 	perf_free(_loop_perf);
 	perf_free(_nonfinite_input_perf);
@@ -135,7 +135,7 @@ AutoGyroAttitudeControl::~AutoGyroAttitudeControl()
 }
 
 int
-AutoGyroAttitudeControl::parameters_update()
+RotorwingAttitudeControl::parameters_update()
 {
 
 	int32_t tmp = 0;
@@ -174,6 +174,10 @@ AutoGyroAttitudeControl::parameters_update()
 	param_get(_parameter_handles.airspeed_min, &(_parameters.airspeed_min));
 	param_get(_parameter_handles.airspeed_trim, &(_parameters.airspeed_trim));
 	param_get(_parameter_handles.airspeed_max, &(_parameters.airspeed_max));
+
+	param_get(_parameter_handles.rotorspeed_min, &(_parameters.rotorspeed_min));
+	param_get(_parameter_handles.rotorspeed_trim, &(_parameters.rotorspeed_trim));
+	param_get(_parameter_handles.rotorspeed_max, &(_parameters.rotorspeed_max));
 
 	param_get(_parameter_handles.trim_roll, &(_parameters.trim_roll));
 	param_get(_parameter_handles.trim_pitch, &(_parameters.trim_pitch));
@@ -253,7 +257,7 @@ AutoGyroAttitudeControl::parameters_update()
 }
 
 void
-AutoGyroAttitudeControl::vehicle_control_mode_poll()
+RotorwingAttitudeControl::vehicle_control_mode_poll()
 {
 	bool vcontrol_mode_updated;
 
@@ -267,7 +271,7 @@ AutoGyroAttitudeControl::vehicle_control_mode_poll()
 }
 
 void
-AutoGyroAttitudeControl::vehicle_manual_poll()
+RotorwingAttitudeControl::vehicle_manual_poll()
 {
 	// only update manual if in a manual mode
 	if (_vcontrol_mode.flag_control_manual_enabled) {
@@ -341,7 +345,7 @@ AutoGyroAttitudeControl::vehicle_manual_poll()
 }
 
 void
-AutoGyroAttitudeControl::vehicle_setpoint_poll()
+RotorwingAttitudeControl::vehicle_setpoint_poll()
 {
 	/* check if there is a new setpoint */
 	bool att_sp_updated;
@@ -353,7 +357,7 @@ AutoGyroAttitudeControl::vehicle_setpoint_poll()
 }
 
 void
-AutoGyroAttitudeControl::global_pos_poll()
+RotorwingAttitudeControl::global_pos_poll()
 {
 	/* check if there is a new global position */
 	bool global_pos_updated;
@@ -365,7 +369,7 @@ AutoGyroAttitudeControl::global_pos_poll()
 }
 
 void
-AutoGyroAttitudeControl::vehicle_status_poll()
+RotorwingAttitudeControl::vehicle_status_poll()
 {
 	/* check if there is new status information */
 	bool vehicle_status_updated;
@@ -395,7 +399,7 @@ AutoGyroAttitudeControl::vehicle_status_poll()
 }
 
 void
-AutoGyroAttitudeControl::vehicle_land_detected_poll()
+RotorwingAttitudeControl::vehicle_land_detected_poll()
 {
 	/* check if there is new status information */
 	bool vehicle_land_detected_updated;
@@ -410,7 +414,7 @@ AutoGyroAttitudeControl::vehicle_land_detected_poll()
 	}
 }
 
-void AutoGyroAttitudeControl::run()
+void RotorwingAttitudeControl::run()
 {
 	/*
 	 * do subscriptions
@@ -535,6 +539,7 @@ void AutoGyroAttitudeControl::run()
 			matrix::Eulerf euler_angles(R);
 
 			_airspeed_sub.update();
+			//TF-TODO: ziskat data z rotorspeed
 			vehicle_setpoint_poll();
 			vehicle_control_mode_poll();
 			vehicle_manual_poll();
@@ -648,6 +653,9 @@ void AutoGyroAttitudeControl::run()
 				control_input.airspeed_min = _parameters.airspeed_min;
 				control_input.airspeed_max = _parameters.airspeed_max;
 				control_input.airspeed = airspeed;
+				control_input.rotorspeed_min = _parameters.airspeed_min;
+				control_input.rotorspeed_max = _parameters.airspeed_max;
+				control_input.rotorspeed = airspeed;
 				control_input.scaler = airspeed_scaling;
 				control_input.lock_integrator = lock_integrator;
 				control_input.groundspeed = groundspeed;
@@ -872,7 +880,7 @@ void AutoGyroAttitudeControl::run()
 	}
 }
 
-void AutoGyroAttitudeControl::control_flaps(const float dt)
+void RotorwingAttitudeControl::control_flaps(const float dt)
 {
 	/* default flaps to center */
 	float flap_control = 0.0f;
@@ -928,12 +936,12 @@ void AutoGyroAttitudeControl::control_flaps(const float dt)
 	}
 }
 
-AutoGyroAttitudeControl *AutoGyroAttitudeControl::instantiate(int argc, char *argv[])
+RotorwingAttitudeControl *RotorwingAttitudeControl::instantiate(int argc, char *argv[])
 {
-	return new AutoGyroAttitudeControl();
+	return new RotorwingAttitudeControl();
 }
 
-int AutoGyroAttitudeControl::task_spawn(int argc, char *argv[])
+int RotorwingAttitudeControl::task_spawn(int argc, char *argv[])
 {
 	_task_id = px4_task_spawn_cmd("fw_att_controol",
 				      SCHED_DEFAULT,
@@ -950,12 +958,12 @@ int AutoGyroAttitudeControl::task_spawn(int argc, char *argv[])
 	return 0;
 }
 
-int AutoGyroAttitudeControl::custom_command(int argc, char *argv[])
+int RotorwingAttitudeControl::custom_command(int argc, char *argv[])
 {
 	return print_usage("unknown command");
 }
 
-int AutoGyroAttitudeControl::print_usage(const char *reason)
+int RotorwingAttitudeControl::print_usage(const char *reason)
 {
 	if (reason) {
 		PX4_WARN("%s\n", reason);
@@ -970,14 +978,14 @@ fw_att_control is the fixed wing attitude controller.
 
 	PRINT_MODULE_USAGE_COMMAND("start");
 
-	PRINT_MODULE_USAGE_NAME("fw_att_control", "controller");
+	PRINT_MODULE_USAGE_NAME("rw_att_control", "controller");
 
 	PRINT_MODULE_USAGE_DEFAULT_COMMANDS();
 
 	return 0;
 }
 
-int AutoGyroAttitudeControl::print_status()
+int RotorwingAttitudeControl::print_status()
 {
 	PX4_INFO("Running");
 
@@ -986,7 +994,7 @@ int AutoGyroAttitudeControl::print_status()
 	return 0;
 }
 
-int ag_att_control_main(int argc, char *argv[])
+int rw_att_control_main(int argc, char *argv[])
 {
-	return AutoGyroAttitudeControl::main(argc, argv);
+	return RotorwingAttitudeControl::main(argc, argv);
 }
