@@ -1,0 +1,40 @@
+#!nsh
+#
+# @name ThunderFly G1
+#
+# @type AutoGyro
+# @class Autogyro
+#
+# @output MAIN1 ruddle_left
+# @output MAIN2 ruddle_right
+# @output MAIN3 rotor_left 
+# @output MAIN4 rotor_right
+# @output MAIN5 throttle
+# @output MAIN6 rotor_motor
+#
+# @maintainer ThunderFly
+#
+
+sh /etc/init.d/rc.fw_defaults
+
+if [ $AUTOCNF == yes ]
+then
+	param set BAT_CAPACITY 5500.0
+	param set BAT_N_CELLS 4
+	param set BAT_V_CHARGED 4.199999809265137
+
+	param set FW_AIRSPD_MIN 5.0
+	param set FW_MAN_P_MAX 20.0
+	param set FW_T_SPDWEIGHT 0.5
+
+	# Prevent RC signal lost when simulation lagging
+	param set COM_RC_LOSS_T 10
+	param set NAV_RCL_ACT 4
+fi
+
+set MIXER TF-G1
+
+#set PWM_RATE 50
+#set PWM_AUX_RATE 50
+#set PWM_OUT 12345678
+
