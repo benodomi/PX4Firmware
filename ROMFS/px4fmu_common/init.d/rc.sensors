@@ -362,7 +362,11 @@ fi
 #                           Begin Optional drivers                            #
 ###############################################################################
 
-if [ ${VEHICLE_TYPE} == fw -o ${VEHICLE_TYPE} == vtol ]
+#if [ ${VEHICLE_TYPE} == fw -o ${VEHICLE_TYPE} == rw -o ${VEHICLE_TYPE} == vtol ]
+#TF-TODO: vratit predchozi radek a otestoval, jestli je mozne takto udelat or na 
+# vice parametru zarovan
+
+if [ ${VEHICLE_TYPE} == fw -o ${VEHICLE_TYPE} == rw]
 then
 	if param compare CBRK_AIRSPD_CHK 0
 	then

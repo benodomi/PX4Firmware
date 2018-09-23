@@ -15,7 +15,7 @@
 # @maintainer ThunderFly
 #
 
-sh /etc/init.d/rc.fw_defaults
+sh /etc/init.d/rc.rw_defaults
 
 set MIXER TF-G1
 
