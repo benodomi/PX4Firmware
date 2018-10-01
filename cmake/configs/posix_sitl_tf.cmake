@@ -1,17 +1,10 @@
-#px4_nuttx_configure(HWCLASS m4 CONFIG nsh ROMFS y ROMFSROOT px4fmu_common IO px4io-v2)
+
 set(CMAKE_TOOLCHAIN_FILE ${PX4_SOURCE_DIR}/cmake/toolchains/Toolchain-native.cmake)
 
-
-#set(config_uavcan_num_ifaces 2)
-
 set(config_module_list
-	#
-	# SIMULATOR support modules
-	#
-
 	#drivers/barometer
 	drivers/differential_pressure
-	drivers/distance_sensor
+	#drivers/distance_sensor
 	#drivers/telemetry
 
 	drivers/batt_smbus
@@ -24,7 +17,6 @@ set(config_module_list
 	modules/sensors
 
 	platforms/posix/drivers/tonealrmsim
-
 
 	#
 	# System commands
@@ -49,19 +41,21 @@ set(config_module_list
 	systemcmds/tune_control
 	systemcmds/ver
 
-
 	#
 	# Testing
 	#
 	drivers/distance_sensor/sf0x/sf0x_tests
 	#drivers/test_ppm
-	#lib/controllib/controllib_test
 	lib/rc/rc_tests
 	modules/commander/commander_tests
+	lib/controllib/controllib_test
 	modules/mavlink/mavlink_tests
-	#modules/mc_pos_control/mc_pos_control_tests
 	modules/uORB/uORB_tests
 	systemcmds/tests
+
+	platforms/posix/tests/hello
+	platforms/posix/tests/hrt_test
+	platforms/posix/tests/vcdev_test
 
 	#
 	# General system control
@@ -81,28 +75,25 @@ set(config_module_list
 	#
 	# Estimation modules
 	#
-	#modules/attitude_estimator_q
+	modules/attitude_estimator_q
 	modules/ekf2
-	#modules/local_position_estimator
-	#modules/position_estimator_inav
-	#modules/landing_target_estimator
-	#modules/wind_estimator
+	modules/local_position_estimator
+	modules/position_estimator_inav
+	modules/wind_estimator
 
 	#
 	# Vehicle Control
 	#
 	modules/fw_att_control
 	modules/fw_pos_control_l1
-	
-	modules/rw_att_control
-	#modules/rw_pos_control_l1 #TF-TODO: tento modul jeste neexistuje.
-	
-	#modules/gnd_att_control
-	#modules/gnd_pos_control
-	#modules/mc_att_control
-	#modules/mc_pos_control
+	modules/gnd_att_control
+	modules/gnd_pos_control
+	modules/mc_att_control
+	modules/mc_pos_control
 	modules/vtol_att_control
 
+	modules/rw_att_control
+	#modules/rw_pos_control_l1
 
 	#
 	# Logging
@@ -113,10 +104,49 @@ set(config_module_list
 	# Library modules
 	#
 	modules/dataman
+	modules/landing_target_estimator
+
+	#
+	# OBC challenge
+	#
+	examples/bottle_drop
+
+	#
+	# Rover apps
+	#
+	examples/rover_steering_control
+
+	#
+	# HippoCampus example (AUV from TUHH)
+	#
+	examples/uuv_example_app
+
+	#
+	# Segway
+	#
+	examples/segway
+
+	#
+	# Demo apps
+	#
+
+	# Tutorial code from
+	# https://px4.io/dev/px4_simple_app
+	examples/px4_simple_app
+
+	# Tutorial code from
+	# https://px4.io/dev/debug_values
+	examples/px4_mavlink_debug
 
 	# Tutorial code from
 	# https://px4.io/dev/example_fixedwing_control
-	#examples/fixedwing_control
+	examples/fixedwing_control
+
+	# Template Module
+	templates/module
+
+	# Hardware test
+	#examples/hwtest
 )
 
 set(config_sitl_viewer jmavsim CACHE STRING "viewer for sitl")
@@ -132,3 +162,4 @@ if(REPLAY_FILE)
 	message("Building with uorb publisher rules support")
 	add_definitions(-DORB_USE_PUBLISHER_RULES)
 endif()
+
