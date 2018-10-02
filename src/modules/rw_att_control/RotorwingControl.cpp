@@ -83,9 +83,10 @@ RotorwingAttitudeControl::RotorwingAttitudeControl() :
 	_parameter_handles.airspeed_trim = param_find("FW_AIRSPD_TRIM");
 	_parameter_handles.airspeed_max = param_find("FW_AIRSPD_MAX");
 
-	_parameter_handles.rotorspeed_min = param_find("FW_ROTORSPD_MIN");
-	_parameter_handles.rotorspeed_trim = param_find("FW_ROTORSPD_TRIM");
-	_parameter_handles.rotorspeed_max = param_find("FW_ROTORSPD_MAX");
+	_parameter_handles.rotorspeed_min = param_find("RW_ROTORSPD_MIN");
+	_parameter_handles.rotorspeed_trim = param_find("RW_ROTORSPD_TRIM");
+	_parameter_handles.rotorspeed_max = param_find("RW_ROTORSPD_MAX");
+	_parameter_handles.prerotator_terminate_speed = param_find("RW_PREROT_MAXSPD");
 
 	_parameter_handles.trim_roll = param_find("TRIM_ROLL");
 	_parameter_handles.trim_pitch = param_find("TRIM_PITCH");
@@ -178,6 +179,7 @@ RotorwingAttitudeControl::parameters_update()
 	param_get(_parameter_handles.rotorspeed_min, &(_parameters.rotorspeed_min));
 	param_get(_parameter_handles.rotorspeed_trim, &(_parameters.rotorspeed_trim));
 	param_get(_parameter_handles.rotorspeed_max, &(_parameters.rotorspeed_max));
+	param_get(_parameter_handles.prerotator_terminate_speed, &(_parameters.prerotator_terminate_speed));
 
 	param_get(_parameter_handles.trim_roll, &(_parameters.trim_roll));
 	param_get(_parameter_handles.trim_pitch, &(_parameters.trim_pitch));
@@ -291,6 +293,8 @@ RotorwingAttitudeControl::vehicle_manual_poll()
 
 				if (_vcontrol_mode.flag_control_attitude_enabled) {
 					// STABILIZED mode generate the attitude setpoint from manual user inputs
+					//TF: manual s vstup z ovladace
+					//TF: man_**_max - v radianech
 					_att_sp.timestamp = hrt_absolute_time();
 					_att_sp.roll_body = _manual.y * _parameters.man_roll_max + _parameters.rollsp_offset_rad;
 					_att_sp.roll_body = math::constrain(_att_sp.roll_body, -_parameters.man_roll_max, _parameters.man_roll_max);
@@ -298,6 +302,15 @@ RotorwingAttitudeControl::vehicle_manual_poll()
 					_att_sp.pitch_body = math::constrain(_att_sp.pitch_body, -_parameters.man_pitch_max, _parameters.man_pitch_max);
 					_att_sp.yaw_body = 0.0f;
 					_att_sp.thrust = _manual.z;
+					
+
+					//TF-TODO: zde dodelat vstup pro rotor (zatim to pouzit jako AUX1)
+					
+					if(_airspeed_sub.get().indicated_airspeed_m_s > _parameters.prerotator_terminate_speed){
+						_actuators_airframe.control[6] = 0.0f;
+					}else{
+						_actuators_airframe.control[6] = _manual.aux1;
+					}
 
 					Quatf q(Eulerf(_att_sp.roll_body, _att_sp.pitch_body, _att_sp.yaw_body));
 					q.copyTo(_att_sp.q_d);
@@ -567,6 +580,7 @@ void RotorwingAttitudeControl::run()
 				continue;
 			}
 
+			//TF: ve stabilizovanem rezimu se nespusti
 			control_flaps(deltaT);
 
 			/* decide if in stabilized or full manual control */
@@ -664,6 +678,7 @@ void RotorwingAttitudeControl::run()
 				/* reset body angular rate limits on mode change */
 				if ((_vcontrol_mode.flag_control_attitude_enabled != _flag_control_attitude_enabled_last) || params_updated) {
 					if (_vcontrol_mode.flag_control_attitude_enabled) {
+						//TF: pokud byla provedena zmena a je stabilizovany mod
 						_roll_ctrl.set_max_rate(math::radians(_parameters.r_rmax));
 						_pitch_ctrl.set_max_rate_pos(math::radians(_parameters.p_rmax_pos));
 						_pitch_ctrl.set_max_rate_neg(math::radians(_parameters.p_rmax_neg));
@@ -684,6 +699,7 @@ void RotorwingAttitudeControl::run()
 				float trim_pitch = _parameters.trim_pitch;
 				float trim_yaw = _parameters.trim_yaw;
 
+				/* //TF: zakázání airspeed trimu
 				if (airspeed < _parameters.airspeed_trim) {
 					trim_roll += math::gradual(airspeed, _parameters.airspeed_min, _parameters.airspeed_trim, _parameters.dtrim_roll_vmin,
 								   0.0f);
@@ -700,10 +716,12 @@ void RotorwingAttitudeControl::run()
 					trim_yaw += math::gradual(airspeed, _parameters.airspeed_trim, _parameters.airspeed_max, 0.0f,
 								  _parameters.dtrim_yaw_vmax);
 				}
+				*/
 
 				/* add trim increment if flaps are deployed  */
-				trim_roll += _flaps_applied * _parameters.dtrim_roll_flaps;
-				trim_pitch += _flaps_applied * _parameters.dtrim_pitch_flaps;
+				//TF: nemame zadne klapky
+				//TF: trim_roll += _flaps_applied * _parameters.dtrim_roll_flaps;
+				//TF: trim_pitch += _flaps_applied * _parameters.dtrim_pitch_flaps;
 
 				/* Run attitude controllers */
 				if (_vcontrol_mode.flag_control_attitude_enabled) {
@@ -714,6 +732,7 @@ void RotorwingAttitudeControl::run()
 						_wheel_ctrl.control_attitude(control_input);
 
 						/* Update input data for rate controllers */
+						//TF: zde se ziska rate vypocitane ve funkci control_attitude
 						control_input.roll_rate_setpoint = _roll_ctrl.get_desired_rate();
 						control_input.pitch_rate_setpoint = _pitch_ctrl.get_desired_rate();
 						control_input.yaw_rate_setpoint = _yaw_ctrl.get_desired_rate();

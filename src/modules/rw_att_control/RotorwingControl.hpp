@@ -175,6 +175,7 @@ private:
 		float rotorspeed_min;
 		float rotorspeed_trim;
 		float rotorspeed_max;
+		float prerotator_terminate_speed;
 
 		float trim_roll;
 		float trim_pitch;
@@ -250,6 +251,7 @@ private:
 		param_t rotorspeed_min;
 		param_t rotorspeed_trim;
 		param_t rotorspeed_max;
+		param_t prerotator_terminate_speed;
 
 		param_t trim_roll;
 		param_t trim_pitch;

@@ -86,6 +86,22 @@ PARAM_DEFINE_FLOAT(RW_ROTSPD_MAX, 20.0f);
 
 
 /**
+ * Rotor prerotator terminate speed
+ *
+ * Ground or airspeed at witch it will power off prerotator power.
+ *
+ * @unit m/-
+ * @min 0.0
+ * @max 100
+ * @decimal 1
+ * @increment 0.1
+ * @group RW
+ */
+PARAM_DEFINE_FLOAT(RW_PREROT_MAXSPD, 8.0f);
+
+
+
+/**
  * Attitude Roll Time Constant
  *
  * This defines the latency between a roll step input and the achieved setpoint
