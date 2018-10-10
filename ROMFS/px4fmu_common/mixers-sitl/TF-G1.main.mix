@@ -1,0 +1,58 @@
+Mixer for SITL autogyro
+=========================================================
+
+# The order corresponds to input_index in gazebo mavlink_interface plugin)
+
+# S = input scaling
+# O = output scaling
+
+# M number control count (how many S)
+# S <group> <index> <-ve scale> <+ve scale> <offset> <low lim> <high lim>
+
+
+Output 0 - mixer for the left rudder
+---------------------------------------
+M: 1
+S: 0 2   1250 1250    0 -10000  10000
+
+
+Output 1 - mixer for the right rudder
+---------------------------------------
+M: 1
+S: 0 2   1250 1250   0 -10000  10000
+
+
+Output 2 - mixer for rotor roll
+---------------------------------------
+M: 2
+S: 0 0    5000 5000     0 -10000 10000
+S: 0 1    -5500 -5500   0 -10000 10000
+
+
+Output 3 - mixer for rotor pitch
+---------------------------------------
+M: 2
+S: 0 0    5000 5000 0 -10000 10000
+S: 0 1    5500 5500 0 -10000 10000
+
+
+Output 4 -  mixer for the pusher/puller throttle
+---------------------------------------
+M: 1
+S: 0 3       0  20000  -10000  -10000  10000
+
+
+Output 5 - mixer for the rotor throttle
+---------------------------------------
+M: 1
+S: 3 5       0  20000  -10000  -10000  10000
+
+
+Output 6 - mixer for steering wheel
+---------------------------------------
+M: 1
+S: 0 2  -2250  -2250    0 -10000  10000
+
+
+
+

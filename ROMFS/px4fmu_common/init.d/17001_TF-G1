@@ -17,7 +17,12 @@
 
 sh /etc/init.d/rc.rw_defaults
 
-set MIXER TF-G1
+if [ $AUTOCNF == yes ]
+then
+	param set BAT_CAPACITY 5500.0
+	param set BAT_N_CELLS 4
+	param set BAT_V_CHARGED 4.199999809265137
+
 
 set BAT_CAPACITY 5500.0
 set BAT_N_CELLS 4
@@ -28,5 +33,10 @@ set FW_AIRSPD_MIN 5.0
 set FW_MAN_P_MAX 20.0
 set FW_T_SPDWEIGHT 0.5
 
+set MIXER TF-G1
+
+
+set COM_ARM_WO_GPS 0
+set PWM_MAIN_DIS8 1000
 
 

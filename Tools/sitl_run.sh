@@ -72,8 +72,13 @@ then
 			# Set the plugin path so Gazebo finds our model and sim
 			source $src_path/Tools/setup_gazebo.bash ${src_path} ${build_path}
 
-			gzserver --verbose ${src_path}/Tools/sitl_gazebo/worlds/${model}.world &
+			gazebo_command="gzserver --verbose ${src_path}/Tools/sitl_gazebo/worlds/${model}.world &"
+			echo GAZEBO COMMAND: $gazebo_command
+
+			eval $gazebo_command
 			SIM_PID=`echo $!`
+			#gzserver --verbose ${src_path}/Tools/sitl_gazebo/worlds/${model}.world &
+			
 
 			if [[ -n "$HEADLESS" ]]; then
 				echo "not running gazebo gui"

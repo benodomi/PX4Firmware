@@ -305,7 +305,7 @@ RotorwingAttitudeControl::vehicle_manual_poll()
 					
 
 					//TF-TODO: zde dodelat vstup pro rotor (zatim to pouzit jako AUX1)
-					
+					//TF-TODO: https://github.com/ThunderFly-aerospace/PX4Firmware/issues/10
 					if(_airspeed_sub.get().indicated_airspeed_m_s > _parameters.prerotator_terminate_speed){
 						_actuators_airframe.control[6] = 0.0f;
 					}else{
