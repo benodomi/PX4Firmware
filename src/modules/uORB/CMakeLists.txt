@@ -49,4 +49,5 @@ px4_add_module(
 		uORBUtils.cpp
 	DEPENDS
 		uorb_msgs
+      drivers__device
 	)
