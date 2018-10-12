@@ -101,7 +101,18 @@ px4_posix_generate_symlinks(
 	TARGET px4
 )
 
-if ("${BOARD}" STREQUAL "rpi")
+if ("${BOARD}" STREQUAL "linux")
+	add_custom_target(run
+		COMMAND mkdir -p ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/etc
+		COMMAND mkdir -p ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/etc/init.d
+		COMMAND cp ${PX4_SOURCE_DIR}/posix-configs/linux-run/rcS ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/etc/init.d
+      COMMAND cd ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} && ./px4
+		DEPENDS px4
+		COMMENT "starting px4"
+		USES_TERMINAL
+		)
+
+elseif ("${BOARD}" STREQUAL "rpi")
 	add_custom_target(upload
 		COMMAND rsync -arh --progress ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} ${PX4_SOURCE_DIR}/posix-configs/rpi/*.config ${PX4_SOURCE_DIR}/ROMFS pi@"$ENV{AUTOPILOT_HOST}":/home/pi
 		DEPENDS px4

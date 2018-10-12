@@ -1,0 +1,29 @@
+#!/bin/sh
+
+# PX4 commands need the 'px4-' prefix in bash.
+# (px4-alias.sh is expected to be in the PATH)
+# shellcheck disable=SC1091
+. px4-alias.sh
+
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+
+uorb start
+
+# GCS link
+#mavlink start -x -u $udp_gcs_port_local -r 4000000
+
+#dataman start
+#replay tryapplyparams
+#simulator start -s -u $simulator_udp_port
+#sensors start
+#commander start
+
+
+# API/Offboard link
+#mavlink start -x -u $udp_offboard_plogger start -e -t -b 1000
+
+
+logger start -e -t -b 1000
+
+mavlink boot_complete
