@@ -30,6 +30,11 @@ set(config_module_list
 	systemcmds/tune_control
 	systemcmds/ver
 
+   #testing
+   #examples/px4_simple_app
+
+   drivers/mlab
+
 
 	#
 	# General system control
