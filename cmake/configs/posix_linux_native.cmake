@@ -31,9 +31,10 @@ set(config_module_list
 	systemcmds/ver
 
    #testing
-   #examples/px4_simple_app
+   examples/rotor_frequency_consumer
 
    drivers/mlab
+   drivers/mlab_rotorfreq
 
 
 	#
