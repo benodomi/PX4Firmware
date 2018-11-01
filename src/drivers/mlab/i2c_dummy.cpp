@@ -1,5 +1,7 @@
 #include <drivers/device/i2c.h>
 
+#include <px4_workqueue.h>
+
 #define I2C_DUMMY_BUS_DEFAULT PX4_I2C_BUS_EXPANSION
 #define I2C_DUMMY_BASEADDR 0x51
 #define I2C_DUMMY_DEVICE_PATH "/dev/i2c-dummy"
@@ -17,21 +19,37 @@ public:
 	virtual ssize_t		read(device::file_t *filp, char *buffer, size_t buflen);
 	virtual int			ioctl(device::file_t *filp, int cmd, unsigned long arg);
 
+
+	virtual int			probe();
+
+   void start();
+   void stop();
+
+   int getValue(); //get measured data
+
+
+private:
    int getCounter();
    void resetCounter();
 
-protected:
-	virtual int			probe();
-
-private:
    uint8_t readRegister(uint8_t reg);
    void setRegister(uint8_t reg, uint8_t value);
+
+   //workqueue
+   work_s				_work{};
+   static void			workqueue_callback(void *arg);
+   void              cycle();
+   int               interval_us;
+   int               measuredData;
 
 };
 
 I2C_DUMMY::I2C_DUMMY( int bus, int address)
    :I2C("I2C-DUMMY", I2C_DUMMY_DEVICE_PATH, bus, address)
-{}
+{
+   interval_us=1000000;
+   measuredData=-1;
+}
 
 I2C_DUMMY::~I2C_DUMMY()
 {}
@@ -47,6 +65,9 @@ I2C_DUMMY::init()
    }
 
    set_device_address(I2C_DUMMY_BASEADDR);
+   
+   //set counter mode
+   setRegister(0x00,0b00100000);
 
    return PX4_OK;
 }
@@ -104,30 +125,84 @@ uint8_t
 I2C_DUMMY::readRegister(uint8_t reg)
 {
       uint8_t rcv;
-      int ret=transfer(&reg, 1, nullptr, 0);
+      int ret=transfer(&reg, 1, &rcv, 1);
 
-         if (OK != ret) {
-		      PX4_DEBUG("I2C_DUMMY::readRegister : i2c::transfer returned %d", ret); 
-	      }
-
-      ret=transfer(nullptr, 0, &rcv, 1);
-
-         if (OK != ret) {
-		      PX4_DEBUG("I2C_DUMMY::readRegister : i2c::transfer returned %d", ret); 
-	      }
-
+      if (OK != ret) {
+	      PX4_DEBUG("I2C_DUMMY::readRegister : i2c::transfer returned %d", ret); 
+      }
 
       return rcv;
+}
+
+int 
+I2C_DUMMY::getValue()
+{
+      return measuredData;
+}
+
+//workqueue
+void
+I2C_DUMMY::start()
+{
+   resetCounter();
+	/* schedule a cycle to start things */
+	work_queue(HPWORK, &_work, (worker_t)&I2C_DUMMY::workqueue_callback, this, USEC2TICK(interval_us));
+}
+
+void
+I2C_DUMMY::stop()
+{
+	work_cancel(HPWORK, &_work);
+}
+
+void 
+I2C_DUMMY::cycle()
+{
+   measuredData=getCounter();
+   PX4_INFO("Measured Data: %d", measuredData);
+   resetCounter();
+	/* schedule a cycle to start things */
+	work_queue(HPWORK, &_work, (worker_t)&I2C_DUMMY::workqueue_callback, this, USEC2TICK(interval_us));
+}
+
+void
+I2C_DUMMY::workqueue_callback(void *arg)
+{
+   I2C_DUMMY *dev = (I2C_DUMMY *)arg;
+   dev->cycle();
 }
 
 ////////////////////////////////////MAIN////////////////////////////////
 
 extern "C" __EXPORT int i2c_dummy_main(int argc, char *argv[]);
 
-/*namespace i2c_dummy
+namespace i2c_dummy
 {
 
-   I2C_DUMMY *g_dev;
+   I2C_DUMMY *g_dev=nullptr;;
+   void start();
+   void stop();
+
+   void start()
+   {
+         if(g_dev==nullptr)
+         {
+            g_dev = new I2C_DUMMY();
+            g_dev -> init();
+            g_dev -> start();
+         }
+         else
+         {
+               PX4_INFO("I2C_DUMMY driver already started");
+         }
+   }
+
+   void stop()
+   {
+         g_dev -> stop();
+         delete g_dev;
+         g_dev = nullptr;
+   }
 
 }//namespace i2c-dummy*/
 
@@ -135,22 +210,26 @@ I2C_DUMMY *g_dev;
 
 int i2c_dummy_main(int argc, char *argv[])
 {
-
-   g_dev = new I2C_DUMMY();
-   g_dev ->init();
-
-   for(int i=0; i < 60; i++)
+   if(argc==2)
    {
-      g_dev->resetCounter(); 
-      usleep(1000000);
-            
-      PX4_INFO("Hello Sky: %d", g_dev->getCounter());
-      //PX4_INFO("Reset.");
+      if(argv[1][0]=='s')
+      {
+         i2c_dummy::start();
+         PX4_INFO("Starting I2C_DUMMY driver");
+      }
+
+
+      if(argv[1][0]=='b')
+      {
+         i2c_dummy::stop();
+         PX4_INFO("Stoping I2C_DUMMY driver");
+      }
+      
    }
-
-   delete g_dev;
-   g_dev = nullptr;
-
+   else
+   {
+         PX4_INFO("i2c_dummy s|b");
+   }
    return PX4_OK;
 }
 
