@@ -106,6 +106,7 @@ if ("${BOARD}" STREQUAL "linux")
 		COMMAND mkdir -p ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/etc
 		COMMAND mkdir -p ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/etc/init.d
 		COMMAND cp ${PX4_SOURCE_DIR}/posix-configs/linux-run/rcS ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/etc/init.d
+      #COMMAND cp ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/../px4 ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ #this line is needed when building DEBUG 
       COMMAND cd ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} && ./px4
 		DEPENDS px4
 		COMMENT "starting px4"

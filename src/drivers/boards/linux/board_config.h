@@ -49,10 +49,9 @@
 #define BOARD_HAS_NO_BOOTLOADER
 
 
-#define PX4_I2C_BUS_EXPANSION	5
-#define PX4_I2C_BUS_ONBOARD		1
-#define PX4_NUMBER_I2C_BUSES 1
-
+#define PX4_I2C_BUS_EXPANSION	5 //číslo sběrnice která bude pro PX4 externí
+#define PX4_I2C_BUS_ONBOARD	1 //číslo zběrnice která bude pro PX4 interní 
+#define PX4_NUMBER_I2C_BUSES  1 //počet sběrnic - zdá se, že využívá jen NuttX I2C skrze BOARD_NUMBER_I2C_BUSES
 #define BOARD_NUMBER_BRICKS     0
 
 #include <system_config.h>
