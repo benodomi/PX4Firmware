@@ -33,7 +33,7 @@ set(config_module_list
    #testing
    examples/rotor_frequency_consumer
 
-   drivers/mlab
+   drivers/mlab_dummy
    drivers/mlab_rotorfreq
 
 
