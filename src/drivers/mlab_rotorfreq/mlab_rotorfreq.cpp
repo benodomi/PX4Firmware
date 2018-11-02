@@ -84,22 +84,28 @@
 
 /* Configuration Constants */
 #define MLAB_ROTORFREQ_BUS_DEFAULT 		      PX4_I2C_BUS_EXPANSION
-#define MLAB_ROTORFREQ_BASEADDR 	            0x51
 #define MLAB_ROTORFREQ_DEVICE_PATH	         "/dev/mlab_rotorfreq"
-#define MLAB_ROTORFREQ_DEFAULT_POOL_INTERVAL	1000000
+
+
+//loaded parameters defaluts
+#define MLAB_ROTORFREQ_BASEADDR_DEFAULT 	            0x51     //ROTROFREQ_ADDR param default value
+#define MLAB_ROTORFREQ_POOL_INTERVAL_DAFAULT	         1000000  //ROTORFREQ_POOL param defalut value
+#define MLAB_ROTORFREQ_MAGNET_COUNT_DEFAULT           1        //ROTORFREQ_MAGNET param defalut value
+#define MLAB_ROTORFREQ_RESET_COUNT_DEFAULT            0 //0 - reset after every measurement
+
+#define MLAB_ROTORFREQ_POOL_INTERVAL_MAX              10000000 //10s max - limiter for setting by ioctl
 
 
 #ifndef CONFIG_SCHED_WORKQUEUE
 # error This requires CONFIG_SCHED_WORKQUEUE.
 #endif
 
-//#define DIFFMEASUREMENT
 
 class MLAB_ROTORFREQ : public device::I2C
 {
 public:
 	MLAB_ROTORFREQ(int bus = MLAB_ROTORFREQ_BUS_DEFAULT,
-	      int address = MLAB_ROTORFREQ_BASEADDR);
+	      int address = MLAB_ROTORFREQ_BASEADDR_DEFAULT);
 	virtual ~MLAB_ROTORFREQ();
 
 	virtual int 		init();
@@ -117,8 +123,12 @@ protected:
 
 private:
 	int            _pool_interval; //Interval of reading counter and publishing frequency
+   int            _pool_interval_default; //Interval of reading counter and publishing frequency
    float          _indicated_frequency;
+   float          _estimated_accurancy;
    int            _count;
+   int            _reset_count;
+   int            _magnet_count;
    uint64_t       _lastmeasurement_time;
 	work_s			_work{};
 
@@ -187,9 +197,13 @@ extern "C" __EXPORT int mlab_rotorfreq_main(int argc, char *argv[]);
 
 MLAB_ROTORFREQ::MLAB_ROTORFREQ(int bus, int address) :
 	I2C("MLAB_ROTORFREQ", MLAB_ROTORFREQ_DEVICE_PATH, bus, address, 400000),
-	_pool_interval(0),//us
+	_pool_interval(0),//us-0=disabled
+   _pool_interval_default(MLAB_ROTORFREQ_POOL_INTERVAL_DAFAULT),//us
 	_indicated_frequency(0.0),
-   _count(0),
+   _estimated_accurancy(0.0),
+   _count(0),//couter last count
+   _reset_count(MLAB_ROTORFREQ_RESET_COUNT_DEFAULT ),
+   _magnet_count(MLAB_ROTORFREQ_MAGNET_COUNT_DEFAULT),
 	_rotor_frequency_topic(nullptr)
 	//_sample_perf(perf_alloc(PC_ELAPSED, "sf1xx_read")),
 	//_comms_errors(perf_alloc(PC_COUNT, "sf1xx_com_err"))
@@ -215,15 +229,28 @@ int
 MLAB_ROTORFREQ::init()
 {
 	int ret = PX4_ERROR;
-	//int hw_model;
-	//param_get(param_find("SENS_EN_SF1XX"), &hw_model);
+
+   //load parameters 
+	int address=MLAB_ROTORFREQ_BASEADDR_DEFAULT;
+   if(param_find("ROTORFREQ_ADDR")!=PARAM_INVALID)
+   	param_get(param_find("ROTORFREQ_ADDR"), &address);
+
+   set_device_address(address); 
+
+   if(param_find("ROTORFREQ_POOL")!=PARAM_INVALID)
+      param_get(param_find("ROTORFREQ_POOL"),&_pool_interval_default);
+
+   if(param_find("ROTORFREQ_RESET")!=PARAM_INVALID)
+      param_get(param_find("ROTORFREQ_RESET"),&_reset_count);
+
+   if(param_find("ROTORFREQ_MAGNET")!=PARAM_INVALID)
+      param_get(param_find("ROTORFREQ_MAGNET"),&_magnet_count);
 
 	/* do I2C init (and probe) first */
 	if (I2C::init() != OK) {
 		return ret;
 	}
 
-   set_device_address(MLAB_ROTORFREQ_BASEADDR); 
    //set counter mode
    setRegister(0x00,0b00100000);
 
@@ -316,7 +343,8 @@ MLAB_ROTORFREQ::ioctl(device::file_t *filp, int cmd, unsigned long arg)
 					bool want_start = ( _pool_interval == 0);
 
 					/* set interval for next measurement to minimum legal value */
-					 _pool_interval = MLAB_ROTORFREQ_DEFAULT_POOL_INTERVAL;
+               
+					 _pool_interval = _pool_interval_default;
 
 					/* if we need to start the poll state machine, do it */
 					if (want_start) {
@@ -336,7 +364,7 @@ MLAB_ROTORFREQ::ioctl(device::file_t *filp, int cmd, unsigned long arg)
 					int interval = 1000000 / arg; 
 
 					/* check against maximum rate */
-					if (interval > 0 && interval < MLAB_ROTORFREQ_DEFAULT_POOL_INTERVAL) {
+					if (interval > 0 && interval < MLAB_ROTORFREQ_POOL_INTERVAL_MAX) {
 						return -EINVAL;
 					}
 
@@ -393,7 +421,7 @@ MLAB_ROTORFREQ::read(device::file_t *filp, char *buffer, size_t buflen)
 	/* manual measurement - run one conversion */
    //TODO:ResetCounter      
 	/* wait for it to complete */
-	//usleep(MLAB_ROTORFREQ_DEFAULT_POOL_INTERVAL);
+	//usleep(MLAB_ROTORFREQ_POOL_INTERVAL);
    //TODO: getCounter
    
 	return ret;
@@ -402,40 +430,37 @@ MLAB_ROTORFREQ::read(device::file_t *filp, char *buffer, size_t buflen)
 void
 MLAB_ROTORFREQ::readSensorAndComputeFreqency()
 {
-         
-    int count=getCounter();
-    uint64_t interval=hrt_absolute_time()-_lastmeasurement_time;//měření intervalu musí být bezprostřdně po dokončení komuinikace
+        
+   int oldcount=_count;
+   uint64_t oldtime=_lastmeasurement_time;
 
-   #ifndef DIFFMEASUREMENT
-      //reset after every measurement
-      _count=count;
+   _count=getCounter();
+   _lastmeasurement_time=hrt_absolute_time();      
+
+   int diffCount=_count-oldcount;
+   uint64_t diffTime=_lastmeasurement_time-oldtime;
+   if(_reset_count<_count+diffCount)
+   {
       resetCounter();
       _lastmeasurement_time=hrt_absolute_time();
-   #else
-      int oldcount=_count;
-      _count=count;
-      count=_count-oldcount;//v count očekávám rozdíl od minula, ale je vněm celková hodnota
-      _lastmeasurement_time=_lastmeasurement_time+interval;
-      if(900<_count+count)
-      {
-         resetCounter();
-         _lastmeasurement_time=hrt_absolute_time();
-         _count=0;
-      }
-   #endif
+      _count=0;
+   }
 
-   _indicated_frequency=(float)count/(interval/1000000);
+   _indicated_frequency=(float)diffCount/_magnet_count/((float)diffTime/1000000);
+   _estimated_accurancy=1/(float)_magnet_count/((float)diffTime/1000000);  
 }
 
 void MLAB_ROTORFREQ::publish()
 {
-   //PX4_INFO("Measurement: freq:%f, count: %d", (double)_indicated_frequency, _count);
+   //PX4_INFO("Measurement: freq:%.2f, acc: %.2f, relacc: %.0f\%, count: %d", (double)_indicated_frequency, (double) _estimated_accurancy,
+    //      (double)(_estimated_accurancy/_indicated_frequency*100), _count);
 
    //PX4_ERR("Measurement: freq:%f, count: %d", (double)_indicated_frequency, _count);
 
 	struct rotor_frequency_s msg;
 	msg.timestamp = hrt_absolute_time();
    msg.indicated_frequency = _indicated_frequency;
+   msg.estimated_accurancy=_estimated_accurancy;
    msg.count=_count;
 
 	// publish it, if we are the primary 
