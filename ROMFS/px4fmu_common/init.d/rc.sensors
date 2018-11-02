@@ -362,6 +362,12 @@ fi
 #                           Begin Optional drivers                            #
 ###############################################################################
 
+if [${VEHICLE_TYPE} == fw]
+then
+    mlab_rotorfreq start
+fi
+
+
 #if [ ${VEHICLE_TYPE} == fw -o ${VEHICLE_TYPE} == rw -o ${VEHICLE_TYPE} == vtol ]
 #TF-TODO: vratit predchozi radek a otestoval, jestli je mozne takto udelat or na 
 # vice parametru zarovan
