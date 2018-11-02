@@ -424,6 +424,8 @@ void MLAB_ROTORFREQ::publish()
 {
    //PX4_INFO("Measurement: freq:%f, count: %d", (double)_indicated_frequency, _count);
 
+   //PX4_ERR("Measurement: freq:%f, count: %d", (double)_indicated_frequency, _count);
+
 	struct rotor_frequency_s msg;
 	msg.timestamp = hrt_absolute_time();
    msg.indicated_frequency = _indicated_frequency;

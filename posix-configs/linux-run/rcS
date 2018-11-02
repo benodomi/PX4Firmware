@@ -11,7 +11,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 uorb start
 
 # GCS link
-#mavlink start -x -u $udp_gcs_port_local -r 4000000
+#mavlink start -x -u 14556 -r 4000000
 
 #dataman start
 #replay tryapplyparams
@@ -23,7 +23,8 @@ uorb start
 # API/Offboard link
 #mavlink start -x -u $udp_offboard_plogger start -e -t -b 1000
 
+#mlab_rotorfreq start
 
-logger start -e -t -b 1000
+logger start -m file -e -t -b 1000
 
 mavlink boot_complete
