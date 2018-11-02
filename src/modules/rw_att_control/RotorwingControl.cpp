@@ -306,10 +306,16 @@ RotorwingAttitudeControl::vehicle_manual_poll()
 
 					//TF-TODO: zde dodelat vstup pro rotor (zatim to pouzit jako AUX1)
 					//TF-TODO: https://github.com/ThunderFly-aerospace/PX4Firmware/issues/10
-					if(_airspeed_sub.get().indicated_airspeed_m_s > _parameters.prerotator_terminate_speed){
+					if(!_vcontrol_mode.flag_armed){ // if not armed
+						if(!_prerotator_used && _airspeed_sub.get().indicated_airspeed_m_s > _parameters.prerotator_terminate_speed){
+							_actuators_airframe.control[6] = 0.0f;
+							_prerotator_used = true;
+						} else {
+							_actuators_airframe.control[6] = _manual.aux1;
+						}
+					} else {
 						_actuators_airframe.control[6] = 0.0f;
-					}else{
-						_actuators_airframe.control[6] = _manual.aux1;
+						_prerotator_used = false;
 					}
 
 					Quatf q(Eulerf(_att_sp.roll_body, _att_sp.pitch_body, _att_sp.yaw_body));
@@ -962,7 +968,7 @@ RotorwingAttitudeControl *RotorwingAttitudeControl::instantiate(int argc, char *
 
 int RotorwingAttitudeControl::task_spawn(int argc, char *argv[])
 {
-	_task_id = px4_task_spawn_cmd("fw_att_controol",
+	_task_id = px4_task_spawn_cmd("rw_att_control",
 				      SCHED_DEFAULT,
 				      SCHED_PRIORITY_ATTITUDE_CONTROL,
 				      1500,
@@ -991,7 +997,7 @@ int RotorwingAttitudeControl::print_usage(const char *reason)
 	PRINT_MODULE_DESCRIPTION(
 		R"DESCR_STR(
 ### Description
-fw_att_control is the fixed wing attitude controller.
+rw_att_control is the fixed wing attitude controller.
 
 )DESCR_STR");
 

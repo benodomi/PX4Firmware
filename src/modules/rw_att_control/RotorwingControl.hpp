@@ -104,6 +104,8 @@ private:
 	int		_vehicle_land_detected_sub{-1};		/**< vehicle land detected subscription */
 	int		_vehicle_status_sub{-1};		/**< vehicle status subscription */
 
+	bool _prerotator_used;
+
 	orb_advert_t	_rate_sp_pub{nullptr};			/**< rate setpoint publication */
 	orb_advert_t	_attitude_sp_pub{nullptr};		/**< attitude setpoint point */
 	orb_advert_t	_actuators_0_pub{nullptr};		/**< actuator control group 0 setpoint */
