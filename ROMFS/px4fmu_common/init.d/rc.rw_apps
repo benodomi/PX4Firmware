@@ -22,7 +22,7 @@ ekf2 start
 # Start attitude controller.
 #
 rw_att_control start
-fw_pos_control_l1 start
+rw_pos_control_l1 start
 
 #
 # Start Land Detector.

@@ -12,6 +12,8 @@ set(config_module_list
 	#drivers/magnetometer
 	#drivers/telemetry
 
+    drivers/mlab_rotorfreq
+
 	#drivers/imu/adis16448
 	drivers/barometer/ms5611
 	#drivers/blinkm
