@@ -13,6 +13,7 @@ set(config_module_list
 	#drivers/telemetry
 
     drivers/mlab_rotorfreq
+    examples/rotor_frequency_consumer
 
 	#drivers/imu/adis16448
 	drivers/barometer/ms5611
@@ -50,7 +51,7 @@ set(config_module_list
 
 	# distance sensors
 #	drivers/distance_sensor/ll40ls
-	#drivers/distance_sensor/mb12xx
+#	#drivers/distance_sensor/mb12xx
 #	drivers/distance_sensor/sf0x
 #	drivers/distance_sensor/sf1xx
 #	drivers/distance_sensor/srf02
@@ -80,8 +81,8 @@ set(config_module_list
 	#systemcmds/sd_bench
 	systemcmds/top
 	#systemcmds/topic_listener
-	systemcmds/tune_control
-	systemcmds/ver
+	#systemcmds/tune_control
+#	systemcmds/ver
 
 	#
 	# Testing
