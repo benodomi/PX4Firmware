@@ -32,11 +32,23 @@
 ############################################################################
 
 px4_add_romfs_files(
-	delta_wing_sitl.main.mix
-	plane_sitl.main.mix
-	#over_sitl.main.mix
-	standard_vtol_sitl.main.mix
-	tiltrotor_sitl.main.mix
-
-	TF-G1.main.mix
+	1010_iris_opt_flow
+	1013_iris_vision
+	1040_standard_vtol
+	17001_TF-G1
+	rc.replay
+	1010_iris_opt_flow.post
+	1014_solo
+	1041_tailsitter
+	6011_typhoon_h480
+	rcS
+	1011_iris_irlock
+	1020_hippocampus
+	1042_tiltrotor
+	6011_typhoon_h480.post
+	10016_iris
+	1012_iris_rplidar
+	1030_plane
+	1060_rover
 )
+
