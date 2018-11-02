@@ -6,4 +6,5 @@ px4_add_module(
 	SRCS
 		mlab_rotorfreq.cpp
 	DEPENDS
+      drivers__device
 )

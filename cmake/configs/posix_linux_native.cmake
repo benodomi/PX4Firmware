@@ -10,25 +10,17 @@ set(config_module_list
 	#
 	# System commands
 	#
-	#systemcmds/bl_update
-	#systemcmds/config
-	#systemcmds/dumpfile
-	#systemcmds/esc_calib
-	#systemcmds/led_control
-	#systemcmds/mixer
-	#systemcmds/motor_ramp
-	#systemcmds/mtd
-	#systemcmds/nshterm
+
 	systemcmds/param
-	systemcmds/perf
-	#systemcmds/pwm
+	systemcmds/led_control
+	systemcmds/mixer
+	systemcmds/ver
+	systemcmds/esc_calib
 	systemcmds/reboot
 	systemcmds/shutdown
-	#systemcmds/sd_bench
-	systemcmds/top
 	systemcmds/topic_listener
 	systemcmds/tune_control
-	systemcmds/ver
+	systemcmds/perf
 
    #testing
    examples/rotor_frequency_consumer
