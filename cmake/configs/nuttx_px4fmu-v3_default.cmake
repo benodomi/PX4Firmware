@@ -19,6 +19,8 @@ set(config_module_list
 	drivers/magnetometer
 	drivers/telemetry
 
+   drivers/mlab_rotorfreq
+
 	drivers/batt_smbus
 	drivers/blinkm
 	drivers/camera_trigger
