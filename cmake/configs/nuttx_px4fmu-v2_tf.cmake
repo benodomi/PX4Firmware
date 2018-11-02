@@ -18,7 +18,7 @@ set(config_module_list
 	#drivers/imu/bmi160
 	#drivers/barometer/bmp280
 	#drivers/bst
-	drivers/camera_trigger
+	#drivers/camera_trigger
 	#drivers/frsky_telemetry
 	drivers/gps
 	#drivers/hott
@@ -47,13 +47,13 @@ set(config_module_list
 	drivers/vmount
 
 	# distance sensors
-	drivers/distance_sensor/ll40ls
+#	drivers/distance_sensor/ll40ls
 	#drivers/distance_sensor/mb12xx
-	drivers/distance_sensor/sf0x
-	drivers/distance_sensor/sf1xx
-	drivers/distance_sensor/srf02
-	drivers/distance_sensor/teraranger
-	drivers/distance_sensor/tfmini
+#	drivers/distance_sensor/sf0x
+#	drivers/distance_sensor/sf1xx
+#	drivers/distance_sensor/srf02
+#	drivers/distance_sensor/teraranger
+#	drivers/distance_sensor/tfmini
 	#drivers/distance_sensor/ulanding
 	modules/sensors
 
@@ -122,11 +122,16 @@ set(config_module_list
 	#
 	modules/fw_att_control
 	modules/fw_pos_control_l1
+	
+	modules/rw_att_control
+	#modules/rw_pos_control_l1
+
 	#modules/gnd_att_control
 	#modules/gnd_pos_control
 	modules/mc_att_control
 	modules/mc_pos_control
 	modules/vtol_att_control
+
 
 	#
 	# Logging
@@ -139,37 +144,7 @@ set(config_module_list
 	#
 	modules/dataman
 
-	#
-	# OBC challenge
-	#
-	#examples/bottle_drop
-
-	#
-	# Rover apps
-	#
-	#examples/rover_steering_control
-
-	#
-	# Segway
-	#
-	#examples/segway
-
-	#
-	# Demo apps
-	#
-
-	# Tutorial code from
-	# https://px4.io/dev/px4_simple_app
-	#examples/px4_simple_app
-
-	# Tutorial code from
-	# https://px4.io/dev/debug_values
-	#examples/px4_mavlink_debug
-
 	# Tutorial code from
 	# https://px4.io/dev/example_fixedwing_control
 	#examples/fixedwing_control
-
-	# Hardware test
-	#examples/hwtest
 )

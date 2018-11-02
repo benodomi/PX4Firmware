@@ -1,6 +1,6 @@
 #!nsh
 #
-# Standard apps for fixed wing
+# Standard apps for rotor wing
 #
 # NOTE: Script variables are declared/initialized/unset in the rcS script.
 #
