@@ -362,7 +362,7 @@ fi
 #                           Begin Optional drivers                            #
 ###############################################################################
 
-if [${VEHICLE_TYPE} == fw]
+if [${VEHICLE_TYPE} == rw]
 then
     mlab_rotorfreq start
 fi
