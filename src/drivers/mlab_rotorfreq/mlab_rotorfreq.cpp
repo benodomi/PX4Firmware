@@ -57,7 +57,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <semaphore.h>
-#include <string.h>
+
 #include <fcntl.h>
 #include <poll.h>
 #include <stdio.h>
@@ -65,8 +65,15 @@
 #include <unistd.h>
 #include <vector>
 
+
+
 #include <perf/perf_counter.h>
 */
+
+#include <stdint.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <string.h>
 
 #include <uORB/uORB.h>
 #include <uORB/topics/rotor_frequency.h>
