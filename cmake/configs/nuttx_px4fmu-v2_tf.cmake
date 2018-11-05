@@ -6,8 +6,14 @@ set(config_module_list
 	#
 	# Board support modules
 	#
+
 	#drivers/barometer
-	drivers/differential_pressure
+	#drivers/differential_pressure
+
+	#drivers/differential_pressure/ms4525
+	#drivers/differential_pressure/ms5525
+	drivers/differential_pressure/sdp3x
+
 	#drivers/distance_sensor
 	#drivers/magnetometer
 	#drivers/telemetry
@@ -30,11 +36,11 @@ set(config_module_list
 	drivers/imu/l3gd20
 	drivers/imu/lsm303d
 	drivers/magnetometer/hmc5883
-	drivers/magnetometer/lis3mdl
+#	drivers/magnetometer/lis3mdl
 	#drivers/mb12xx
 	#drivers/mkblctrl
 	drivers/imu/mpu6000
-	drivers/imu/mpu9250
+#	drivers/imu/mpu9250
 	#drivers/oreoled
 	#drivers/protocol_splitter
 	drivers/pwm_input
@@ -48,6 +54,7 @@ set(config_module_list
 	drivers/stm32/tone_alarm
 	#drivers/tap_esc
 	drivers/vmount
+
 
 	# distance sensors
 #	drivers/distance_sensor/ll40ls
@@ -63,7 +70,7 @@ set(config_module_list
 	#
 	# System commands
 	#
-	systemcmds/bl_update
+	#systemcmds/bl_update
 	#systemcmds/config
 	#systemcmds/dumpfile
 	#systemcmds/esc_calib
@@ -80,9 +87,9 @@ set(config_module_list
 	systemcmds/reboot
 	#systemcmds/sd_bench
 	systemcmds/top
-	#systemcmds/topic_listener
-	#systemcmds/tune_control
-#	systemcmds/ver
+#	systemcmds/topic_listener
+	systemcmds/tune_control
+	systemcmds/ver
 
 	#
 	# Testing

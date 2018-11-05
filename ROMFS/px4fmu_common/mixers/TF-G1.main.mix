@@ -40,10 +40,3 @@ Na smerovku vstup 2 (YAW)
 M: 1
 S: 0 2  3000  3000    0 -10000  10000
 
-
-Motor rotoru, vystup 8
-Vstup 4 je definovany jako 'aux1' a mel by byt odpojen pri
-urcite airspeed rychlosti.
----------
-M: 1
-S: 2 6   10000  10000   0 -10000  10000
