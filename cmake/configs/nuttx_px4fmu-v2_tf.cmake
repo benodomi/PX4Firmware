@@ -10,8 +10,8 @@ set(config_module_list
 	#drivers/barometer
 	#drivers/differential_pressure
 
-	#drivers/differential_pressure/ms4525
-	#drivers/differential_pressure/ms5525
+#	drivers/differential_pressure/ms4525
+#	drivers/differential_pressure/ms5525
 	drivers/differential_pressure/sdp3x
 
 	#drivers/distance_sensor
@@ -36,7 +36,7 @@ set(config_module_list
 	drivers/imu/l3gd20
 	drivers/imu/lsm303d
 	drivers/magnetometer/hmc5883
-#	drivers/magnetometer/lis3mdl
+	drivers/magnetometer/lis3mdl
 	#drivers/mb12xx
 	#drivers/mkblctrl
 	drivers/imu/mpu6000
@@ -87,7 +87,7 @@ set(config_module_list
 	systemcmds/reboot
 	#systemcmds/sd_bench
 	systemcmds/top
-#	systemcmds/topic_listener
+	#systemcmds/topic_listener
 	systemcmds/tune_control
 	systemcmds/ver
 
