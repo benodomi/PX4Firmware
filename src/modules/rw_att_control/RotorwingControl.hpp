@@ -49,7 +49,7 @@
 #include <uORB/Subscription.hpp>
 #include <uORB/topics/actuator_controls.h>
 #include <uORB/topics/airspeed.h>
-//FT-TODO: #include <uORB/topics/rotorspeed.h>
+#include <uORB/topics/rotor_frequency.h>
 #include <uORB/topics/battery_status.h>
 #include <uORB/topics/manual_control_setpoint.h>
 #include <uORB/topics/parameter_update.h>
