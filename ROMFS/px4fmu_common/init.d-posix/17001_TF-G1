@@ -33,6 +33,9 @@ then
 	param set COM_ARM_IMU_ACC 1.0
 	param set COM_ARM_EKF_AB 0.01
 
+	# Use [2] if joystick is present to simulate RC
+	param set COM_RC_IN_MODE 1
+
 fi
 
 set MIXER TF-G1
