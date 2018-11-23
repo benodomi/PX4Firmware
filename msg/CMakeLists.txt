@@ -140,6 +140,7 @@ set(msg_files
 	vtol_vehicle_status.msg
 	wind_estimate.msg
 	rotor_frequency.msg
+   temperature.msg
 	)
 
 if(NOT EXTERNAL_MODULES_LOCATION STREQUAL "")

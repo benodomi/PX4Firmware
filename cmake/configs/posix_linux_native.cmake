@@ -27,6 +27,7 @@ set(config_module_list
 
    drivers/mlab_dummy
    drivers/mlab_rotorfreq
+   drivers/mlab_temperature
 
 
 	#
