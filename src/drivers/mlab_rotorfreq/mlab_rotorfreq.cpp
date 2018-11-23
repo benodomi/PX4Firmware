@@ -32,7 +32,7 @@
  ****************************************************************************/
 
 /**
- * @file mlab_rotorfrequency.cpp
+ * @file mlab_rotorfreq.cpp
  *
  * @author Vít Hanousek <slimonslimon@gmail.com>
  *
@@ -132,7 +132,6 @@ private:
    uint64_t       _lastmeasurement_time;
 	work_s			_work{};
 
-	int				   _orb_class_instance;
 	orb_advert_t		_rotor_frequency_topic;
 
 	//perf_counter_t		_sample_perf;
