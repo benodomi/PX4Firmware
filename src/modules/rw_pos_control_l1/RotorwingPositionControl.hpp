@@ -48,7 +48,7 @@
 #ifndef ROTORWINGPOSITIONCONTROL_HPP_
 #define ROTORWINGPOSITIONCONTROL_HPP_
 
-#include "../fw_pos_control_l1/launchdetection/LaunchDetector.h"
+#include "../rw_pos_control_l1/launchdetection/LaunchDetector.h"
 #include "roverroof_takeoff/RoverroofTakeoff.h"
 
 #include <cfloat>
@@ -84,6 +84,7 @@
 #include <uORB/topics/vehicle_land_detected.h>
 #include <uORB/topics/vehicle_local_position.h>
 #include <uORB/topics/vehicle_status.h>
+#include <uORB/topics/rotor_frequency.h>
 #include <uORB/uORB.h>
 #include <vtol_att_control/vtol_type.h>
 

@@ -369,15 +369,23 @@ fi
 
 if [${VEHICLE_TYPE} = rw]
 then
-    mlab_rotorfreq start
+
+  if param compare CBRK_AIRSPD_CHK 0
+  then
+    sdp3x_airspeed start -a
+  fi
+
+  mlab_rotorfreq start
+
 fi
 
 
 #if [ ${VEHICLE_TYPE} = fw -o ${VEHICLE_TYPE} = rw -o ${VEHICLE_TYPE} = vtol ]
-#TF-TODO: vratit predchozi radek a otestoval, jestli je mozne takto udelat or na 
+#TF-TODO: vratit predchozi radek a otestoval, jestli je mozne takto udelat or na
 # vice parametru zarovan
 
-if [ ${VEHICLE_TYPE} = fw -o ${VEHICLE_TYPE} = rw]
+
+if [ ${VEHICLE_TYPE} = fw -o ${VEHICLE_TYPE} = vtol]
 then
 	if param compare CBRK_AIRSPD_CHK 0
 	then
