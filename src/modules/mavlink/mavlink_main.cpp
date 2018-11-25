@@ -1743,6 +1743,9 @@ Mavlink::configure_streams_to_default(const char *configure_single_stream)
 
 	const float unlimited_rate = -1.f;
 
+	//TODO-TF: logovani ROTOR_FREQUENCY
+        //configure_stream_local("ROTOR_FREQUENCY", 5.0f);
+
 	switch (_mode) {
 	case MAVLINK_MODE_NORMAL:
 		configure_stream_local("ADSB_VEHICLE", unlimited_rate);
