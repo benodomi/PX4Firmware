@@ -367,17 +367,14 @@ fi
 #                           Begin Optional drivers                            #
 ###############################################################################
 
-if [${VEHICLE_TYPE} = rw]
-then
+#if [${VEHICLE_TYPE} = rw]
+#then
 
-  if param compare CBRK_AIRSPD_CHK 0
-  then
-    sdp3x_airspeed start -a
-  fi
-
+  gps start
+  sdp3x_airspeed start
   mlab_rotorfreq start
 
-fi
+#fi
 
 
 #if [ ${VEHICLE_TYPE} = fw -o ${VEHICLE_TYPE} = rw -o ${VEHICLE_TYPE} = vtol ]

@@ -38,5 +38,3 @@ set MIXER TF-G1
 
 set COM_ARM_WO_GPS 0
 set PWM_MAIN_DIS8 1000
-
-

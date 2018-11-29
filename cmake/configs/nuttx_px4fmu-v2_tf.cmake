@@ -1,6 +1,17 @@
 px4_nuttx_configure(HWCLASS m4 CONFIG nsh ROMFS y ROMFSROOT px4fmu_common IO px4io-v2)
 
+# user-configurable UART ports
+set(board_serial_ports
+	GPS1:/dev/ttyS3
+	TEL1:/dev/ttyS1
+	TEL2:/dev/ttyS2
+	TEL4:/dev/ttyS6)
+
+set(px4_constrained_flash_build 1)
+
 #set(config_uavcan_num_ifaces 2)
+
+set(config_bl_file ${PX4_SOURCE_DIR}/ROMFS/px4fmu_common/extras/px4fmuv3_bl.bin)
 
 set(config_module_list
     #
@@ -10,8 +21,8 @@ set(config_module_list
     #drivers/barometer
     #drivers/differential_pressure
 
-#    drivers/differential_pressure/ms4525
-#    drivers/differential_pressure/ms5525
+#   drivers/differential_pressure/ms4525
+#   drivers/differential_pressure/ms5525
     drivers/differential_pressure/sdp3x
 
     #drivers/distance_sensor
@@ -70,7 +81,7 @@ set(config_module_list
     #
     # System commands
     #
-    #systemcmds/bl_update
+    systemcmds/bl_update
     #systemcmds/config
     #systemcmds/dumpfile
     #systemcmds/esc_calib
@@ -107,7 +118,7 @@ set(config_module_list
     #
     # General system control
     #
-    modules/camera_feedback
+#    modules/camera_feedback
     modules/commander
     modules/events
     #modules/gpio_led
@@ -158,3 +169,7 @@ set(config_module_list
     # https://px4.io/dev/example_fixedwing_control
     #examples/fixedwing_control
 )
+
+
+
+set(flight_tasks_to_remove Orbit)
