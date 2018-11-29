@@ -227,7 +227,7 @@ MLAB_TEMPERATURE::init()
 float
 MLAB_TEMPERATURE::getTemperature()
 {
-      uint16_t r = readRegister16(0x00);
+      int16_t r = (int16_t)readRegister16(0x00);
       //temperature calculation register_value * 0.00390625; (Sensor is a big-endian but SMBus is little-endian by default)
       return (float)r / 256.0f ;
 }

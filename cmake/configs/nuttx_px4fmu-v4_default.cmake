@@ -20,8 +20,6 @@ set(config_module_list
 	drivers/telemetry
 	drivers/imu
 
-   drivers/mlab_rotorfreq
-
 	drivers/batt_smbus
 	drivers/blinkm
 	drivers/camera_trigger
