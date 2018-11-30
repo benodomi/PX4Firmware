@@ -23,7 +23,6 @@ uorb start
 # API/Offboard link
 #mavlink start -x -u $udp_offboard_plogger start -e -t -b 1000
 
-#mlab_rotorfreq start
 
 logger start -m file -e -t -b 1000
 

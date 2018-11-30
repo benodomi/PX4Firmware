@@ -1,10 +1,10 @@
 px4_add_module(
 
-	MODULE drivers__mlab_temperature
-	MAIN mlab_temperature
+	MODULE drivers__lm75
+	MAIN lm75
 	COMPILE_FLAGS
 	SRCS
-		mlab_temperature.cpp
+		lm75.cpp
 	DEPENDS
       drivers__device
 )

@@ -5,16 +5,16 @@
  * @group Sensors
  * @unit us
  */
-PARAM_DEFINE_INT32(TEMPERATURE_POOL, 1000000);
+PARAM_DEFINE_INT32(LM75_POOL, 1000000);
 
 /**
  * MLAB temperature (i2c) i2c address 
  *
  * @reboot_required true
  * @group Sensors
- * @value 81 0x51
- * @value 80 0x50
+ * @value 72 0x48
+ * @value 73 0x49
  */
-PARAM_DEFINE_INT32(TEMPERATURE_ADDR, 81);
+PARAM_DEFINE_INT32(LM75_ADDR, 72);
 
 

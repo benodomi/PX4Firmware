@@ -1,10 +1,10 @@
 px4_add_module(
 
-	MODULE drivers__mlab_rotorfreq
-	MAIN mlab_rotorfreq
+	MODULE drivers__pcf8583
+	MAIN pcf8583
 	COMPILE_FLAGS
 	SRCS
-		mlab_rotorfreq.cpp
+		pcf8583.cpp
 	DEPENDS
       drivers__device
 )
