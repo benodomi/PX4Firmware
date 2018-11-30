@@ -1,2 +1,2 @@
-add_subdirectory(PCF8583)
+add_subdirectory(pcf8583)
 

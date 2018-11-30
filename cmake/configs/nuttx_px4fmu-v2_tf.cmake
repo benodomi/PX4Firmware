@@ -29,7 +29,7 @@ set(config_module_list
     #drivers/magnetometer
     #drivers/telemetry
 
-    drivers/rotor_frequency/PCF8583
+    drivers/rotor_frequency/pcf8583
     examples/rotor_frequency_consumer
 
     #drivers/imu/adis16448
