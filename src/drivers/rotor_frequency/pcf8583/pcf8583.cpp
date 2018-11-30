@@ -458,8 +458,10 @@ void PCF8583::publish()
 
 	struct rotor_frequency_s msg;
 	msg.timestamp = hrt_absolute_time();
-   msg.indicated_frequency = _indicated_frequency;
-   msg.estimated_accurancy=_estimated_accurancy;
+   msg.indicated_frequency_hz = _indicated_frequency;
+   msg.indicated_frequency_rpm = _indicated_frequency*60;
+   msg.estimated_accurancy_hz=_estimated_accurancy;
+   msg.estimated_accurancy_rpm=_estimated_accurancy*60;
    msg.count=_count;
 
 	// publish it, if we are the primary 

@@ -40,7 +40,7 @@ int rotorfreq_consumer_main(int argc, char *argv[])
            orb_copy(ORB_ID(rotor_frequency), sensor_sub_fd, &raw);
 
            PX4_INFO("Rotor frequency:\t%f count: %d",
-                       (double)raw.indicated_frequency,
+                       (double)raw.indicated_frequency_hz,
                         (int) raw.count);
           } 
       }
