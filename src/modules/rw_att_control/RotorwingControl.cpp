@@ -313,7 +313,7 @@ RotorwingAttitudeControl::vehicle_manual_poll()
 					_att_sp.pitch_body = -_manual.x * _parameters.man_pitch_max + _parameters.pitchsp_offset_rad;
 					_att_sp.pitch_body = math::constrain(_att_sp.pitch_body, -_parameters.man_pitch_max, _parameters.man_pitch_max);
 					_att_sp.yaw_body = 0.0f;
-					_att_sp.thrust = _manual.z;
+					_att_sp.thrust_body[0] = _manual.z;
 
 
 					//TF-TODO: zde dodelat vstup pro rotor (zatim to pouzit jako AUX1)
@@ -351,7 +351,7 @@ RotorwingAttitudeControl::vehicle_manual_poll()
 					_rates_sp.roll = _manual.y * _parameters.acro_max_x_rate_rad;
 					_rates_sp.pitch = -_manual.x * _parameters.acro_max_y_rate_rad;
 					_rates_sp.yaw = _manual.r * _parameters.acro_max_z_rate_rad;
-					_rates_sp.thrust = _manual.z;
+					_rates_sp.thrust_body[0] = _manual.z;
 
 					if (_rate_sp_pub != nullptr) {
 						/* publish the attitude rates setpoint */
@@ -379,11 +379,15 @@ void
 RotorwingAttitudeControl::vehicle_setpoint_poll()
 {
 	/* check if there is a new setpoint */
-	bool att_sp_updated;
-	orb_check(_att_sp_sub, &att_sp_updated);
+	bool updated = false;
+	orb_check(_att_sp_sub, &updated);
 
-	if (att_sp_updated) {
-		orb_copy(ORB_ID(vehicle_attitude_setpoint), _att_sp_sub, &_att_sp);
+	if (updated) {
+		if (orb_copy(ORB_ID(vehicle_attitude_setpoint), _att_sp_sub, &_att_sp) == PX4_OK) {
+			_rates_sp.thrust_body[0] = _att_sp.thrust_body[0];
+			_rates_sp.thrust_body[1] = _att_sp.thrust_body[1];
+			_rates_sp.thrust_body[2] = _att_sp.thrust_body[2];
+		}
 	}
 }
 
@@ -409,10 +413,19 @@ RotorwingAttitudeControl::vehicle_status_poll()
 	if (vehicle_status_updated) {
 		orb_copy(ORB_ID(vehicle_status), _vehicle_status_sub, &_vehicle_status);
 
+		// if VTOL and not in fixed wing mode we should only control body-rates which are published
+		// by the multicoper attitude controller. Therefore, modify the control mode to achieve rate
+		// control only
+		//if (_vehicle_status.is_vtol) {
+		//	if (_vehicle_status.is_rotary_wing) {
+		//		_vcontrol_mode.flag_control_attitude_enabled = false;
+		//		_vcontrol_mode.flag_control_manual_enabled = false;
+		//	}
+		//}
+
 		/* set correct uORB ID, depending on if vehicle is VTOL or not */
-		if (!_rates_sp_id) {
+        if (!_actuators_id) {
 			if (_vehicle_status.is_vtol) {
-				_rates_sp_id = ORB_ID(fw_virtual_rates_setpoint);
 				_actuators_id = ORB_ID(actuator_controls_virtual_fw);
 				_attitude_setpoint_id = ORB_ID(fw_virtual_attitude_setpoint);
 
@@ -421,7 +434,6 @@ RotorwingAttitudeControl::vehicle_status_poll()
 				parameters_update();
 
 			} else {
-				_rates_sp_id = ORB_ID(vehicle_rates_setpoint);
 				_actuators_id = ORB_ID(actuator_controls_0);
 				_attitude_setpoint_id = ORB_ID(vehicle_attitude_setpoint);
 			}
@@ -799,8 +811,8 @@ void RotorwingAttitudeControl::run()
                                 ? _manual.flaps : 0.0f;
 
 						/* throttle passed through if it is finite and if no engine failure was detected */
-						_actuators.control[actuator_controls_s::INDEX_THROTTLE] = (PX4_ISFINITE(_att_sp.thrust)
-								&& !_vehicle_status.engine_failure) ? _att_sp.thrust : 0.0f;
+						_actuators.control[actuator_controls_s::INDEX_THROTTLE] = (PX4_ISFINITE(_att_sp.thrust_body[0])
+								&& !_vehicle_status.engine_failure) ? _att_sp.thrust_body[0] : 0.0f;
 
 						/* scale effort by battery status */
 						if (_parameters.bat_scale_en &&
@@ -860,7 +872,7 @@ void RotorwingAttitudeControl::run()
 					float yaw_u = _yaw_ctrl.control_bodyrate(control_input);
 					_actuators.control[actuator_controls_s::INDEX_YAW] = (PX4_ISFINITE(yaw_u)) ? yaw_u + trim_yaw : trim_yaw;
 
-                    _actuators.control[actuator_controls_s::INDEX_THROTTLE] = PX4_ISFINITE(_rates_sp.thrust) ? _rates_sp.thrust : 0.0f;
+                    _actuators.control[actuator_controls_s::INDEX_THROTTLE] = PX4_ISFINITE(_rates_sp.thrust_body[0]) ? _rates_sp.thrust_body[0] : 0.0f;
 
                     _actuators.control[actuator_controls_s::INDEX_FLAPS] = PX4_ISFINITE(_manual.flaps) ? _manual.flaps : 0.0f;
 				}

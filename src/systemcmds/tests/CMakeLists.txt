@@ -75,7 +75,7 @@ set(srcs
 	tests_main.c
 	)
 
-if(${OS} STREQUAL "nuttx")
+if(${PX4_PLATFORM} STREQUAL "nuttx")
 	list(APPEND srcs
 		test_time.c
 		test_uart_break.c
@@ -101,4 +101,7 @@ px4_add_module(
 		git_ecl
 		ecl_geo_lookup # TODO: move this
 		pwm_limit
+		version
 	)
+
+add_subdirectory(hrt_test)

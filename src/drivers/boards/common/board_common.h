@@ -255,7 +255,7 @@
 #  else
 /*  Use PX4IO FW search paths defaults based on version */
 #    if BOARD_USES_PX4IO_VERSION == 2
-#      define PX4IO_FW_SEARCH_PATHS {"/etc/extras/px4io-v2.bin", "/fs/microsd/px4io2.bin", "/fs/microsd/px4io.bin", nullptr }
+#      define PX4IO_FW_SEARCH_PATHS {"/etc/extras/px4_io-v2_default.bin","/fs/microsd/px4_io-v2_default.bin", "/fs/microsd/px4io2.bin", nullptr }
 #    endif
 #  endif
 #endif
@@ -290,6 +290,39 @@
 #if defined(BOARD_HAS_HW_VERSIONING)
 #  define BOARD_HAS_VERSIONING 1
 #endif
+
+/* Default LED logical to color mapping */
+
+#if defined(BOARD_OVERLOAD_LED)
+#  define BOARD_OVERLOAD_LED_TOGGLE() led_toggle(BOARD_OVERLOAD_LED)
+#  define BOARD_OVERLOAD_LED_OFF()    led_off(BOARD_OVERLOAD_LED)
+#else
+#  define BOARD_OVERLOAD_LED_TOGGLE()
+#  define BOARD_OVERLOAD_LED_OFF()
+#endif
+
+#if defined(BOARD_HAS_CONTROL_STATUS_LEDS)
+
+#  if defined(BOARD_ARMED_LED)
+#    define BOARD_ARMED_LED_TOGGLE() led_toggle(BOARD_ARMED_LED)
+#    define BOARD_ARMED_LED_OFF()    led_off(BOARD_ARMED_LED)
+#    define BOARD_ARMED_LED_ON()     led_on(BOARD_ARMED_LED)
+#  else
+#    define BOARD_ARMED_LED_TOGGLE()
+#    define BOARD_ARMED_LED_OFF()
+#    define BOARD_ARMED_LED_ON()
+#  endif
+
+#  if defined(BOARD_ARMED_STATE_LED)
+#    define BOARD_ARMED_STATE_LED_TOGGLE() led_toggle(BOARD_ARMED_STATE_LED)
+#    define BOARD_ARMED_STATE_LED_OFF()    led_off(BOARD_ARMED_STATE_LED)
+#    define BOARD_ARMED_STATE_LED_ON()     led_on(BOARD_ARMED_STATE_LED)
+#  else
+#    define BOARD_ARMED_STATE_LED_TOGGLE()
+#    define BOARD_ARMED_STATE_LED_OFF()
+#    define BOARD_ARMED_STATE_LED_ON()
+#  endif
+#endif //
 
 /************************************************************************************
  * Public Data
