@@ -1743,8 +1743,7 @@ Mavlink::configure_streams_to_default(const char *configure_single_stream)
 
 	const float unlimited_rate = -1.f;
 
-	//TODO-TF: logovani ROTOR_FREQUENCY
-        //configure_stream_local("ROTOR_FREQUENCY", 5.0f);
+  //TODO-TF: logovani ROTOR_FREQUENCY
 
 	switch (_mode) {
 	case MAVLINK_MODE_NORMAL:
@@ -1779,6 +1778,7 @@ Mavlink::configure_streams_to_default(const char *configure_single_stream)
 		configure_stream_local("VFR_HUD", 4.0f);
 		configure_stream_local("VISION_POSITION_ESTIMATE", 1.0f);
 		configure_stream_local("WIND_COV", 1.0f);
+    configure_stream_local("ROTOR_FREQUENCY", unlimited_rate);
 		break;
 
 	case MAVLINK_MODE_ONBOARD:

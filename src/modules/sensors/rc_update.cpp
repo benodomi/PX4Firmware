@@ -381,6 +381,7 @@ RCUpdate::rc_poll(const ParameterHandles &parameter_handles)
 			manual.aux5 = get_rc_value(rc_channels_s::RC_CHANNELS_FUNCTION_AUX_5, -1.0, 1.0);
 
 			/* filter controls */
+      /* LowPassFilter2p */
 			manual.y = math::constrain(_filter_roll.apply(manual.y), -1.f, 1.f);
 			manual.x = math::constrain(_filter_pitch.apply(manual.x), -1.f, 1.f);
 			manual.r = math::constrain(_filter_yaw.apply(manual.r), -1.f, 1.f);

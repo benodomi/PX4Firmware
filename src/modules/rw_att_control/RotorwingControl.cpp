@@ -30,8 +30,20 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  ****************************************************************************/
+/*
+//TF-TODO, TF-INFO
 
-// TF-TODO: Připojení HPP souboru požáduje dlouhou relativní cestu... 
+    Prerotator je zatim pripojen na vstup jako 'flaps', To je potreba prenastavit v ovladaci,
+    aby ukazatel pro prerotator ukazoval na vstup jako kridelka.
+
+    V mixeru by melo byt osetreno to, aby se motor neroztocil v pripade
+    ze neni naarmovano. Je to udelano tak, ze je na vstup pro motor
+    'INDEX_THROTTLE' nastavena NaN hodnota.
+
+*/
+
+
+// TF-TODO: Připojení HPP souboru požáduje dlouhou relativní cestu...
 //#include "RotorwingAttitudeControl.hpp"
 #include "modules/rw_att_control/RotorwingControl.hpp"
 
@@ -288,8 +300,8 @@ RotorwingAttitudeControl::vehicle_manual_poll()
 				}
 			}
 
-			if (!_vcontrol_mode.flag_control_climb_rate_enabled &&
-			    !_vcontrol_mode.flag_control_offboard_enabled) {
+            /* aircraft is controlled from local autpilot. It pass manual, stabilized, ... modes */
+			if (!_vcontrol_mode.flag_control_climb_rate_enabled &&  !_vcontrol_mode.flag_control_offboard_enabled) {
 
 				if (_vcontrol_mode.flag_control_attitude_enabled) {
 					// STABILIZED mode generate the attitude setpoint from manual user inputs
@@ -302,7 +314,7 @@ RotorwingAttitudeControl::vehicle_manual_poll()
 					_att_sp.pitch_body = math::constrain(_att_sp.pitch_body, -_parameters.man_pitch_max, _parameters.man_pitch_max);
 					_att_sp.yaw_body = 0.0f;
 					_att_sp.thrust = _manual.z;
-					
+
 
 					//TF-TODO: zde dodelat vstup pro rotor (zatim to pouzit jako AUX1)
 					//TF-TODO: https://github.com/ThunderFly-aerospace/PX4Firmware/issues/10
@@ -311,7 +323,7 @@ RotorwingAttitudeControl::vehicle_manual_poll()
 							_actuators_airframe.control[6] = 0.0f;
 							_prerotator_used = true;
 						} else {
-							_actuators_airframe.control[6] = _manual.aux1;
+							_actuators_airframe.control[6] = _manual.flaps;
 						}
 					} else {
 						_actuators_airframe.control[6] = 0.0f;
@@ -353,10 +365,10 @@ RotorwingAttitudeControl::vehicle_manual_poll()
 				} else {
 					/* manual/direct control */
 					_actuators.control[actuator_controls_s::INDEX_ROLL] = _manual.y * _parameters.man_roll_scale + _parameters.trim_roll;
-					_actuators.control[actuator_controls_s::INDEX_PITCH] = -_manual.x * _parameters.man_pitch_scale +
-							_parameters.trim_pitch;
+					_actuators.control[actuator_controls_s::INDEX_PITCH] = -_manual.x * _parameters.man_pitch_scale + _parameters.trim_pitch;
 					_actuators.control[actuator_controls_s::INDEX_YAW] = _manual.r * _parameters.man_yaw_scale + _parameters.trim_yaw;
 					_actuators.control[actuator_controls_s::INDEX_THROTTLE] = _manual.z;
+					_actuators.control[actuator_controls_s::INDEX_FLAPS] = _manual.flaps;
 				}
 			}
 		}
@@ -591,7 +603,7 @@ void RotorwingAttitudeControl::run()
 
 			/* decide if in stabilized or full manual control */
 			if (_vcontrol_mode.flag_control_rates_enabled) {
-				/* scale around tuning airspeed */
+                /* scale around tuning airspeed */
 				float airspeed;
 
 				/* if airspeed is non-finite or not valid or if we are asked not to control it, we assume the normal average speed */
@@ -782,6 +794,10 @@ void RotorwingAttitudeControl::run()
 							perf_count(_nonfinite_output_perf);
 						}
 
+                        /*TF: Prerotator port*/
+						_actuators.control[actuator_controls_s::INDEX_FLAPS] = (PX4_ISFINITE(_manual.flaps))
+                                ? _manual.flaps : 0.0f;
+
 						/* throttle passed through if it is finite and if no engine failure was detected */
 						_actuators.control[actuator_controls_s::INDEX_THROTTLE] = (PX4_ISFINITE(_att_sp.thrust)
 								&& !_vehicle_status.engine_failure) ? _att_sp.thrust : 0.0f;
@@ -844,7 +860,9 @@ void RotorwingAttitudeControl::run()
 					float yaw_u = _yaw_ctrl.control_bodyrate(control_input);
 					_actuators.control[actuator_controls_s::INDEX_YAW] = (PX4_ISFINITE(yaw_u)) ? yaw_u + trim_yaw : trim_yaw;
 
-					_actuators.control[actuator_controls_s::INDEX_THROTTLE] = PX4_ISFINITE(_rates_sp.thrust) ? _rates_sp.thrust : 0.0f;
+                    _actuators.control[actuator_controls_s::INDEX_THROTTLE] = PX4_ISFINITE(_rates_sp.thrust) ? _rates_sp.thrust : 0.0f;
+
+                    _actuators.control[actuator_controls_s::INDEX_FLAPS] = PX4_ISFINITE(_manual.flaps) ? _manual.flaps : 0.0f;
 				}
 
 				rate_ctrl_status_s rate_ctrl_status;
@@ -866,8 +884,8 @@ void RotorwingAttitudeControl::run()
 			_actuators.control[actuator_controls_s::INDEX_YAW] += _parameters.roll_to_yaw_ff * math::constrain(
 						_actuators.control[actuator_controls_s::INDEX_ROLL], -1.0f, 1.0f);
 
-			_actuators.control[actuator_controls_s::INDEX_FLAPS] = _flaps_applied;
-			_actuators.control[5] = _manual.aux1;
+			//TF: _actuators.control[actuator_controls_s::INDEX_FLAPS] = _flaps_applied;
+			_actuators.control[5] = _manual.flaps;
 			_actuators.control[actuator_controls_s::INDEX_AIRBRAKES] = _flaperons_applied;
 			// FIXME: this should use _vcontrol_mode.landing_gear_pos in the future
 			_actuators.control[7] = _manual.aux3;
@@ -908,10 +926,11 @@ void RotorwingAttitudeControl::run()
 void RotorwingAttitudeControl::control_flaps(const float dt)
 {
 	/* default flaps to center */
-	float flap_control = 0.0f;
+    //TF: float flap_control = 0.0f;
 
 	/* map flaps by default to manual if valid */
-	if (PX4_ISFINITE(_manual.flaps) && _vcontrol_mode.flag_control_manual_enabled
+    /*TF ...
+    if (PX4_ISFINITE(_manual.flaps) && _vcontrol_mode.flag_control_manual_enabled
 	    && fabsf(_parameters.flaps_scale) > 0.01f) {
 		flap_control = 0.5f * (_manual.flaps + 1.0f) * _parameters.flaps_scale;
 
@@ -928,16 +947,20 @@ void RotorwingAttitudeControl::control_flaps(const float dt)
 					_parameters.flaps_takeoff_scale; // take-off flaps
 			break;
 		}
-	}
+	}*/
 
+    //TF-TODO: We havent flaps.... There is prerotator
 	// move the actual control value continuous with time, full flap travel in 1sec
-	if (fabsf(_flaps_applied - flap_control) > 0.01f) {
+    /*
+    if (fabsf(_flaps_applied - flap_control) > 0.01f) {
 		_flaps_applied += (_flaps_applied - flap_control) < 0 ? dt : -dt;
 
 	} else {
 		_flaps_applied = flap_control;
-	}
+	}*/
 
+
+    //TF-TODO:
 	/* default flaperon to center */
 	float flaperon_control = 0.0f;
 

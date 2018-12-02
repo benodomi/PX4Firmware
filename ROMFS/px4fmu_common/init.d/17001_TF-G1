@@ -7,7 +7,7 @@
 #
 # @output MAIN1 ruddle_left
 # @output MAIN2 ruddle_right
-# @output MAIN3 rotor_left 
+# @output MAIN3 rotor_left
 # @output MAIN4 rotor_right
 # @output MAIN5 throttle
 # @output MAIN6 rotor_motor
@@ -17,7 +17,7 @@
 
 sh /etc/init.d/rc.rw_defaults
 
-if [ $AUTOCNF == yes ]
+if [ $AUTOCNF = yes ]
 then
 	param set BAT_CAPACITY 5500.0
 	param set BAT_N_CELLS 4
@@ -35,6 +35,4 @@ set FW_T_SPDWEIGHT 0.5
 
 set MIXER TF-G1
 
-
-set COM_ARM_WO_GPS 0
 set PWM_MAIN_DIS8 1000

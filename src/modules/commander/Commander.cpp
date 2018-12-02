@@ -736,7 +736,7 @@ Commander::handle_command(vehicle_status_s *status_local, const vehicle_command_
 						break;
 					}
 
-					// Refuse to arm if in manual with non-zero throttle
+                    // Refuse to arm if in manual with non-zero throttle
 					if (cmd_arms
 					    && (status_local->nav_state == vehicle_status_s::NAVIGATION_STATE_MANUAL
 						|| status_local->nav_state == vehicle_status_s::NAVIGATION_STATE_ACRO
@@ -748,6 +748,7 @@ Commander::handle_command(vehicle_status_s *status_local, const vehicle_command_
 						cmd_result = vehicle_command_s::VEHICLE_CMD_RESULT_DENIED;
 						break;
 					}
+
 				}
 
 				transition_result_t arming_res = arm_disarm(cmd_arms, &mavlink_log_pub, "arm/disarm component command");

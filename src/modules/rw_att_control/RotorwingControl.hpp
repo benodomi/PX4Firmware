@@ -127,7 +127,7 @@ private:
 	vehicle_status_s				_vehicle_status {};	/**< vehicle status */
 
 	Subscription<airspeed_s>		_airspeed_sub;
-	//Subscription<rotorspeed_s>		_rotorspeed_sub;
+	//Subscription<rotor_frequency_s>		_rotorspeed_sub;
 	// TF-TODO: Subscription for rotorspeed
 
 	perf_counter_t	_loop_perf;			/**< loop performance counter */
