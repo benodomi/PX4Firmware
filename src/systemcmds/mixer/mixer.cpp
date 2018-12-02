@@ -163,6 +163,7 @@ load(const char *devname, const char *fname, bool append)
 		PX4_ERR("failed to load mixers from %s", fname);
 		return 1;
 	}
-
+    
+    PX4_INFO("Mixer file '%s' is loaded", fname);
 	return 0;
 }

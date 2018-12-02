@@ -7,9 +7,9 @@ get_property(module_libraries GLOBAL PROPERTY PX4_MODULE_LIBRARIES)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-set(PX4_BASH_PREFIX "px4-")
+set(PX4_SHELL_COMMAND_PREFIX "px4-")
 
-add_definitions("-DPX4_BASH_PREFIX=\"${PX4_BASH_PREFIX}\"")
+add_definitions("-DPX4_SHELL_COMMAND_PREFIX=\"${PX4_SHELL_COMMAND_PREFIX}\"")
 
 px4_posix_generate_builtin_commands(
 	OUT apps
@@ -18,7 +18,7 @@ px4_posix_generate_builtin_commands(
 px4_posix_generate_alias(
 	OUT ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/px4-alias.sh
 	MODULE_LIST ${module_libraries}
-	PREFIX ${PX4_BASH_PREFIX}
+	PREFIX ${PX4_SHELL_COMMAND_PREFIX}
 )
 
 if (("${BOARD}" STREQUAL "eagle") OR ("${BOARD}" STREQUAL "excelsior"))
@@ -97,11 +97,23 @@ endif()
 # Module Symlinks
 px4_posix_generate_symlinks(
 	MODULE_LIST ${module_libraries}
-	PREFIX ${PX4_BASH_PREFIX}
+	PREFIX ${PX4_SHELL_COMMAND_PREFIX}
 	TARGET px4
 )
 
-if ("${BOARD}" STREQUAL "rpi")
+if ("${BOARD}" STREQUAL "linux")
+	add_custom_target(run
+		COMMAND mkdir -p ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/etc
+		COMMAND mkdir -p ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/etc/init.d
+		COMMAND cp ${PX4_SOURCE_DIR}/posix-configs/linux-run/rcS ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/etc/init.d
+      #COMMAND cp ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/../px4 ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/ #this line is needed when building DEBUG 
+      COMMAND cd ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} && ./px4
+		DEPENDS px4
+		COMMENT "starting px4"
+		USES_TERMINAL
+		)
+
+elseif ("${BOARD}" STREQUAL "rpi")
 	add_custom_target(upload
 		COMMAND rsync -arh --progress ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} ${PX4_SOURCE_DIR}/posix-configs/rpi/*.config ${PX4_SOURCE_DIR}/ROMFS pi@"$ENV{AUTOPILOT_HOST}":/home/pi
 		DEPENDS px4
@@ -122,7 +134,7 @@ elseif ("${BOARD}" STREQUAL "bbblue")
 elseif ("${BOARD}" STREQUAL "bebop")
 
 	add_custom_target(upload
-		COMMAND ${PX4_SOURCE_DIR}/Tools/adb_upload_to_bebop.sh $<TARGET_FILE:px4> /data/ftp/internal_000
+		COMMAND ${PX4_SOURCE_DIR}/Tools/adb_upload_to_bebop.sh ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/. /data/ftp/internal_000
 		DEPENDS px4
 		COMMENT "uploading px4"
 		USES_TERMINAL

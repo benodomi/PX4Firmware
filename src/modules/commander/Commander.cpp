@@ -736,7 +736,7 @@ Commander::handle_command(vehicle_status_s *status_local, const vehicle_command_
 						break;
 					}
 
-					// Refuse to arm if in manual with non-zero throttle
+                    // Refuse to arm if in manual with non-zero throttle
 					if (cmd_arms
 					    && (status_local->nav_state == vehicle_status_s::NAVIGATION_STATE_MANUAL
 						|| status_local->nav_state == vehicle_status_s::NAVIGATION_STATE_ACRO
@@ -748,6 +748,7 @@ Commander::handle_command(vehicle_status_s *status_local, const vehicle_command_
 						cmd_result = vehicle_command_s::VEHICLE_CMD_RESULT_DENIED;
 						break;
 					}
+
 				}
 
 				transition_result_t arming_res = arm_disarm(cmd_arms, &mavlink_log_pub, "arm/disarm component command");
@@ -2108,7 +2109,7 @@ Commander::run()
 
 		} else {
 			if (!status_flags.rc_input_blocked && !status.rc_signal_lost) {
-				mavlink_log_critical(&mavlink_log_pub, "MANUAL CONTROL LOST (at t=%llums)", hrt_absolute_time() / 1000);
+				mavlink_log_critical(&mavlink_log_pub, "MANUAL CONTROL LOST (at t=%" PRIu64 "ms)", hrt_absolute_time() / 1000);
 				status.rc_signal_lost = true;
 				rc_signal_lost_timestamp = sp_man.timestamp;
 				set_health_flags(subsystem_info_s::SUBSYSTEM_TYPE_RCRECEIVER, true, true, false, status);
@@ -2331,7 +2332,7 @@ Commander::run()
 			}
 
 			/* Set home position altitude to EKF origin height if home is not set and the EKF has a global origin.
-			 * This allows home atitude to be used in the calculation of height above takeoff location when GPS
+			 * This allows home altitude to be used in the calculation of height above takeoff location when GPS
 			 * use has commenced after takeoff. */
 			if (!_home.valid_alt && local_position.z_global) {
 				set_home_position(home_pub, _home, true);
@@ -3401,7 +3402,7 @@ print_reject_arm(const char *msg)
 
 	if (t - last_print_mode_reject_time > PRINT_MODE_REJECT_INTERVAL) {
 		last_print_mode_reject_time = t;
-		mavlink_log_critical(&mavlink_log_pub, msg);
+		mavlink_log_critical(&mavlink_log_pub, "%s", msg);
 		tune_negative(true);
 	}
 }
