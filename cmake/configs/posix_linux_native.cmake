@@ -25,8 +25,8 @@ set(config_module_list
    #testing
    examples/rotor_frequency_consumer
 
-   drivers/mlab_dummy
-   drivers/mlab_rotorfreq
+   drivers/rotor_frequency/pcf8583
+   drivers/temperature/lm75
 
 
 	#

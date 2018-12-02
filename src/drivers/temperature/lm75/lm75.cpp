@@ -32,11 +32,11 @@
  ****************************************************************************/
 
 /**
- * @file mlab_rotorfrequency.cpp
+ * @file lm75.cpp
  *
  * @author Vít Hanousek <slimonslimon@gmail.com>
  *
- * Driver for Main Rotor speed sensor using MLAB.CZ RTC003A I2C counter.
+ * Driver for I2C Temperature sensor LM75 - tested on npx lm75a
  */
 
 #include <board_config.h>
@@ -53,22 +53,6 @@
 
 
 #include <sys/types.h>
-/*#include <stdint.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <semaphore.h>
-
-#include <fcntl.h>
-#include <poll.h>
-#include <stdio.h>
-#include <math.h>
-#include <unistd.h>
-#include <vector>
-
-
-
-#include <perf/perf_counter.h>
-*/
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -76,24 +60,22 @@
 #include <string.h>
 
 #include <uORB/uORB.h>
-#include <uORB/topics/rotor_frequency.h>
+#include <uORB/topics/temperature.h>
 
 #include <drivers/drv_hrt.h>
 
 
 
 /* Configuration Constants */
-#define MLAB_ROTORFREQ_BUS_DEFAULT 		      PX4_I2C_BUS_EXPANSION
-#define MLAB_ROTORFREQ_DEVICE_PATH	         "/dev/mlab_rotorfreq"
+#define LM75_BUS_DEFAULT 		      PX4_I2C_BUS_EXPANSION
+#define LM75_DEVICE_PATH	         "/dev/lm75"
 
 
 //loaded parameters defaluts
-#define MLAB_ROTORFREQ_BASEADDR_DEFAULT 	            0x51     //ROTROFREQ_ADDR param default value
-#define MLAB_ROTORFREQ_POOL_INTERVAL_DAFAULT	         1000000  //ROTORFREQ_POOL param defalut value
-#define MLAB_ROTORFREQ_MAGNET_COUNT_DEFAULT           1        //ROTORFREQ_MAGNET param defalut value
-#define MLAB_ROTORFREQ_RESET_COUNT_DEFAULT            0 //0 - reset after every measurement
+#define LM75_BASEADDR_DEFAULT 	            0x48     //LM75_ADDR param default value //TODO
+#define LM75_POOL_INTERVAL_DAFAULT	         1000000  //LM75_POOL param defalut value
 
-#define MLAB_ROTORFREQ_POOL_INTERVAL_MAX              10000000 //10s max - limiter for setting by ioctl
+#define LM75_POOL_INTERVAL_MAX              100000000 //100s max - limiter for setting by ioctl
 
 
 #ifndef CONFIG_SCHED_WORKQUEUE
@@ -101,12 +83,12 @@
 #endif
 
 
-class MLAB_ROTORFREQ : public device::I2C
+class LM75 : public device::I2C
 {
 public:
-	MLAB_ROTORFREQ(int bus = MLAB_ROTORFREQ_BUS_DEFAULT,
-	      int address = MLAB_ROTORFREQ_BASEADDR_DEFAULT);
-	virtual ~MLAB_ROTORFREQ();
+	LM75(int bus = LM75_BUS_DEFAULT,
+	      int address = LM75_BASEADDR_DEFAULT);
+	virtual ~LM75();
 
 	virtual int 		init();
 
@@ -124,16 +106,11 @@ protected:
 private:
 	int            _pool_interval; //Interval of reading counter and publishing frequency
    int            _pool_interval_default; //Interval of reading counter and publishing frequency
-   float          _indicated_frequency;
-   float          _estimated_accurancy;
-   int            _count;
-   int            _reset_count;
-   int            _magnet_count;
-   uint64_t       _lastmeasurement_time;
+   float          _measured_temperature;
+
 	work_s			_work{};
 
-	int				   _orb_class_instance;
-	orb_advert_t		_rotor_frequency_topic;
+	orb_advert_t		_temperature_topic;
 
 	//perf_counter_t		_sample_perf;
 	//perf_counter_t		_comms_errors;
@@ -163,21 +140,13 @@ private:
 	void cycle();
 
    /**
-    Get data from sensor
-   */
-   void readSensorAndComputeFreqency();
-
-
-   /**
    *Publis rotor_frequency uORB mesage
    */
    void publish();
 
-   int getCounter();
-   void resetCounter();
-
-   uint8_t readRegister(uint8_t reg);
+   float getTemperature();
    void setRegister(uint8_t reg, uint8_t value);
+   uint16_t readRegister16(uint8_t reg);
 
 	/**
 	* Static trampoline from the workq context; because we don't have a
@@ -193,31 +162,27 @@ private:
 /*
  * Driver 'main' command.
  */
-extern "C" __EXPORT int mlab_rotorfreq_main(int argc, char *argv[]);
+extern "C" __EXPORT int lm75_main(int argc, char *argv[]);
 
-MLAB_ROTORFREQ::MLAB_ROTORFREQ(int bus, int address) :
-	I2C("MLAB_ROTORFREQ", MLAB_ROTORFREQ_DEVICE_PATH, bus, address, 400000),
+LM75::LM75(int bus, int address) :
+	I2C("LM75", LM75_DEVICE_PATH, bus, address, 400000),
 	_pool_interval(0),//us-0=disabled
-   _pool_interval_default(MLAB_ROTORFREQ_POOL_INTERVAL_DAFAULT),//us
-	_indicated_frequency(0.0),
-   _estimated_accurancy(0.0),
-   _count(0),//couter last count
-   _reset_count(MLAB_ROTORFREQ_RESET_COUNT_DEFAULT ),
-   _magnet_count(MLAB_ROTORFREQ_MAGNET_COUNT_DEFAULT),
-	_rotor_frequency_topic(nullptr)
+   _pool_interval_default(LM75_POOL_INTERVAL_DAFAULT),//us
+	_measured_temperature(0.0),
+	_temperature_topic(nullptr)
 	//_sample_perf(perf_alloc(PC_ELAPSED, "sf1xx_read")),
 	//_comms_errors(perf_alloc(PC_COUNT, "sf1xx_com_err"))
 
 {
 }
 
-MLAB_ROTORFREQ::~MLAB_ROTORFREQ()
+LM75::~LM75()
 {
 	/* make sure we are truly inactive */
 	stop();
 
-	if (_rotor_frequency_topic != nullptr) {
-		orb_unadvertise(_rotor_frequency_topic);
+	if (_temperature_topic != nullptr) {
+		orb_unadvertise(_temperature_topic);
 	}
 
 	/* free perf counters */
@@ -226,65 +191,66 @@ MLAB_ROTORFREQ::~MLAB_ROTORFREQ()
 }
 
 int
-MLAB_ROTORFREQ::init()
+LM75::init()
 {
 	int ret = PX4_ERROR;
 
    //load parameters 
-	int address=MLAB_ROTORFREQ_BASEADDR_DEFAULT;
-   if(param_find("ROTORFREQ_ADDR")!=PARAM_INVALID)
-   	param_get(param_find("ROTORFREQ_ADDR"), &address);
+	int address=LM75_BASEADDR_DEFAULT;
+   if(param_find("LM75_ADDR")!=PARAM_INVALID)
+   	param_get(param_find("LM75_ADDR"), &address);
 
    set_device_address(address); 
 
-   if(param_find("ROTORFREQ_POOL")!=PARAM_INVALID)
-      param_get(param_find("ROTORFREQ_POOL"),&_pool_interval_default);
-
-   if(param_find("ROTORFREQ_RESET")!=PARAM_INVALID)
-      param_get(param_find("ROTORFREQ_RESET"),&_reset_count);
-
-   if(param_find("ROTORFREQ_MAGNET")!=PARAM_INVALID)
-      param_get(param_find("ROTORFREQ_MAGNET"),&_magnet_count);
+   if(param_find("LM75_POOL")!=PARAM_INVALID)
+      param_get(param_find("LM75_POOL"),&_pool_interval_default);
 
 	/* do I2C init (and probe) first */
 	if (I2C::init() != OK) {
 		return ret;
 	}
 
-   //set counter mode
-   setRegister(0x00,0b00100000);
+   //setup device mode
+   setRegister(0x01,0x00);
 
 	/* get a publish handle on the range finder topic */
-	struct rotor_frequency_s rf_report = {};
-	_rotor_frequency_topic=orb_advertise(ORB_ID(rotor_frequency), &rf_report);
+	struct temperature_s rf_report = {};
+	_temperature_topic=orb_advertise(ORB_ID(temperature), &rf_report);
 
-	if (_rotor_frequency_topic == nullptr) {
+	if (_temperature_topic == nullptr) {
 		PX4_ERR("failed to create distance_sensor object");
 	}
 
 	return PX4_OK;
 }
 
-int
-MLAB_ROTORFREQ::getCounter()
+float
+LM75::getTemperature()
 {
-   uint8_t a = readRegister(0x01);
-   uint8_t b = readRegister(0x02);
-   uint8_t c = readRegister(0x03);
-
-   return int((a&0x0f)*1 + ((a&0xf0)>>4)*10 + (b&0x0f)*100 + ((b&0xf0)>>4)*1000+ (c&0x0f)*10000 + ((c&0xf0)>>4)*1000000);
+      int16_t r = (int16_t)readRegister16(0x00);
+      //temperature calculation register_value * 0.00390625; (Sensor is a big-endian but SMBus is little-endian by default)
+      return (float)r / 256.0f ;
 }
 
-void
-MLAB_ROTORFREQ::resetCounter()
-{	
-        setRegister(0x01,0x00);
-        setRegister(0x02,0x00);
-        setRegister(0x03,0x00);
+uint16_t 
+LM75::readRegister16(uint8_t reg)
+{
+      uint8_t rcv[2];
+      int ret=transfer(&reg, 1, rcv, 2); //TODO: check endians
+
+      if (OK != ret) {
+	      PX4_DEBUG("LM75::readRegister16 : i2c::transfer returned %d", ret); 
+      }
+
+      //PX4_INFO( "%x, %x",rcv[0], rcv[1]);
+
+      uint16_t res=0x0;
+      res=rcv[0]<<8 | rcv[1];
+      return res;
 }
 
 void 
-MLAB_ROTORFREQ::setRegister(uint8_t reg, uint8_t value)
+LM75::setRegister(uint8_t reg, uint8_t value)
 {
       uint8_t buff[2];
       buff[0]=reg;
@@ -292,32 +258,19 @@ MLAB_ROTORFREQ::setRegister(uint8_t reg, uint8_t value)
       int ret=transfer(buff, 2, nullptr, 0);
 
       if (OK != ret) {
-		      PX4_DEBUG("I2C_DUMMY::setRegister : i2c::transfer returned %d", ret); 
+		      PX4_DEBUG("LM75::setRegister : i2c::transfer returned %d", ret); 
 	      }
 }
 
-uint8_t 
-MLAB_ROTORFREQ::readRegister(uint8_t reg)
-{
-      uint8_t rcv;
-      int ret=transfer(&reg, 1, &rcv, 1);
-
-      if (OK != ret) {
-	      PX4_DEBUG("I2C_DUMMY::readRegister : i2c::transfer returned %d", ret); 
-      }
-
-      return rcv;
-}
-
 int
-MLAB_ROTORFREQ::probe()
+LM75::probe()
 {
 	//return measure();??
    return PX4_OK;
 }
 
 int
-MLAB_ROTORFREQ::ioctl(device::file_t *filp, int cmd, unsigned long arg)
+LM75::ioctl(device::file_t *filp, int cmd, unsigned long arg)
 {
 	switch (cmd) {
 
@@ -348,7 +301,6 @@ MLAB_ROTORFREQ::ioctl(device::file_t *filp, int cmd, unsigned long arg)
 
 					/* if we need to start the poll state machine, do it */
 					if (want_start) {
-                  resetCounter();
 						start();
 					}
 
@@ -364,7 +316,7 @@ MLAB_ROTORFREQ::ioctl(device::file_t *filp, int cmd, unsigned long arg)
 					int interval = 1000000 / arg; 
 
 					/* check against maximum rate */
-					if (interval > 0 && interval < MLAB_ROTORFREQ_POOL_INTERVAL_MAX) {
+					if (interval > 0 && interval < LM75_POOL_INTERVAL_MAX) {
 						return -EINVAL;
 					}
 
@@ -373,7 +325,6 @@ MLAB_ROTORFREQ::ioctl(device::file_t *filp, int cmd, unsigned long arg)
 
 					/* if we need to start the poll state machine, do it */
 					if (want_start) {
-                  resetCounter();
 						start();
 					}
 
@@ -400,7 +351,7 @@ MLAB_ROTORFREQ::ioctl(device::file_t *filp, int cmd, unsigned long arg)
 }
 
 ssize_t
-MLAB_ROTORFREQ::read(device::file_t *filp, char *buffer, size_t buflen)
+LM75::read(device::file_t *filp, char *buffer, size_t buflen)
 {
 	int ret = 0;
 
@@ -412,7 +363,7 @@ MLAB_ROTORFREQ::read(device::file_t *filp, char *buffer, size_t buflen)
 
 	/* if automatic measurement is enabled */
 	if (_pool_interval> 0) {
-      *((float*)buffer)=_indicated_frequency;
+      *((float*)buffer)=_measured_temperature;
       ret+=sizeof(float);
 		/* if there was no data, warn the caller */
 		return ret;
@@ -421,51 +372,27 @@ MLAB_ROTORFREQ::read(device::file_t *filp, char *buffer, size_t buflen)
 	/* manual measurement - run one conversion */
    //TODO:ResetCounter      
 	/* wait for it to complete */
-	//usleep(MLAB_ROTORFREQ_POOL_INTERVAL);
+	//usleep(LM75_POOL_INTERVAL);
    //TODO: getCounter
    
 	return ret;
 }
 
-void
-MLAB_ROTORFREQ::readSensorAndComputeFreqency()
-{
-        
-   int oldcount=_count;
-   uint64_t oldtime=_lastmeasurement_time;
-
-   _count=getCounter();
-   _lastmeasurement_time=hrt_absolute_time();      
-
-   int diffCount=_count-oldcount;
-   uint64_t diffTime=_lastmeasurement_time-oldtime;
-   if(_reset_count<_count+diffCount)
-   {
-      resetCounter();
-      _lastmeasurement_time=hrt_absolute_time();
-      _count=0;
-   }
-
-   _indicated_frequency=(float)diffCount/_magnet_count/((float)diffTime/1000000);
-   _estimated_accurancy=1/(float)_magnet_count/((float)diffTime/1000000);  
-}
-
-void MLAB_ROTORFREQ::publish()
+void LM75::publish()
 {
    //PX4_INFO("Measurement: freq:%.2f, acc: %.2f, relacc: %.0f\%, count: %d", (double)_indicated_frequency, (double) _estimated_accurancy,
     //      (double)(_estimated_accurancy/_indicated_frequency*100), _count);
 
    //PX4_ERR("Measurement: freq:%f, count: %d", (double)_indicated_frequency, _count);
 
-	struct rotor_frequency_s msg;
+	struct temperature_s msg;
 	msg.timestamp = hrt_absolute_time();
-   msg.indicated_frequency = _indicated_frequency;
-   msg.estimated_accurancy=_estimated_accurancy;
-   msg.count=_count;
+   msg.temperature = _measured_temperature;
+   msg.sensor=1; //TODO: mulutiple sensors 
 
 	// publish it, if we are the primary 
-	if (_rotor_frequency_topic != nullptr) {
-		orb_publish(ORB_ID(rotor_frequency), _rotor_frequency_topic, &msg);
+	if (_temperature_topic != nullptr) {
+		orb_publish(ORB_ID(temperature), _temperature_topic, &msg);
 	}
 
 	// notify anyone waiting for data 
@@ -475,45 +402,43 @@ void MLAB_ROTORFREQ::publish()
 
 
 void
-MLAB_ROTORFREQ::start()
+LM75::start()
 {
 	/* schedule a cycle to start things */
-   resetCounter();
-   _lastmeasurement_time=hrt_absolute_time();
+   _measured_temperature=getTemperature();
 	schedule_measurement();
 }
 
-void MLAB_ROTORFREQ::schedule_measurement()
+void LM75::schedule_measurement()
 {
-   work_queue(HPWORK, &_work, (worker_t)&MLAB_ROTORFREQ::cycle_trampoline, this, USEC2TICK(_pool_interval));
+   work_queue(HPWORK, &_work, (worker_t)&LM75::cycle_trampoline, this, USEC2TICK(_pool_interval));
 }
 
 void
-MLAB_ROTORFREQ::stop()
+LM75::stop()
 {
 	work_cancel(HPWORK, &_work);
 }
 
 void
-MLAB_ROTORFREQ::cycle_trampoline(void *arg)
+LM75::cycle_trampoline(void *arg)
 {
-	MLAB_ROTORFREQ *dev = (MLAB_ROTORFREQ *)arg;
+	LM75 *dev = (LM75 *)arg;
 	dev->cycle();
    //start new cycle
    dev-> schedule_measurement();
 }
 
 void
-MLAB_ROTORFREQ::cycle()
+LM75::cycle()
 {
-	/*Collect results */
-   readSensorAndComputeFreqency();
+   _measured_temperature=getTemperature();
    publish();
 }
 
 
 void
-MLAB_ROTORFREQ::print_info()
+LM75::print_info()
 {
 	//perf_print_counter(_sample_perf);
 	//perf_print_counter(_comms_errors);
@@ -523,41 +448,14 @@ MLAB_ROTORFREQ::print_info()
 /**
  * Local functions in support of the shell command.
  */
-namespace mlab_rotorfreq
+namespace lm75
 {
 
-MLAB_ROTORFREQ	*g_dev;
+LM75	*g_dev;
 
-int 	start();
 int 	start_bus( int i2c_bus);
 int 	stop();
 int 	info();
-
-/**
- *
- * Attempt to start driver on all available I2C busses.
- *
- * This function will return as soon as the first sensor
- * is detected on one of the available busses or if no
- * sensors are detected.
- *
- */
-int
-start()
-{
-	if (g_dev != nullptr) {
-		PX4_ERR("already started");
-		return PX4_ERROR;
-	}
-
-	for (unsigned i = 0; i < NUM_I2C_BUS_OPTIONS; i++) {
-		if (start_bus(i2c_bus_options[i]) == PX4_OK) {
-			return PX4_OK;
-		}
-	}
-
-	return PX4_ERROR;
-}
 
 /**
  * Start the driver on a specific bus.
@@ -576,7 +474,7 @@ start_bus(int i2c_bus)
 	}
 
 	/* create the driver */
-	g_dev = new MLAB_ROTORFREQ( i2c_bus);
+	g_dev = new LM75( i2c_bus);
 
 	if (g_dev == nullptr) {
 		goto fail;
@@ -587,10 +485,10 @@ start_bus(int i2c_bus)
 	}
 
 	/* set the poll rate to default, starts automatic data collection */
-	fd = px4_open(MLAB_ROTORFREQ_DEVICE_PATH, O_RDONLY);
+	fd = px4_open(LM75_DEVICE_PATH, O_RDONLY);
 
 	if (fd < 0) {
-      PX4_INFO("Cannot open device %s",MLAB_ROTORFREQ_DEVICE_PATH);
+      PX4_INFO("Cannot open device %s",LM75_DEVICE_PATH);
 		goto fail;
 	}
 
@@ -601,7 +499,7 @@ start_bus(int i2c_bus)
 	}
 
 	px4_close(fd);
-   PX4_INFO("mlab_rotorfreq for bus: %d started.",i2c_bus );
+   PX4_INFO("lm75 for bus: %d started.",i2c_bus );
 	return PX4_OK;
 
 fail:
@@ -653,34 +551,29 @@ info()
 
 
 static void
-mlab_rotorfreq_usage()
+lm75_usage()
 {
-	PX4_INFO("usage: mlab_rotorfreq command [options]");
+	PX4_INFO("usage: lm75 command [options]");
 	PX4_INFO("options:");
-	PX4_INFO("\t-b --bus i2cbus (%d)", MLAB_ROTORFREQ_BUS_DEFAULT);
-	PX4_INFO("\t-a --all");
+	PX4_INFO("\t-b --bus i2cbus (%d)", LM75_BUS_DEFAULT);
 	PX4_INFO("command:");
 	PX4_INFO("\tstart|stop|info");
 }
 
 int
-mlab_rotorfreq_main(int argc, char *argv[])
+lm75_main(int argc, char *argv[])
 {
 	int ch;
 	int myoptind = 1;
 	const char *myoptarg = nullptr;
-	bool start_all = false;
 
-	int i2c_bus = MLAB_ROTORFREQ_BUS_DEFAULT;
+	int i2c_bus = LM75_BUS_DEFAULT;
 
-	while ((ch = px4_getopt(argc, argv, "ab:", &myoptind, &myoptarg)) != EOF) {
+	while ((ch = px4_getopt(argc, argv, "b:", &myoptind, &myoptarg)) != EOF) 
+   {
 		switch (ch) {
 		case 'b':
 			i2c_bus = atoi(myoptarg);
-			break;
-
-		case 'a':
-			start_all = true;
 			break;
 
 		default:
@@ -697,29 +590,24 @@ mlab_rotorfreq_main(int argc, char *argv[])
 	 * Start/load the driver.
 	 */
 	if (!strcmp(argv[myoptind], "start")) {
-		if (start_all) {
-			return mlab_rotorfreq::start();
-
-		} else {
-			return mlab_rotorfreq::start_bus(i2c_bus);
+			return lm75::start_bus(i2c_bus);
 		}
-	}
 
 	/*
 	 * Stop the driver
 	 */
 	if (!strcmp(argv[myoptind], "stop")) {
-		return mlab_rotorfreq::stop();
+		return lm75::stop();
 	}
 
 	/*
 	 * Print driver information.
 	 */
 	if (!strcmp(argv[myoptind], "info") || !strcmp(argv[myoptind], "status")) {
-		return mlab_rotorfreq::info();
+		return lm75::info();
 	}
 
 out_error:
-	mlab_rotorfreq_usage();
+	lm75_usage();
 	return PX4_ERROR;
 }

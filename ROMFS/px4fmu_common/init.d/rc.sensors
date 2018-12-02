@@ -372,7 +372,7 @@ fi
 
   gps start
   sdp3x_airspeed start
-  mlab_rotorfreq start
+  pcf8583 start
 
 #fi
 
