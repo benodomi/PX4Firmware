@@ -79,7 +79,7 @@
 #include <uORB/topics/rotor_frequency.h>
 
 #include <drivers/drv_hrt.h>
-
+#include <drivers/drv_sensor.h>
 
 
 /* Configuration Constants */
@@ -323,20 +323,6 @@ PCF8583::ioctl(device::file_t *filp, int cmd, unsigned long arg)
 	case SENSORIOCSPOLLRATE: {
 			switch (arg) {
 
-			/* switching to manual polling */
-			case SENSOR_POLLRATE_MANUAL:
-				stop();
-				 _pool_interval = 0;
-				return OK;
-
-			/* external signalling (DRDY) not supported */
-			case SENSOR_POLLRATE_EXTERNAL:
-			/* zero would be bad */
-			case 0:
-				return -EINVAL;
-
-			/* set default/max polling rate */
-			case SENSOR_POLLRATE_MAX:
 			case SENSOR_POLLRATE_DEFAULT: {
 					/* do we need to start internal polling? */
 					bool want_start = ( _pool_interval == 0);
@@ -380,17 +366,6 @@ PCF8583::ioctl(device::file_t *filp, int cmd, unsigned long arg)
 				}
 			}
 		}
-
-	case SENSORIOCGPOLLRATE:
-		if (_pool_interval == 0) {
-			return SENSOR_POLLRATE_MANUAL;
-		}
-
-		return (1000000 / _pool_interval); //us -> Hz
-
-	case SENSORIOCRESET:
-		/* XXX implement this */
-		return -EINVAL;
 
 	default:
 		/* give it to the superclass */
