@@ -1,4 +1,8 @@
-#px4_nuttx_configure(HWCLASS m4 CONFIG nsh ROMFS y ROMFSROOT px4fmu_common IO px4io-v2)
+#px4_nuttx_configure(
+#   HWCLASS m4
+#   CONFIG nsh ROMFS y
+#   ROMFSROOT px4fmu_common
+#   IO px4io-v2)
 #
 # user-configurable UART ports
 #set(board_serial_ports
@@ -23,12 +27,13 @@ px4_add_board(
 	MODEL fmu-v2
 	TOOLCHAIN arm-none-eabi
 	ARCHITECTURE cortex-m4
-	ROMFSROOT px4fmu_common
+    ROMFSROOT px4fmu_common
 	BOOTLOADER ${PX4_SOURCE_DIR}/ROMFS/px4fmu_common/extras/px4fmuv3_bl.bin
 	IO px4_io-v2_default
 	#TESTING
-	CONSTRAINED_FLASH
+	#CONSTRAINED_FLASH
 	#UAVCAN_INTERFACES 2
+
 
 	SERIAL_PORTS
 		GPS1:/dev/ttyS0
@@ -49,7 +54,7 @@ px4_add_board(
         #magnetometer
         #telemetry
 
-        rotor_frequency/pcf8583
+        #rotor_frequency/pcf8583
 
         #imu/adis16448
         barometer/ms5611
@@ -198,7 +203,7 @@ px4_add_board(
 		#rover_steering_control # Rover example app
 		#segway
 
-        rotor_frequency_consumer
+        #rotor_frequency_consumer
 )
 
 
