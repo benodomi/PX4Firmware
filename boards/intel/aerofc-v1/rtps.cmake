@@ -14,7 +14,6 @@ px4_add_board(
 		TEL2:/dev/ttyS1
 
 	DRIVERS
-		aerofc_adc
 		barometer/ms5611
 		#camera_trigger
 		#differential_pressure # all available differential pressure drivers
@@ -33,7 +32,7 @@ px4_add_board(
 		stm32
 		tap_esc
 		#telemetry # all available telemetry drivers
-		#vmount
+		#uavcan
 
 	MODULES
 		attitude_estimator_q
@@ -46,7 +45,6 @@ px4_add_board(
 		#fw_pos_control_l1
 		#gnd_att_control
 		#gnd_pos_control
-		#gpio_led
 		land_detector
 		landing_target_estimator
 		load_mon
@@ -59,7 +57,7 @@ px4_add_board(
 		navigator
 		#position_estimator_inav
 		sensors
-		#uavcan
+		vmount
 		#vtol_att_control
 		#wind_estimator
 

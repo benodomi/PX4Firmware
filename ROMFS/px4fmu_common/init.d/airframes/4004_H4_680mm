@@ -8,7 +8,13 @@
 # @maintainer Leon Mueller <thedevleon>
 #
 
-sh /etc/init.d/4002_quad_x_mount
+sh /etc/init.d/rc.mc_defaults
+
+set MIXER quad_x
+set PWM_OUT 1234
+
+set MIXER_AUX mount
+set PWM_AUX_OUT 123456
 
 # The Z1 Tiny2 can handle up to 400Hz
 # and works with min 1020us, middle 1520us, max 2020us
@@ -25,6 +31,3 @@ fi
 
 # Start FrSky telemetry on SERIAL4 (ttyS6, designated "SERIAL4/5" on the case)
 frsky_telemetry start -d /dev/ttyS6
-
-# GPIO LED
-gpio_led start -p 6

@@ -15,7 +15,6 @@ px4_add_board(
 		#barometer # all available barometer drivers
 		barometer/bmp280
 		#batt_smbus
-		#blinkm
 		#camera_trigger
 		#differential_pressure # all available differential pressure drivers
 		#distance_sensor # all available distance sensor drivers
@@ -24,17 +23,18 @@ px4_add_board(
 		#imu # all available imu drivers
 		imu/mpu6000
 		#irlock
+		#lights/blinkm
+		#lights/oreoled
+		lights/rgbled
 		#magnetometer # all available magnetometer drivers
 		magnetometer/hmc5883
 		#mkblctrl
-		#oreoled
 		#pca9685
 		#pwm_input
 		#pwm_out_sim
 		px4flow
 		px4fmu
 		rc_input
-		rgbled
 		stm32
 		stm32/adc
 		#stm32/tone_alarm
@@ -42,7 +42,6 @@ px4_add_board(
 		#telemetry # all available telemetry drivers
 		telemetry/frsky_telemetry
 		#test_ppm
-		#vmount
 
 	MODULES
 		attitude_estimator_q
@@ -55,7 +54,6 @@ px4_add_board(
 		#fw_pos_control_l1
 		#gnd_att_control
 		#gnd_pos_control
-		#gpio_led
 		land_detector
 		landing_target_estimator
 		load_mon
@@ -67,7 +65,7 @@ px4_add_board(
 		navigator
 		#position_estimator_inav
 		sensors
-		#uavcan
+		#vmount
 		#vtol_att_control
 		#wind_estimator
 

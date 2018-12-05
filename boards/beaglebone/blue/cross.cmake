@@ -19,12 +19,9 @@ px4_add_board(
 		#magnetometer # all available magnetometer drivers
 		pwm_out_sim
 		#telemetry # all available telemetry drivers
-		vmount
 
-		linux_gpio
 		linux_pwm_out
 		linux_sbus
-		bbblue_adc
 
 	DF_DRIVERS # NOTE: DriverFramework is migrating to intree PX4 drivers
 		mpu9250
@@ -41,7 +38,6 @@ px4_add_board(
 		fw_pos_control_l1
 		gnd_att_control
 		gnd_pos_control
-		#gpio_led
 		land_detector
 		landing_target_estimator
 		load_mon
@@ -53,7 +49,7 @@ px4_add_board(
 		navigator
 		position_estimator_inav
 		sensors
-		#uavcan
+		vmount
 		vtol_att_control
 		wind_estimator
 

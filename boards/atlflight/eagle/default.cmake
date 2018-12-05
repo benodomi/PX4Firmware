@@ -52,14 +52,13 @@ px4_add_board(
 		differential_pressure # all available differential pressure drivers
 		distance_sensor # all available distance sensor drivers
 		gps
-		linux_sbus
 		#imu # all available imu drivers
+		lights/rgbled
+		linux_sbus
 		#magnetometer # all available magnetometer drivers
-		rgbled
 		pwm_out_sim
 		qshell/posix
 		#telemetry # all available telemetry drivers
-		vmount
 
 	MODULES
 		muorb/krait
@@ -75,7 +74,6 @@ px4_add_board(
 		fw_pos_control_l1
 		gnd_att_control
 		gnd_pos_control
-		#gpio_led
 		land_detector
 		landing_target_estimator
 		load_mon
@@ -88,7 +86,7 @@ px4_add_board(
 		position_estimator_inav
 		sensors
 		simulator
-		#uavcan
+		vmount
 		vtol_att_control
 		wind_estimator
 

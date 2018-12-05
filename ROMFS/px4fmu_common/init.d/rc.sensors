@@ -70,6 +70,11 @@ then
 	fi
 fi
 
+if param compare SENS_EN_BATT 1
+then
+	batt_smbus start -X
+fi
+
 # Sensors on the PWM interface bank
 if param compare SENS_EN_LL40LS 1
 then
@@ -114,6 +119,9 @@ if param greater SENS_EN_TRANGER 0
 then
 	teraranger start -a
 fi
+
+# ICM20948 as external magnetometer on I2C (e.g. Here GPS)
+mpu9250 -X -M -R 6 start
 
 ###############################################################################
 #                            End Optional drivers                             #

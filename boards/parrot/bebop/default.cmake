@@ -17,7 +17,7 @@ px4_add_board(
 		ak8963
 		bebop_bus
 		bebop_rangefinder
-		#bebop_flow
+		mt9v117
 
 	MODULES
 		attitude_estimator_q
@@ -30,7 +30,6 @@ px4_add_board(
 		#fw_pos_control_l1
 		#gnd_att_control
 		#gnd_pos_control
-		#gpio_led
 		land_detector
 		landing_target_estimator
 		load_mon
