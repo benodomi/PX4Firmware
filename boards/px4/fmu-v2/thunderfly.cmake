@@ -59,10 +59,7 @@ px4_add_board(
         #imu/adis16448
         barometer/ms5611
         #blinkm
-        #imu/bmi160
-        #barometer/bmp280
         #bst
-        #camera_trigger
         telemetry/frsky_telemetry
         gps
         #hott
@@ -83,12 +80,12 @@ px4_add_board(
         px4flow
         px4fmu
         px4io
-        rgbled
+       lights/rgbled
         stm32
         stm32/adc
         stm32/tone_alarm
         #tap_esc
-        vmount
+    #    vmount                 #TF-TODO: zjistit co to dela ...
 
 
         # distance sensors
