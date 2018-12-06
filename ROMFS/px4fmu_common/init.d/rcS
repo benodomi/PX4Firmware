@@ -14,46 +14,6 @@ set +e
 # NOTE: COMMENT LINES ARE REMOVED BEFORE STORED IN ROMFS.
 #
 #------------------------------------------------------------------------------
-#
-# UART mapping on FMUv2/3/4:
-#
-# UART1         /dev/ttyS0      IO debug (except v4, there ttyS0 is the wifi)
-# USART2        /dev/ttyS1      TELEM1 (flow control)
-# USART3        /dev/ttyS2      TELEM2 (flow control)
-# UART4
-# UART7                         CONSOLE
-# UART8                         SERIAL4
-#
-#------------------------------------------------------------------------------
-#
-# UART mapping on FMUv5:
-#
-# UART1         /dev/ttyS0      GPS
-# USART2        /dev/ttyS1      TELEM1 (flow control)
-# USART3        /dev/ttyS2      TELEM2 (flow control)
-# UART4         /dev/ttyS3      TELEM4
-# USART6        /dev/ttyS4      TELEM3 (flow control)
-# UART7         /dev/ttyS5
-# UART8         /dev/ttyS6      CONSOLE
-#
-#------------------------------------------------------------------------------
-#
-# UART mapping on OMNIBUSF4SD:
-#
-# USART1        /dev/ttyS0      SerialRX
-# USART4        /dev/ttyS1      TELEM1
-# USART6        /dev/ttyS2      GPS
-#
-
-#------------------------------------------------------------------------------
-#
-# UART mapping on NXPhlitev3:
-#
-# LPUART0		/dev/ttyS0		P16 CONSOLE
-# UART0			/dev/ttyS1		P7  IR
-# UART1			/dev/ttyS2		P14-3, P15-2 RC input
-# UART2			/dev/ttyS3		P3 GPS
-# UART4			/dev/ttyS3		P10 TELEM1 (flow control)
 
 #
 # Set default paramter values.
@@ -61,6 +21,7 @@ set +e
 # it wastes flash
 #
 set AUX_MODE pwm
+set BOARD_RC /etc/init.d/rc.board
 set DATAMAN_OPT ""
 set FAILSAFE none
 set FAILSAFE_AUX none
@@ -69,11 +30,11 @@ set FEXTRAS /fs/microsd/etc/extras.txt
 set FRC /fs/microsd/etc/rc.txt
 set FMU_ARGS ""
 set FMU_MODE pwm
-set IOFW "/etc/extras/px4io-v2.bin"
+set IOFW "/etc/extras/px4_io-v2_default.bin"
 set IO_PRESENT no
 set LOG_FILE /fs/microsd/bootlog.txt
-set MAVLINK_F default
-set MAVLINK_COMPANION_DEVICE /dev/ttyS2
+set LOGGER_ARGS ""
+set LOGGER_BUF  14
 set MAV_TYPE none
 set MIXER none
 set MIXER_AUX none
@@ -160,10 +121,10 @@ else
 fi
 
 # AEROCORE2 shouldn't have an sd card and CF2 may optionally have an sd card.
-if ! ver hwcmp CRAZYFLIE AEROCORE2
+if ! ver hwcmp BITCRAZE_CRAZYFLIE GUMSTIX_AEROCORE2
 then
 	# Run no SD alarm.
-	if [ $LOG_FILE == /dev/null ]
+	if [ $LOG_FILE = /dev/null ]
 	then
 		# tune Make FS MBAGP
 		tune_control play -t 2
@@ -182,6 +143,7 @@ else
 	# Waypoint storage.
 	# REBOOTWORK this needs to start in parallel.
 	#
+	# TODO: fix board override $DATAMAN_OPT
 	dataman start $DATAMAN_OPT
 
 	#
@@ -222,6 +184,8 @@ else
 		fi
 	fi
 
+	rgbled_ncp5623c start
+	
 	#
 	# FMUv5 may have both PWM I2C RGB LED support.
 	#
@@ -252,37 +216,13 @@ else
 	#               Begin setup for board specific configurations.                #
 	###############################################################################
 
-	if ver hwcmp AEROCORE2
+	#
+	# run boards rc.board if available
+	#
+	if [ -f $BOARD_RC ]
 	then
-		set DATAMAN_OPT "-f /fs/mtd_dataman"
-	fi
-
-	if ver hwcmp AEROFC_V1
-	then
-		if param compare SYS_AUTOSTART 0
-		then
-			set AUTOCNF yes
-		fi
-
-		# We don't allow changing AUTOSTART as it doesn't work in
-		# other configurations.
-		param set SYS_AUTOSTART 4070
-
-		set DATAMAN_OPT -i
-	fi
-
-	if ver hwcmp CRAZYFLIE
-	then
-		if param compare SYS_AUTOSTART 0
-		then
-			param set SYS_AUTOSTART 4900
-			set AUTOCNF yes
-		fi
-	fi
-
-	if ver hwcmp NXPHLITE_V3
-	then
-		param set SYS_FMU_TASK 1
+		echo "Board init: ${BOARD_RC}"
+		sh $BOARD_RC
 	fi
 
 	###############################################################################
@@ -314,45 +254,24 @@ else
 	#
 	# If autoconfig parameter was set, reset it and save parameters.
 	#
-	if [ $AUTOCNF == yes ]
+	if [ $AUTOCNF = yes ]
 	then
-		# Run FMU as task on Pixracer and on boards with enough RAM.
-		if ver hwcmp PX4FMU_V4 PX4FMU_V4PRO PX4FMU_V5
-		then
-			param set SYS_FMU_TASK 1
-		fi
-
-		# Disable safety switch by default on Pixracer and OmnibusF4SD.
-		if ver hwcmp PX4FMU_V4 OMNIBUS_F4SD
-		then
-			param set CBRK_IO_SAFETY 22027
-		fi
-
-		if ver hwcmp OMNIBUS_F4SD
-		then
-			param set SYS_FMU_TASK 1
-			param set SYS_HAS_MAG 0
-			# use the Q attitude estimator, it works w/o mag or GPS.
-			param set SYS_MC_EST_GROUP 1
-			param set ATT_ACC_COMP 0
-			param set ATT_W_ACC 0.4000
-			param set ATT_W_GYRO_BIAS 0.0000
-		fi
-
 		param set SYS_AUTOCONFIG 0
 	fi
 
 	#
 	# Check if PX4IO present and update firmware if needed.
-	# Assumption IOFW set to firware file and IO_PRESENT = no
+	# Assumption IOFW set to firmware file and IO_PRESENT = no
 	#
 
 	if [ -f $IOFW ]
 	then
 		# Check for the mini using build with px4io fw file
 		# but not a px4IO
-		if ! ver hwtypecmp V540
+		if ver hwtypecmp V540
 		then
+			param set SYS_USE_IO 0
+		else
 			if px4io checkcrc ${IOFW}
 			then
 				set IO_PRESENT yes
@@ -383,7 +302,7 @@ else
 					fi
 				fi
 
-				if [ $IO_PRESENT == no ]
+				if [ $IO_PRESENT = no ]
 				then
 					echo "PX4IO update failed" >> $LOG_FILE
 					# Error tune.
@@ -401,14 +320,14 @@ else
 		set USE_IO yes
 	fi
 
-	if [ $USE_IO == yes -a $IO_PRESENT == no ]
+	if [ $USE_IO = yes -a $IO_PRESENT = no ]
 	then
 		echo "PX4IO not found" >> $LOG_FILE
 		# Error tune.
 		tune_control play -t 2
 	fi
 
-	if [ $IO_PRESENT == no -o $USE_IO == no ]
+	if [ $IO_PRESENT = no -o $USE_IO = no ]
 	then
 		rc_input start
 	fi
@@ -422,13 +341,9 @@ else
 		set OUTPUT_MODE hil
 		sensors start -h
 		commander start --hil
+		# disable GPS
+		param set GPS_1_CONFIG 0
 	else
-		if ver hwcmp PX4_SAME70XPLAINED_V1
-		then
-			gps start -d /dev/ttyS2
-		else
-			gps start
-		fi
 		sh /etc/init.d/rc.sensors
 		commander start
 	fi
@@ -484,9 +399,15 @@ else
 	fi
 
 	#
-	# Start mavlink streams.
+	# Start mavlink streams that are not configurable (e.g. on USB).
 	#
 	sh /etc/init.d/rc.mavlink
+
+	#
+	# Start UART/Serial device drivers.
+	# Note: rc.serial is auto-generated from Tools/serial/generate_config.py
+	#
+	sh /etc/init.d/rc.serial
 
 	#
 	# Configure vehicle type specific parameters.
@@ -527,14 +448,6 @@ else
 	fi
 
 	#
-	# Launch the flow sensor as a background task.
-	#
-	if ver hwcmp PX4FMU_V2 PX4FMU_V4 PX4FMU_V4PRO MINDPX_V2 PX4FMU_V5 OMNIBUS_F4SD
-	then
-		px4flow start &
-	fi
-
-	#
 	# Start any custom addons.
 	#
 	if [ -f $FEXTRAS ]
@@ -562,15 +475,14 @@ unset FMU_MODE
 unset IOFW
 unset IO_PRESENT
 unset LOG_FILE
-unset MAVLINK_F
-unset MAVLINK_COMPANION_DEVICE
+unset LOGGER_ARGS
+unset LOGGER_BUF
 unset MAV_TYPE
 unset MIXER
 unset MIXER_AUX
 unset MIXER_FILE
 unset MK_MODE
 unset MKBLCTRL_ARG
-unset OUTPUT_DEV
 unset OUTPUT_MODE
 unset PARAM_FILE
 unset PWM_AUX_DISARMED

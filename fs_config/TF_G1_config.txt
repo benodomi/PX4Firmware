@@ -47,6 +47,8 @@ set CAL_MAG0_EN 0
 # jen SW joystick
 # set COM_RC_IN_MODE 2
 
+# nastavení počtu magnetů pro rotor_frequency
+set PCF8583_MAGNET 2
 
 # vypnout kontroly, ktere brani naarmovani
 set CBRK_AIRSPD_CHK 162128

@@ -33,3 +33,6 @@
 
 add_subdirectory(init.d)
 add_subdirectory(mixers)
+
+add_subdirectory(init.d-posix)
+add_subdirectory(mixers-sitl)
