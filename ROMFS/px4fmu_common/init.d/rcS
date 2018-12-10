@@ -185,7 +185,7 @@ else
 	fi
 
 	rgbled_ncp5623c start
-	
+
 	#
 	# FMUv5 may have both PWM I2C RGB LED support.
 	#
@@ -263,6 +263,11 @@ else
 	# Check if PX4IO present and update firmware if needed.
 	# Assumption IOFW set to firmware file and IO_PRESENT = no
 	#
+
+    #TF-TODO: toto nahradit...
+
+    set IO_PRESENT yes
+    set USE_IO yes
 
 	if [ -f $IOFW ]
 	then
