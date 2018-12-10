@@ -1437,6 +1437,31 @@ PX4FMU::control_callback(uintptr_t handle,
 		}
 	}
 
+
+
+    	/* motor spinup phase - lock throttle to zero */
+    	if (_pwm_limit.state == PWM_LIMIT_STATE_RAMP) {
+    		if ((control_group == actuator_controls_s::GROUP_INDEX_ATTITUDE ||
+    		     control_group == actuator_controls_s::GROUP_INDEX_ATTITUDE_ALTERNATE) &&
+    		    control_index == actuator_controls_s::INDEX_FLAPS) {
+    			/* limit the throttle output to zero during motor spinup,
+    			 * as the motors cannot follow any demand yet
+    			 */
+    			input = 0.0f;
+    		}
+    	}
+
+	/* prerotator not arming - mark Prerotator input as invalid */
+    /*TF: There are the same rulles as for normal throttle*/
+	if (arm_nothrottle()) {
+		if ((control_group == actuator_controls_s::GROUP_INDEX_ATTITUDE ||
+		     control_group == actuator_controls_s::GROUP_INDEX_ATTITUDE_ALTERNATE) &&
+		    control_index == actuator_controls_s::INDEX_FLAPS) {
+			/* set the throttle to an invalid value */
+			input = NAN;
+		}
+	}
+
 	return 0;
 }
 
