@@ -85,7 +85,7 @@ px4_add_board(
 		position_estimator_inav
 		sensors
 		vmount
-		vtol_att_control
+#		vtol_att_control
 		wind_estimator
 
 	SYSTEMCMDS
@@ -115,17 +115,17 @@ px4_add_board(
 		ver
 
 	EXAMPLES
-		bottle_drop # OBC challenge
-		fixedwing_control # Tutorial code from https://px4.io/dev/example_fixedwing_control
-		hello
-		hwtest # Hardware test
-		#matlab_csv_serial
-		#publisher
+#		bottle_drop # OBC challenge
+#		fixedwing_control # Tutorial code from https://px4.io/dev/example_fixedwing_control
+#		hello
+#		hwtest # Hardware test
+#		#matlab_csv_serial
+#		#publisher
 		px4_mavlink_debug # Tutorial code from https://px4.io/dev/debug_values
 		px4_simple_app # Tutorial code from https://px4.io/dev/px4_simple_app
-		rover_steering_control # Rover example app
-		segway
-		#subscriber
-		uuv_example_app
+#		rover_steering_control # Rover example app
+#		segway
+#		#subscriber
+#		uuv_example_app
 
 	)
