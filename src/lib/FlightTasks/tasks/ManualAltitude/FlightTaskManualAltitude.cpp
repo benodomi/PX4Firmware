@@ -43,18 +43,22 @@ using namespace matrix;
 
 bool FlightTaskManualAltitude::updateInitialize()
 {
-	bool ret = FlightTaskManualStabilized::updateInitialize();
-	// in addition to stabilized require valid position and velocity in D-direction
-	return ret && PX4_ISFINITE(_position(2)) && PX4_ISFINITE(_velocity(2));
+	bool ret = FlightTaskManual::updateInitialize();
+	// in addition to manual require valid position and velocity in D-direction and valid yaw
+	return ret && PX4_ISFINITE(_position(2)) && PX4_ISFINITE(_velocity(2)) && PX4_ISFINITE(_yaw);
 }
 
 bool FlightTaskManualAltitude::activate()
 {
-	bool ret = FlightTaskManualStabilized::activate();
-	_thrust_setpoint(2) = NAN; // altitude is controlled from position/velocity
+	bool ret = FlightTaskManual::activate();
+	_yaw_setpoint = NAN;
+	_yawspeed_setpoint = 0.0f;
+	_thrust_setpoint = matrix::Vector3f(0.0f, 0.0f, NAN); // altitude is controlled from position/velocity
 	_position_setpoint(2) = _position(2);
 	_velocity_setpoint(2) = 0.0f;
 	_setDefaultConstraints();
+
+	_constraints.tilt = math::radians(MPC_MAN_TILT_MAX.get());
 
 	if (PX4_ISFINITE(_sub_vehicle_local_position->get().hagl_min)) {
 		_constraints.min_distance_to_ground = _sub_vehicle_local_position->get().hagl_min;
@@ -78,10 +82,9 @@ bool FlightTaskManualAltitude::activate()
 
 void FlightTaskManualAltitude::_scaleSticks()
 {
-	// reuse same scaling as for stabilized
-	FlightTaskManualStabilized::_scaleSticks();
+	// Use sticks input with deadzone and exponential curve for vertical velocity and yawspeed
+	_yawspeed_setpoint = _sticks_expo(3) * math::radians(MPC_MAN_Y_MAX.get());
 
-	// scale horizontal velocity with expo curve stick input
 	const float vel_max_z = (_sticks(2) > 0.0f) ? _constraints.speed_down : _constraints.speed_up;
 	_velocity_setpoint(2) = vel_max_z * _sticks_expo(2);
 }
@@ -92,7 +95,7 @@ void FlightTaskManualAltitude::_updateAltitudeLock()
 	// If not locked, altitude setpoint is set to NAN.
 
 	// Check if user wants to break
-	const bool apply_brake = fabsf(_velocity_setpoint(2)) <= FLT_EPSILON;
+	const bool apply_brake = fabsf(_sticks_expo(2)) <= FLT_EPSILON;
 
 	// Check if vehicle has stopped
 	const bool stopped = (MPC_HOLD_MAX_Z.get() < FLT_EPSILON || fabsf(_velocity(2)) < MPC_HOLD_MAX_Z.get());
@@ -101,7 +104,7 @@ void FlightTaskManualAltitude::_updateAltitudeLock()
 	// when terrain hold behaviour has been selected.
 	if (MPC_ALT_MODE.get() == 2) {
 		// Use horizontal speed as a transition criteria
-		float spd_xy = Vector2f(&_velocity(0)).length();
+		float spd_xy = Vector2f(_velocity).length();
 
 		// Use presence of horizontal stick inputs as a transition criteria
 		float stick_xy = Vector2f(&_sticks_expo(0)).length();
@@ -249,18 +252,48 @@ void FlightTaskManualAltitude::_respectMaxAltitude()
 	}
 }
 
+void FlightTaskManualAltitude::_rotateIntoHeadingFrame(Vector2f &v)
+{
+	float yaw_rotate = PX4_ISFINITE(_yaw_setpoint) ? _yaw_setpoint : _yaw;
+	Vector3f v_r = Vector3f(Dcmf(Eulerf(0.0f, 0.0f, yaw_rotate)) * Vector3f(v(0), v(1), 0.0f));
+	v(0) = v_r(0);
+	v(1) = v_r(1);
+}
+
+void FlightTaskManualAltitude::_updateHeadingSetpoints()
+{
+	/* Yaw-lock depends on stick input. If not locked,
+	 * yaw_sp is set to NAN.
+	 * TODO: add yawspeed to get threshold.*/
+	if (fabsf(_yawspeed_setpoint) > FLT_EPSILON) {
+		// no fixed heading when rotating around yaw by stick
+		_yaw_setpoint = NAN;
+
+	} else {
+		// hold the current heading when no more rotation commanded
+		if (!PX4_ISFINITE(_yaw_setpoint)) {
+			_yaw_setpoint = _yaw;
+
+		} else {
+			// check reset counter and update yaw setpoint if necessary
+			if (_sub_attitude->get().quat_reset_counter != _heading_reset_counter) {
+				_yaw_setpoint += matrix::Eulerf(matrix::Quatf(_sub_attitude->get().delta_q_reset)).psi();
+				_heading_reset_counter = _sub_attitude->get().quat_reset_counter;
+			}
+		}
+	}
+}
+
 void FlightTaskManualAltitude::_updateSetpoints()
 {
-	FlightTaskManualStabilized::_updateSetpoints(); // get yaw and thrust setpoints
-
-	_thrust_setpoint *= NAN; // Don't need thrust setpoint from Stabilized mode.
+	_updateHeadingSetpoints(); // get yaw setpoint
 
 	// Thrust in xy are extracted directly from stick inputs. A magnitude of
 	// 1 means that maximum thrust along xy is demanded. A magnitude of 0 means no
 	// thrust along xy is demanded. The maximum thrust along xy depends on the thrust
 	// setpoint along z-direction, which is computed in PositionControl.cpp.
 
-	Vector2f sp{_sticks(0), _sticks(1)};
+	Vector2f sp(&_sticks(0));
 	_rotateIntoHeadingFrame(sp);
 
 	if (sp.length() > 1.0f) {
@@ -269,6 +302,15 @@ void FlightTaskManualAltitude::_updateSetpoints()
 
 	_thrust_setpoint(0) = sp(0);
 	_thrust_setpoint(1) = sp(1);
+	_thrust_setpoint(2) = NAN;
 
 	_updateAltitudeLock();
+}
+
+bool FlightTaskManualAltitude::update()
+{
+	_scaleSticks();
+	_updateSetpoints();
+
+	return true;
 }
