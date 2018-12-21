@@ -36,3 +36,5 @@ set FW_T_SPDWEIGHT 0.5
 set MIXER TF-G1
 
 set PWM_MAIN_DIS8 1000
+
+fi

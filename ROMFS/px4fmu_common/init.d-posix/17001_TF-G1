@@ -18,7 +18,7 @@
 sh /etc/init.d/rc.fw_defaults
 
 # Use normal config, the extra overrides for SITL are below
-sh /etc/init.d/17001_TF-G1
+sh /etc/init.d/airframes/17001_TF-G1
 
 if [ $AUTOCNF == yes ]
 then
