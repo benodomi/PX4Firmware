@@ -219,7 +219,7 @@ GroundRoverPositionControl::control_position(const matrix::Vector2f &current_pos
 			prev_wp(1) = (float)pos_sp_triplet.previous.lon;
 		}
 
-		matrix::Vector2f ground_speed_2d = {ground_speed(0), ground_speed(1)};
+		matrix::Vector2f ground_speed_2d(ground_speed);
 
 		float mission_throttle = _parameters.throttle_cruise;
 
@@ -261,7 +261,7 @@ GroundRoverPositionControl::control_position(const matrix::Vector2f &current_pos
 			_att_sp.roll_body = 0.0f;
 			_att_sp.pitch_body = 0.0f;
 			_att_sp.yaw_body = 0.0f;
-			_att_sp.thrust = 0.0f;
+			_att_sp.thrust_body[0] = 0.0f;
 
 		} else if ((pos_sp_triplet.current.type == position_setpoint_s::SETPOINT_TYPE_POSITION)
 			   || (pos_sp_triplet.current.type == position_setpoint_s::SETPOINT_TYPE_TAKEOFF)) {
@@ -272,7 +272,7 @@ GroundRoverPositionControl::control_position(const matrix::Vector2f &current_pos
 			_att_sp.pitch_body = 0.0f;
 			_att_sp.yaw_body = _gnd_control.nav_bearing();
 			_att_sp.fw_control_yaw = true;
-			_att_sp.thrust = mission_throttle;
+			_att_sp.thrust_body[0] = mission_throttle;
 
 		} else if (pos_sp_triplet.current.type == position_setpoint_s::SETPOINT_TYPE_LOITER) {
 
@@ -284,7 +284,7 @@ GroundRoverPositionControl::control_position(const matrix::Vector2f &current_pos
 			_att_sp.pitch_body = 0.0f;
 			_att_sp.yaw_body = _gnd_control.nav_bearing();
 			_att_sp.fw_control_yaw = true;
-			_att_sp.thrust = 0.0f;
+			_att_sp.thrust_body[0] = 0.0f;
 		}
 
 		if (was_circle_mode && !_gnd_control.circle_mode()) {
@@ -299,7 +299,7 @@ GroundRoverPositionControl::control_position(const matrix::Vector2f &current_pos
 		_att_sp.pitch_body = 0.0f;
 		_att_sp.yaw_body = 0.0f;
 		_att_sp.fw_control_yaw = true;
-		_att_sp.thrust = 0.0f;
+		_att_sp.thrust_body[0] = 0.0f;
 
 		/* do not publish the setpoint */
 		setpoint = false;

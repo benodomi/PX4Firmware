@@ -34,8 +34,9 @@
 #pragma once
 
 #include <stdint.h>
+
 #include "uORBCommon.hpp"
-#include <lib/cdev/CDev.hpp>
+#include <px4_posix.h>
 
 namespace uORB
 {
@@ -44,17 +45,10 @@ class DeviceMaster;
 class Manager;
 }
 
-#ifdef __PX4_NUTTX
 #include <string.h>
 #include <stdlib.h>
-#include "ORBMap.hpp"
 
-#else
-
-#include <string>
-#include <map>
-
-#endif /* __PX4_NUTTX */
+#include <containers/List.hpp>
 
 /**
  * Master control device for ObjDev.
@@ -62,16 +56,18 @@ class Manager;
  * Used primarily to create new objects via the ORBIOCCREATE
  * ioctl.
  */
-class uORB::DeviceMaster : public cdev::CDev
+class uORB::DeviceMaster
 {
 public:
-	virtual int   ioctl(cdev::file_t *filp, int cmd, unsigned long arg);
+
+	int advertise(const struct orb_metadata *meta, int *instance, int priority);
 
 	/**
 	 * Public interface for getDeviceNodeLocked(). Takes care of synchronization.
 	 * @return node if exists, nullptr otherwise
 	 */
 	uORB::DeviceNode *getDeviceNode(const char *node_name);
+	uORB::DeviceNode *getDeviceNode(const struct orb_metadata *meta, const uint8_t instance);
 
 	/**
 	 * Print statistics for each existing topic.
@@ -91,11 +87,10 @@ public:
 private:
 	// Private constructor, uORB::Manager takes care of its creation
 	DeviceMaster();
-	virtual ~DeviceMaster() = default;
+	~DeviceMaster();
 
 	struct DeviceNodeStatisticsData {
 		DeviceNode *node;
-		uint8_t instance;
 		uint32_t last_lost_msg_count;
 		unsigned int last_pub_msg_count;
 		uint32_t lost_msg_delta;
@@ -113,12 +108,14 @@ private:
 	 * _lock must already be held when calling this.
 	 * @return node if exists, nullptr otherwise
 	 */
-	uORB::DeviceNode *getDeviceNodeLocked(const char *node_name);
+	uORB::DeviceNode *getDeviceNodeLocked(const struct orb_metadata *meta, const uint8_t instance);
 
-#ifdef __PX4_NUTTX
-	ORBMap _node_map;
-#else
-	std::map<std::string, uORB::DeviceNode *> _node_map;
-#endif
+	List<uORB::DeviceNode *> _node_list;
+
 	hrt_abstime       _last_statistics_output;
+
+	px4_sem_t	_lock; /**< lock to protect access to all class members (also for derived classes) */
+
+	void		lock() { do {} while (px4_sem_wait(&_lock) != 0); }
+	void		unlock() { px4_sem_post(&_lock); }
 };
