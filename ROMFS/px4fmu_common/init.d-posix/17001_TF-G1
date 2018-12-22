@@ -15,12 +15,16 @@
 # @maintainer ThunderFly
 #
 
-sh /etc/init.d/rc.fw_defaults
+if [ $AUTOCNF = yes ]
+then
+	param set FW_ARSP_MODE 1
+fi
 
 # Use normal config, the extra overrides for SITL are below
-sh /etc/init.d/17001_TF-G1
+sh /etc/init.d/airframes/17001_TF-G1
 
-if [ $AUTOCNF == yes ]
+# Parameter SITL overrides
+if [ $AUTOCNF = yes ]
 then
 
 	param set COM_DISARM_LAND -1.0
