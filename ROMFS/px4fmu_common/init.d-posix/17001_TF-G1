@@ -15,7 +15,6 @@
 # @maintainer ThunderFly
 #
 
-param set FW_ARSP_MODE 1
 
 # Use normal config, the extra overrides for SITL are below
 sh /etc/init.d/airframes/17001_TF-G1
