@@ -22,11 +22,16 @@ ekf2 start
 # Start attitude controller.
 #
 rw_att_control start
-rw_pos_control_l1 start
 
-rotor_frequency
+# Replaced by fw for now
+#rw_pos_control_l1 start
+
+fw_pos_control_l1 start
+
+
+#rotor_frequency
 
 #
 # Start Land Detector.
 #
-#land_detector start fixedwing
+land_detector start fixedwing

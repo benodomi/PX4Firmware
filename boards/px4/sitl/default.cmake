@@ -47,6 +47,8 @@ px4_add_board(
 		vmount
 		vtol_att_control
 		wind_estimator
+		rw_att_control
+		#rw_pos_control_l1
 
 	SYSTEMCMDS
 		#bl_update
