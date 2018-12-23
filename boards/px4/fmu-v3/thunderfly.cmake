@@ -20,7 +20,7 @@ px4_add_board(
 		TEL4:/dev/ttyS3
 
 	DRIVERS
-        rotor_frequency/pcf8583
+        	#rotor_frequency/pcf8583
 
 		barometer # all available barometer drivers
 		batt_smbus
