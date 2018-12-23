@@ -55,6 +55,7 @@
 #include <uORB/topics/vehicle_local_position_setpoint.h>
 #include <uORB/topics/vehicle_status.h>
 #include <uORB/topics/vehicle_trajectory_waypoint.h>
+#include <uORB/topics/landing_gear.h>
 
 #include <float.h>
 #include <mathlib/mathlib.h>
@@ -110,6 +111,7 @@ private:
 	orb_advert_t _traj_wp_avoidance_desired_pub{nullptr}; /**< trajectory waypoint desired publication */
 	orb_advert_t _pub_vehicle_command{nullptr};           /**< vehicle command publication */
 	orb_id_t _attitude_setpoint_id{nullptr};
+	orb_advert_t	_landing_gear_pub{nullptr};
 
 	int		_vehicle_status_sub{-1};		/**< vehicle status subscription */
 	int		_vehicle_land_detected_sub{-1};	/**< vehicle land detected subscription */
@@ -135,6 +137,9 @@ private:
 	home_position_s				_home_pos{};			/**< home position */
 	vehicle_trajectory_waypoint_s		_traj_wp_avoidance{};		/**< trajectory waypoint */
 	vehicle_trajectory_waypoint_s		_traj_wp_avoidance_desired{};	/**< desired waypoints, inputs to an obstacle avoidance module */
+	landing_gear_s _landing_gear{};
+
+	int8_t		_old_landing_gear_position;
 
 	DEFINE_PARAMETERS(
 		(ParamFloat<px4::params::MPC_TKO_RAMP_T>) _takeoff_ramp_time, /**< time constant for smooth takeoff ramp */
@@ -407,6 +412,9 @@ MulticopterPositionControl::parameters_update(bool force)
 void
 MulticopterPositionControl::poll_subscriptions()
 {
+	// This is polled for, so all we need to do is a copy now.
+	orb_copy(ORB_ID(vehicle_local_position), _local_pos_sub, &_local_pos);
+
 	bool updated;
 
 	orb_check(_vehicle_status_sub, &updated);
@@ -440,12 +448,6 @@ MulticopterPositionControl::poll_subscriptions()
 
 	if (updated) {
 		orb_copy(ORB_ID(vehicle_control_mode), _control_mode_sub, &_control_mode);
-	}
-
-	orb_check(_local_pos_sub, &updated);
-
-	if (updated) {
-		orb_copy(ORB_ID(vehicle_local_position), _local_pos_sub, &_local_pos);
 	}
 
 	orb_check(_att_sub, &updated);
@@ -592,9 +594,6 @@ MulticopterPositionControl::run()
 	parameters_update(true);
 	poll_subscriptions();
 
-	// Let's be safe and have the landing gear down by default
-	_att_sp.landing_gear = vehicle_attitude_setpoint_s::LANDING_GEAR_DOWN;
-
 	// setup file descriptor to poll the local position as loop wakeup source
 	px4_pollfd_struct_t poll_fd = {.fd = _local_pos_sub};
 	poll_fd.events = POLLIN;
@@ -689,6 +688,7 @@ MulticopterPositionControl::run()
 			update_avoidance_waypoint_desired(_states, setpoint);
 
 			vehicle_constraints_s constraints = _flight_tasks.getConstraints();
+			landing_gear_s gear = _flight_tasks.getGear();
 
 			// check if all local states are valid and map accordingly
 			set_vehicle_states(setpoint.vz);
@@ -730,7 +730,6 @@ MulticopterPositionControl::run()
 				setpoint.vx = setpoint.vy = setpoint.vz = NAN;
 				setpoint.yawspeed = NAN;
 				setpoint.yaw = _states.yaw;
-				constraints.landing_gear = vehicle_constraints_s::GEAR_KEEP;
 				// reactivate the task which will reset the setpoint to current state
 				_flight_tasks.reActivate();
 			}
@@ -792,22 +791,29 @@ MulticopterPositionControl::run()
 			_att_sp.fw_control_yaw = false;
 			_att_sp.apply_flaps = false;
 
-			if (!constraints.landing_gear) {
-				if (constraints.landing_gear == vehicle_constraints_s::GEAR_UP) {
-					_att_sp.landing_gear = vehicle_attitude_setpoint_s::LANDING_GEAR_UP;
-				}
-
-				if (constraints.landing_gear == vehicle_constraints_s::GEAR_DOWN) {
-					_att_sp.landing_gear = vehicle_attitude_setpoint_s::LANDING_GEAR_DOWN;
-				}
-			}
-
 			// publish attitude setpoint
 			// Note: this requires review. The reason for not sending
 			// an attitude setpoint is because for non-flighttask modes
 			// the attitude septoint should come from another source, otherwise
 			// they might conflict with each other such as in offboard attitude control.
 			publish_attitude();
+
+			// if there's any change in landing gear setpoint publish it
+			if (gear.landing_gear != _old_landing_gear_position
+				&& gear.landing_gear != landing_gear_s::GEAR_KEEP) {
+
+				_landing_gear.landing_gear = gear.landing_gear;
+				_landing_gear.timestamp = hrt_absolute_time();
+
+				if (_landing_gear_pub != nullptr) {
+					orb_publish(ORB_ID(landing_gear), _landing_gear_pub, &_landing_gear);
+
+				} else {
+					_landing_gear_pub = orb_advertise(ORB_ID(landing_gear), &_landing_gear);
+				}
+			}
+
+			_old_landing_gear_position = gear.landing_gear;
 
 		} else {
 			// no flighttask is active: set attitude setpoint to idle
