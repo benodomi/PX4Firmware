@@ -36,15 +36,15 @@ fi
 #
 # Rotor wing setup.
 #
-if [ $VEHICLE_TYPE == rw ]
+if [ $VEHICLE_TYPE = rw ]
 then
-	if [ $MIXER == none ]
+	if [ $MIXER = none ]
 	then
 		# Set default mixer for fixed wing if not defined.
 		set MIXER TF-G1
 	fi
 
-	if [ $MAV_TYPE == none ]
+	if [ $MAV_TYPE = none ]
 	then
 		# Use MAV_TYPE = 1 (fixed wing) if not defined.
 		set MAV_TYPE 1

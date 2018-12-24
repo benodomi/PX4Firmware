@@ -1777,7 +1777,11 @@ Mavlink::configure_streams_to_default(const char *configure_single_stream)
 		configure_stream_local("VFR_HUD", 4.0f);
 		configure_stream_local("ODOMETRY", 3.0f);
 		configure_stream_local("WIND_COV", 1.0f);
+<<<<<<< HEAD
 		configure_stream_local("ORBIT_EXECUTION_STATUS", 5.f);
+=======
+    	//configure_stream_local("ROTOR_FREQUENCY", unlimited_rate);
+>>>>>>> origin/autogyro-sitl
 		break;
 
 	case MAVLINK_MODE_ONBOARD:

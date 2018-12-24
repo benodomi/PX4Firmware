@@ -22,7 +22,7 @@ then
 	param set BAT_CAPACITY 5500.0
 	param set BAT_N_CELLS 4
 	param set BAT_V_CHARGED 4.199999809265137
-
+fi
 
 set BAT_CAPACITY 5500.0
 set BAT_N_CELLS 4

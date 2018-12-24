@@ -211,7 +211,7 @@ then
 fi
 
 
-if [ ${VEHICLE_TYPE} = fw -o ${VEHICLE_TYPE} = vtol ]
+if [ ${VEHICLE_TYPE} = fw -o ${VEHICLE_TYPE} = vtol -o ${VEHICLE_TYPE} = rw ]
 then
 	if param compare CBRK_AIRSPD_CHK 0
 	then
