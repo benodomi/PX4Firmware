@@ -48,6 +48,7 @@
 #include <perf/perf_counter.h>
 #include <uORB/Subscription.hpp>
 #include <uORB/topics/actuator_controls.h>
+#include <uORB/topics/actuator_controls_rw.h>
 #include <uORB/topics/airspeed.h>
 #include <uORB/topics/rotor_frequency.h>
 #include <uORB/topics/battery_status.h>
@@ -116,8 +117,9 @@ private:
 	orb_id_t _actuators_id{nullptr};	// pointer to correct actuator controls0 uORB metadata structure
 	orb_id_t _attitude_setpoint_id{nullptr};
 
-	actuator_controls_s				_actuators {};		/**< actuator control inputs */
-	actuator_controls_s				_actuators_airframe {};	/**< actuator control inputs */
+    //actuator_controls_s				_actuators {};		/**< actuator control inputs */
+    actuator_controls_rw_s				_actuators {};		/**< actuator control inputs */
+	actuator_controls_rw_s				_actuators_airframe {};	/**< actuator control inputs */
 	manual_control_setpoint_s		_manual {};		/**< r/c channel data */
 	vehicle_attitude_s				_att {};		/**< vehicle attitude setpoint */
 	vehicle_attitude_setpoint_s		_att_sp {};		/**< vehicle attitude setpoint */

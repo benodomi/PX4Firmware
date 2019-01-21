@@ -34,6 +34,7 @@
 set(msg_files
 	actuator_armed.msg
 	actuator_controls.msg
+	actuator_controls_rw.msg
 	actuator_direct.msg
 	actuator_outputs.msg
 	adc_report.msg

@@ -279,7 +279,6 @@ RotorwingAttitudeControl::vehicle_control_mode_poll()
 	orb_check(_vcontrol_mode_sub, &vcontrol_mode_updated);
 
 	if (vcontrol_mode_updated) {
-
 		orb_copy(ORB_ID(vehicle_control_mode), _vcontrol_mode_sub, &_vcontrol_mode);
 	}
 }
@@ -308,9 +307,9 @@ RotorwingAttitudeControl::vehicle_manual_poll()
 					//TF: manual s vstup z ovladace
 					//TF: man_**_max - v radianech
 					_att_sp.timestamp = hrt_absolute_time();
-					_att_sp.roll_body = _manual.y * _parameters.man_roll_max + _parameters.rollsp_offset_rad;
+					_att_sp.roll_body = _manual.y + _parameters.rollsp_offset_rad;
 					_att_sp.roll_body = math::constrain(_att_sp.roll_body, -_parameters.man_roll_max, _parameters.man_roll_max);
-					_att_sp.pitch_body = -_manual.x * _parameters.man_pitch_max + _parameters.pitchsp_offset_rad;
+					_att_sp.pitch_body = -_manual.x + _parameters.pitchsp_offset_rad;
 					_att_sp.pitch_body = math::constrain(_att_sp.pitch_body, -_parameters.man_pitch_max, _parameters.man_pitch_max);
 					_att_sp.yaw_body = 0.0f;
 					_att_sp.thrust_body[0] = _manual.z;
@@ -364,11 +363,41 @@ RotorwingAttitudeControl::vehicle_manual_poll()
 
 				} else {
 					/* manual/direct control */
+                    /* //TF:
+
 					_actuators.control[actuator_controls_s::INDEX_ROLL] = _manual.y * _parameters.man_roll_scale + _parameters.trim_roll;
-					_actuators.control[actuator_controls_s::INDEX_PITCH] = -_manual.x * _parameters.man_pitch_scale + _parameters.trim_pitch;
+					_actuators.control[actuator_controls_s::INDEX_PITCH] = -_manual.x * _parameters.man_pitch_scale +
+							_parameters.trim_pitch;
 					_actuators.control[actuator_controls_s::INDEX_YAW] = _manual.r * _parameters.man_yaw_scale + _parameters.trim_yaw;
 					_actuators.control[actuator_controls_s::INDEX_THROTTLE] = _manual.z;
-					_actuators.control[actuator_controls_s::INDEX_FLAPS] = _manual.flaps;
+                    */
+
+                    //  x - vstp 'roll' -> roll -> rotor_roll
+                    //  y - vstup 'pitch' -> pitch -> throttle
+                    //  z - vstup 'throttle' -> speed -> rotor_pitch
+                    //  r
+
+/*
+listener actuator_controls_0 -n 40 -r 2
+
+uint8 INDEX_ROTOR_ROLL = 0
+uint8 INDEX_ROTOR_PITCH = 1
+uint8 INDEX_YAW = 2
+uint8 INDEX_THROTTLE = 3
+uint8 INDEX_PREROTATOR = 4
+*/
+
+					_actuators.control[actuator_controls_rw_s::INDEX_ROTOR_ROLL] = _manual.x;
+                    _actuators.control[actuator_controls_rw_s::INDEX_ROTOR_PITCH] = _manual.y;
+					_actuators.control[actuator_controls_rw_s::INDEX_YAW] = _manual.r;
+                    //TODO-TF: zde by bylo lepsi mit misto '0' 'NaN'
+                    _actuators.control[actuator_controls_rw_s::INDEX_PREROTATOR] = 0;
+                    _actuators.control[actuator_controls_rw_s::INDEX_THROTTLE] = 0;
+                    if(_vcontrol_mode.flag_armed){
+	                   _actuators.control[actuator_controls_rw_s::INDEX_PREROTATOR] = _manual.aux1;
+   					   _actuators.control[actuator_controls_rw_s::INDEX_THROTTLE] = _manual.z;
+                    }
+
 				}
 			}
 		}
@@ -413,30 +442,9 @@ RotorwingAttitudeControl::vehicle_status_poll()
 	if (vehicle_status_updated) {
 		orb_copy(ORB_ID(vehicle_status), _vehicle_status_sub, &_vehicle_status);
 
-		// if VTOL and not in fixed wing mode we should only control body-rates which are published
-		// by the multicoper attitude controller. Therefore, modify the control mode to achieve rate
-		// control only
-		//if (_vehicle_status.is_vtol) {
-		//	if (_vehicle_status.is_rotary_wing) {
-		//		_vcontrol_mode.flag_control_attitude_enabled = false;
-		//		_vcontrol_mode.flag_control_manual_enabled = false;
-		//	}
-		//}
-
-		/* set correct uORB ID, depending on if vehicle is VTOL or not */
         if (!_actuators_id) {
-			if (_vehicle_status.is_vtol) {
-				_actuators_id = ORB_ID(actuator_controls_virtual_fw);
-				_attitude_setpoint_id = ORB_ID(fw_virtual_attitude_setpoint);
-
-				_parameter_handles.vtol_type = param_find("VT_TYPE");
-
-				parameters_update();
-
-			} else {
-				_actuators_id = ORB_ID(actuator_controls_0);
-				_attitude_setpoint_id = ORB_ID(vehicle_attitude_setpoint);
-			}
+			_actuators_id = ORB_ID(actuator_controls_0);
+			_attitude_setpoint_id = ORB_ID(vehicle_attitude_setpoint);
 		}
 	}
 }
@@ -536,48 +544,6 @@ void RotorwingAttitudeControl::run()
 			/* get current rotation matrix and euler angles from control state quaternions */
 			matrix::Dcmf R = matrix::Quatf(_att.q);
 
-			if (_vehicle_status.is_vtol && _parameters.vtol_type == vtol_type::TAILSITTER) {
-				/* vehicle is a tailsitter, we need to modify the estimated attitude for fw mode
-				 *
-				 * Since the VTOL airframe is initialized as a multicopter we need to
-				 * modify the estimated attitude for the fixed wing operation.
-				 * Since the neutral position of the vehicle in fixed wing mode is -90 degrees rotated around
-				 * the pitch axis compared to the neutral position of the vehicle in multicopter mode
-				 * we need to swap the roll and the yaw axis (1st and 3rd column) in the rotation matrix.
-				 * Additionally, in order to get the correct sign of the pitch, we need to multiply
-				 * the new x axis of the rotation matrix with -1
-				 *
-				 * original:			modified:
-				 *
-				 * Rxx  Ryx  Rzx		-Rzx  Ryx  Rxx
-				 * Rxy	Ryy  Rzy		-Rzy  Ryy  Rxy
-				 * Rxz	Ryz  Rzz		-Rzz  Ryz  Rxz
-				 * */
-				matrix::Dcmf R_adapted = R;		//modified rotation matrix
-
-				/* move z to x */
-				R_adapted(0, 0) = R(0, 2);
-				R_adapted(1, 0) = R(1, 2);
-				R_adapted(2, 0) = R(2, 2);
-
-				/* move x to z */
-				R_adapted(0, 2) = R(0, 0);
-				R_adapted(1, 2) = R(1, 0);
-				R_adapted(2, 2) = R(2, 0);
-
-				/* change direction of pitch (convert to right handed system) */
-				R_adapted(0, 0) = -R_adapted(0, 0);
-				R_adapted(1, 0) = -R_adapted(1, 0);
-				R_adapted(2, 0) = -R_adapted(2, 0);
-
-				/* fill in new attitude data */
-				R = R_adapted;
-
-				/* lastly, roll- and yawspeed have to be swaped */
-				float helper = _att.rollspeed;
-				_att.rollspeed = -_att.yawspeed;
-				_att.yawspeed = helper;
-			}
 
 			matrix::Eulerf euler_angles(R);
 
@@ -611,7 +577,7 @@ void RotorwingAttitudeControl::run()
 			}
 
 			//TF: ve stabilizovanem rezimu se nespusti
-			control_flaps(deltaT);
+			//control_flaps(deltaT);
 
 			/* decide if in stabilized or full manual control */
 			if (_vcontrol_mode.flag_control_rates_enabled) {
@@ -626,6 +592,8 @@ void RotorwingAttitudeControl::run()
 				if (!_parameters.airspeed_disabled && airspeed_valid) {
 					/* prevent numerical drama by requiring 0.5 m/s minimal speed */
 					airspeed = math::max(0.5f, _airspeed_sub.get().indicated_airspeed_m_s);
+
+                //TODO-TF: pokud je neznama airspeed, pouzij ground speed z GPS.
 
 				} else {
 					airspeed = _parameters.airspeed_trim;
@@ -769,7 +737,7 @@ void RotorwingAttitudeControl::run()
 
 						/* Run attitude RATE controllers which need the desired attitudes from above, add trim */
 						float roll_u = _roll_ctrl.control_euler_rate(control_input);
-						_actuators.control[actuator_controls_s::INDEX_ROLL] = (PX4_ISFINITE(roll_u)) ? roll_u + trim_roll : trim_roll;
+						_actuators.control[actuator_controls_rw_s::INDEX_ROTOR_ROLL] = (PX4_ISFINITE(roll_u)) ? roll_u + trim_roll : trim_roll;
 
 						if (!PX4_ISFINITE(roll_u)) {
 							_roll_ctrl.reset_integrator();
@@ -777,7 +745,7 @@ void RotorwingAttitudeControl::run()
 						}
 
 						float pitch_u = _pitch_ctrl.control_euler_rate(control_input);
-						_actuators.control[actuator_controls_s::INDEX_PITCH] = (PX4_ISFINITE(pitch_u)) ? pitch_u + trim_pitch : trim_pitch;
+						_actuators.control[actuator_controls_rw_s::INDEX_THROTTLE] = (PX4_ISFINITE(pitch_u)) ? pitch_u + trim_pitch : trim_pitch;
 
 						if (!PX4_ISFINITE(pitch_u)) {
 							_pitch_ctrl.reset_integrator();
@@ -793,11 +761,11 @@ void RotorwingAttitudeControl::run()
 							yaw_u = _yaw_ctrl.control_euler_rate(control_input);
 						}
 
-						_actuators.control[actuator_controls_s::INDEX_YAW] = (PX4_ISFINITE(yaw_u)) ? yaw_u + trim_yaw : trim_yaw;
+						_actuators.control[actuator_controls_rw_s::INDEX_YAW] = (PX4_ISFINITE(yaw_u)) ? yaw_u + trim_yaw : trim_yaw;
 
 						/* add in manual rudder control in manual modes */
 						if (_vcontrol_mode.flag_control_manual_enabled) {
-							_actuators.control[actuator_controls_s::INDEX_YAW] += _manual.r;
+							_actuators.control[actuator_controls_rw_s::INDEX_YAW] += _manual.r;
 						}
 
 						if (!PX4_ISFINITE(yaw_u)) {
@@ -807,16 +775,16 @@ void RotorwingAttitudeControl::run()
 						}
 
                         /*TF: Prerotator port*/
-						_actuators.control[actuator_controls_s::INDEX_FLAPS] = (PX4_ISFINITE(_manual.flaps))
-                                ? _manual.flaps : 0.0f;
+						_actuators.control[actuator_controls_rw_s::INDEX_PREROTATOR] = (PX4_ISFINITE(_manual.aux1))
+                                ? _manual.aux1 : 0.0f;
 
 						/* throttle passed through if it is finite and if no engine failure was detected */
-						_actuators.control[actuator_controls_s::INDEX_THROTTLE] = (PX4_ISFINITE(_att_sp.thrust_body[0])
-								&& !_vehicle_status.engine_failure) ? _att_sp.thrust_body[0] : 0.0f;
+						//_actuators.control[actuator_controls_rw_s::INDEX_THROTTLE] = (PX4_ISFINITE(_att_sp.thrust_body[0])
+						//		&& !_vehicle_status.engine_failure) ? _att_sp.thrust_body[0] : 0.0f;
 
 						/* scale effort by battery status */
 						if (_parameters.bat_scale_en &&
-						    _actuators.control[actuator_controls_s::INDEX_THROTTLE] > 0.1f) {
+						    _actuators.control[actuator_controls_rw_s::INDEX_THROTTLE] > 0.1f) {
 
 							bool updated = false;
 							orb_check(_battery_status_sub, &updated);
@@ -831,7 +799,7 @@ void RotorwingAttitudeControl::run()
 								}
 							}
 
-							_actuators.control[actuator_controls_s::INDEX_THROTTLE] *= _battery_scale;
+							_actuators.control[actuator_controls_rw_s::INDEX_THROTTLE] *= _battery_scale;
 						}
 
 					} else {
@@ -864,17 +832,16 @@ void RotorwingAttitudeControl::run()
 					_yaw_ctrl.set_bodyrate_setpoint(_rates_sp.yaw);
 
 					float roll_u = _roll_ctrl.control_bodyrate(control_input);
-					_actuators.control[actuator_controls_s::INDEX_ROLL] = (PX4_ISFINITE(roll_u)) ? roll_u + trim_roll : trim_roll;
+					_actuators.control[actuator_controls_rw_s::INDEX_ROTOR_ROLL] = (PX4_ISFINITE(roll_u)) ? roll_u + trim_roll : trim_roll;
 
 					float pitch_u = _pitch_ctrl.control_bodyrate(control_input);
-					_actuators.control[actuator_controls_s::INDEX_PITCH] = (PX4_ISFINITE(pitch_u)) ? pitch_u + trim_pitch : trim_pitch;
+					_actuators.control[actuator_controls_rw_s::INDEX_THROTTLE] = (PX4_ISFINITE(pitch_u)) ? pitch_u + trim_pitch : trim_pitch;
 
 					float yaw_u = _yaw_ctrl.control_bodyrate(control_input);
-					_actuators.control[actuator_controls_s::INDEX_YAW] = (PX4_ISFINITE(yaw_u)) ? yaw_u + trim_yaw : trim_yaw;
+					_actuators.control[actuator_controls_rw_s::INDEX_YAW] = (PX4_ISFINITE(yaw_u)) ? yaw_u + trim_yaw : trim_yaw;
 
-                    _actuators.control[actuator_controls_s::INDEX_THROTTLE] = PX4_ISFINITE(_rates_sp.thrust_body[0]) ? _rates_sp.thrust_body[0] : 0.0f;
-
-                    _actuators.control[actuator_controls_s::INDEX_FLAPS] = PX4_ISFINITE(_manual.flaps) ? _manual.flaps : 0.0f;
+                    //_actuators.control[actuator_controls_rw_s::INDEX_THROTTLE] = PX4_ISFINITE(_rates_sp.thrust_body[0]) ? _rates_sp.thrust_body[0] : 0.0f;
+                    _actuators.control[actuator_controls_rw_s::INDEX_PREROTATOR] = PX4_ISFINITE(_manual.aux1) ? _manual.aux1 : 0.0f;
 				}
 
 				rate_ctrl_status_s rate_ctrl_status;
@@ -893,14 +860,16 @@ void RotorwingAttitudeControl::run()
 
 			// Add feed-forward from roll control output to yaw control output
 			// This can be used to counteract the adverse yaw effect when rolling the plane
-			_actuators.control[actuator_controls_s::INDEX_YAW] += _parameters.roll_to_yaw_ff * math::constrain(
-						_actuators.control[actuator_controls_s::INDEX_ROLL], -1.0f, 1.0f);
+			_actuators.control[actuator_controls_rw_s::INDEX_YAW] += _parameters.roll_to_yaw_ff * math::constrain(
+						_actuators.control[actuator_controls_rw_s::INDEX_ROTOR_ROLL], -1.0f, 1.0f);
 
-			//TF: _actuators.control[actuator_controls_s::INDEX_FLAPS] = _flaps_applied;
-			_actuators.control[5] = _manual.flaps;
-			_actuators.control[actuator_controls_s::INDEX_AIRBRAKES] = _flaperons_applied;
+			//TF: _actuators.control[actuator_controls_rw_s::INDEX_PREROTATOR] = _flaps_applied;
+			//_actuators.control[5] = _manual.flaps;
+			//_actuators.control[actuator_controls_rw_s::INDEX_AIRBRAKES] = _flaperons_applied;
 			// FIXME: this should use _vcontrol_mode.landing_gear_pos in the future
-			_actuators.control[7] = _manual.aux3;
+            _actuators.control[5] = _manual.aux2;
+            _actuators.control[6] = _manual.aux3;
+            _actuators.control[7] = _manual.aux4;
 
 			/* lazily publish the setpoint only once available */
 			_actuators.timestamp = hrt_absolute_time();
@@ -974,9 +943,10 @@ void RotorwingAttitudeControl::control_flaps(const float dt)
 
     //TF-TODO:
 	/* default flaperon to center */
+    /* //TF-TODO
 	float flaperon_control = 0.0f;
 
-	/* map flaperons by default to manual if valid */
+	// map flaperons by default to manual if valid
 	if (PX4_ISFINITE(_manual.aux2) && _vcontrol_mode.flag_control_manual_enabled
 	    && fabsf(_parameters.flaperon_scale) > 0.01f) {
 		flaperon_control = 0.5f * (_manual.aux2 + 1.0f) * _parameters.flaperon_scale;
@@ -993,7 +963,7 @@ void RotorwingAttitudeControl::control_flaps(const float dt)
 
 	} else {
 		_flaperons_applied = flaperon_control;
-	}
+	}*/
 }
 
 RotorwingAttitudeControl *RotorwingAttitudeControl::instantiate(int argc, char *argv[])
@@ -1032,7 +1002,7 @@ int RotorwingAttitudeControl::print_usage(const char *reason)
 	PRINT_MODULE_DESCRIPTION(
 		R"DESCR_STR(
 ### Description
-rw_att_control is the fixed wing attitude controller.
+rw_att_control is the rotor wing attitude controller.
 
 )DESCR_STR");
 

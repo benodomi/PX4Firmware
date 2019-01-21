@@ -55,6 +55,7 @@
 #include <rc/sbus.h>
 
 #include <uORB/topics/actuator_controls.h>
+#include <uORB/topics/actuator_controls_rw.h>
 
 #include "mixer.h"
 
@@ -437,18 +438,18 @@ mixer_callback(uintptr_t handle,
 
 	/* apply trim offsets for override channels */
 	if (source == MIX_OVERRIDE || source == MIX_OVERRIDE_FMU_OK) {
-		if (control_group == actuator_controls_s::GROUP_INDEX_ATTITUDE &&
-		    control_index == actuator_controls_s::INDEX_ROLL) {
+		if (control_group == actuator_controls_rw_s::GROUP_INDEX_ATTITUDE &&
+		    control_index == actuator_controls_rw_s::INDEX_ROTOR_ROLL) {
 			control *= REG_TO_FLOAT(r_setup_scale_roll);
 			control += REG_TO_FLOAT(r_setup_trim_roll);
 
-		} else if (control_group == actuator_controls_s::GROUP_INDEX_ATTITUDE &&
-			control_index == actuator_controls_s::INDEX_PITCH) {
+		} else if (control_group == actuator_controls_rw_s::GROUP_INDEX_ATTITUDE &&
+			control_index == actuator_controls_rw_s::INDEX_ROTOR_PITCH) {
 			control *= REG_TO_FLOAT(r_setup_scale_pitch);
 			control += REG_TO_FLOAT(r_setup_trim_pitch);
 
-		} else if (control_group == actuator_controls_s::GROUP_INDEX_ATTITUDE &&
-			control_index == actuator_controls_s::INDEX_YAW) {
+		} else if (control_group == actuator_controls_rw_s::GROUP_INDEX_ATTITUDE &&
+			control_index == actuator_controls_rw_s::INDEX_YAW) {
 			control *= REG_TO_FLOAT(r_setup_scale_yaw);
 			control += REG_TO_FLOAT(r_setup_trim_yaw);
 		}
@@ -462,11 +463,32 @@ mixer_callback(uintptr_t handle,
 		control = -1.0f;
 	}
 
+
+    //TF: prerotator safety off....
+    //ADD parameter, that it is rotorwing aircraft
+    if (should_arm_nothrottle && !should_arm) {
+		if ((control_group == actuator_controls_rw_s::GROUP_INDEX_ATTITUDE ||
+		    control_group == actuator_controls_rw_s::GROUP_INDEX_ATTITUDE_ALTERNATE) &&
+		    control_index == actuator_controls_rw_s::INDEX_THROTTLE) {
+			/* mark the throttle as invalid */
+			control = NAN;
+		}
+	}
+
+    if (should_arm_nothrottle && !should_arm) {
+		if ((control_group == actuator_controls_rw_s::GROUP_INDEX_ATTITUDE ||
+		    control_group == actuator_controls_rw_s::GROUP_INDEX_ATTITUDE_ALTERNATE) &&
+		    control_index == actuator_controls_rw_s::INDEX_PREROTATOR) {
+			/* mark the throttle as invalid */
+			control = NAN;
+		}
+	}
+
 	// /* motor spinup phase - lock throttle to zero */
 	// if ((pwm_limit.state == PWM_LIMIT_STATE_RAMP) || (should_arm_nothrottle && !should_arm)) {
-	// 	if ((control_group == actuator_controls_s::GROUP_INDEX_ATTITUDE ||
-	// 	    control_group == actuator_controls_s::GROUP_INDEX_ATTITUDE_ALTERNATE) &&
-	// 	    control_index == actuator_controls_s::INDEX_THROTTLE) {
+	// 	if ((control_group == actuator_controls_rw_s::GROUP_INDEX_ATTITUDE ||
+	// 	    control_group == actuator_controls_rw_s::GROUP_INDEX_ATTITUDE_ALTERNATE) &&
+	// 	    control_index == actuator_controls_rw_s::INDEX_THROTTLE) {
 	// 		/* limit the throttle output to zero during motor spinup,
 	// 		 * as the motors cannot follow any demand yet
 	// 		 */
@@ -476,15 +498,14 @@ mixer_callback(uintptr_t handle,
     //
 	// /* only safety off, but not armed - set throttle as invalid */
 	// if (should_arm_nothrottle && !should_arm) {
-	// 	if ((control_group == actuator_controls_s::GROUP_INDEX_ATTITUDE ||
-	// 	    control_group == actuator_controls_s::GROUP_INDEX_ATTITUDE_ALTERNATE) &&
-	// 	    control_index == actuator_controls_s::INDEX_THROTTLE) {
+	// 	if ((control_group == actuator_controls_rw_s::GROUP_INDEX_ATTITUDE ||
+	// 	    control_group == actuator_controls_rw_s::GROUP_INDEX_ATTITUDE_ALTERNATE) &&
+	// 	    control_index == actuator_controls_rw_s::INDEX_THROTTLE) {
 	// 		/* mark the throttle as invalid */
 	// 		control = NAN;
 	// 	}
 	// }
 
-    //TF-TODO: prerotator safety off....
 
 
 

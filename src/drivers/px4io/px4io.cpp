@@ -76,6 +76,7 @@
 #include <systemlib/mavlink_log.h>
 
 #include <uORB/topics/actuator_controls.h>
+#include <uORB/topics/actuator_controls_rw.h>
 #include <uORB/topics/actuator_outputs.h>
 #include <uORB/topics/actuator_armed.h>
 #include <uORB/topics/safety.h>

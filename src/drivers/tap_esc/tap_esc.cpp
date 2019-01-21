@@ -49,6 +49,7 @@
 #include <px4_module_params.h>
 #include <uORB/uORB.h>
 #include <uORB/topics/actuator_controls.h>
+#include <uORB/topics/actuator_controls_rw.h>
 #include <uORB/topics/actuator_outputs.h>
 #include <uORB/topics/actuator_armed.h>
 #include <uORB/topics/test_motor.h>
@@ -643,7 +644,17 @@ int TAP_ESC::control_callback(uint8_t control_group, uint8_t control_index, floa
 	if (_armed.prearmed && !_armed.armed) {
 		if ((control_group == actuator_controls_s::GROUP_INDEX_ATTITUDE ||
 		     control_group == actuator_controls_s::GROUP_INDEX_ATTITUDE_ALTERNATE) &&
-		    control_index == actuator_controls_s::INDEX_THROTTLE) {
+		    control_index == actuator_controls_rw_s::INDEX_THROTTLE) {
+			/* set the throttle to an invalid value */
+			input = NAN;
+		}
+	}
+
+	/* throttle not arming - mark throttle input as invalid */
+	if (_armed.prearmed && !_armed.armed) {
+		if ((control_group == actuator_controls_s::GROUP_INDEX_ATTITUDE ||
+		     control_group == actuator_controls_s::GROUP_INDEX_ATTITUDE_ALTERNATE) &&
+		    control_index == actuator_controls_rw_s::INDEX_PREROTATOR) {
 			/* set the throttle to an invalid value */
 			input = NAN;
 		}

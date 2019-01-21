@@ -58,6 +58,7 @@
 #include <pwm_limit/pwm_limit.h>
 #include <uORB/topics/actuator_armed.h>
 #include <uORB/topics/actuator_controls.h>
+#include <uORB/topics/actuator_controls_rw.h>
 #include <uORB/topics/actuator_outputs.h>
 #include <uORB/topics/multirotor_motor_limits.h>
 #include <uORB/topics/parameter_update.h>
@@ -1416,7 +1417,7 @@ PX4FMU::control_callback(uintptr_t handle,
 	if (_pwm_limit.state == PWM_LIMIT_STATE_RAMP) {
 		if ((control_group == actuator_controls_s::GROUP_INDEX_ATTITUDE ||
 		     control_group == actuator_controls_s::GROUP_INDEX_ATTITUDE_ALTERNATE) &&
-		    control_index == actuator_controls_s::INDEX_THROTTLE) {
+		    control_index == actuator_controls_rw_s::INDEX_THROTTLE) {
 			/* limit the throttle output to zero during motor spinup,
 			 * as the motors cannot follow any demand yet
 			 */
@@ -1428,7 +1429,7 @@ PX4FMU::control_callback(uintptr_t handle,
 	if (arm_nothrottle() && !_armed.in_esc_calibration_mode) {
 		if ((control_group == actuator_controls_s::GROUP_INDEX_ATTITUDE ||
 		     control_group == actuator_controls_s::GROUP_INDEX_ATTITUDE_ALTERNATE) &&
-		    control_index == actuator_controls_s::INDEX_THROTTLE) {
+		    control_index == actuator_controls_rw_s::INDEX_THROTTLE) {
 			/* set the throttle to an invalid value */
 			input = NAN;
 		}
@@ -1436,24 +1437,24 @@ PX4FMU::control_callback(uintptr_t handle,
 
 
 
-    	/* motor spinup phase - lock throttle to zero */
-    	if (_pwm_limit.state == PWM_LIMIT_STATE_RAMP) {
-    		if ((control_group == actuator_controls_s::GROUP_INDEX_ATTITUDE ||
-    		     control_group == actuator_controls_s::GROUP_INDEX_ATTITUDE_ALTERNATE) &&
-    		    control_index == actuator_controls_s::INDEX_FLAPS) {
-    			/* limit the throttle output to zero during motor spinup,
-    			 * as the motors cannot follow any demand yet
-    			 */
-    			input = 0.0f;
-    		}
-    	}
+	/* motor spinup phase - lock throttle to zero */
+	if (_pwm_limit.state == PWM_LIMIT_STATE_RAMP) {
+		if ((control_group == actuator_controls_s::GROUP_INDEX_ATTITUDE ||
+		     control_group == actuator_controls_s::GROUP_INDEX_ATTITUDE_ALTERNATE) &&
+		    control_index == actuator_controls_rw_s::INDEX_PREROTATOR) {
+			/* limit the throttle output to zero during motor spinup,
+			 * as the motors cannot follow any demand yet
+			 */
+			input = 0.0f;
+		}
+	}
 
 	/* prerotator not arming - mark Prerotator input as invalid */
     /*TF: There are the same rulles as for normal throttle*/
 	if (arm_nothrottle()) {
 		if ((control_group == actuator_controls_s::GROUP_INDEX_ATTITUDE ||
 		     control_group == actuator_controls_s::GROUP_INDEX_ATTITUDE_ALTERNATE) &&
-		    control_index == actuator_controls_s::INDEX_FLAPS) {
+		    control_index == actuator_controls_rw_s::INDEX_PREROTATOR) {
 			/* set the throttle to an invalid value */
 			input = NAN;
 		}
