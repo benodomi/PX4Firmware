@@ -20,7 +20,7 @@ px4_add_board(
 		TEL4:/dev/ttyS3
 
 	DRIVERS
-        	#rotor_frequency/pcf8583
+        rotor_frequency/pcf8583
 
 		barometer # all available barometer drivers
 		batt_smbus
@@ -83,6 +83,7 @@ px4_add_board(
 		mc_pos_control
         rw_att_control
         #rw_pos_control_l1
+        rw_prerotate
 		navigator
 		position_estimator_inav
 		sensors
