@@ -200,7 +200,9 @@ void RwPrerotate::task_main()
     _vehicle_attitude_sub = orb_subscribe(ORB_ID(vehicle_attitude));
 
     /* subscribe to rotor freq */
-    _rf_report = orb_subscribe(ORB_ID(rotor_frequency));
+    //_rf_report = orb_subscribe(ORB_ID(rotor_frequency));
+    _rf_report_sub = orb_subscribe(ORB_ID(rotor_frequency));
+
 
     /* advertise control mode topic */
     _vehicle_control_mode_pub = orb_advertise(ORB_ID(vehicle_control_mode), &_vehicle_control_mode);

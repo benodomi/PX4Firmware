@@ -1144,7 +1144,7 @@ PX4FMU::cycle()
 						memset(&_controls[i], 0, sizeof(_controls[i]));
 
 						/* except thrust to maximum. */
-						_controls[i].control[actuator_controls_s::INDEX_THROTTLE] = 1.0f;
+						_controls[i].control[actuator_controls_rw_s::INDEX_THROTTLE] = 1.0f;
 
 						/* Switch off the PWM limit ramp for the calibration. */
 						_pwm_limit.state = PWM_LIMIT_STATE_ON;
