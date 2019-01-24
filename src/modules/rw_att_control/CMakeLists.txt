@@ -37,5 +37,5 @@ px4_add_module(
 		RotorwingControl.cpp
 	DEPENDS
 		git_ecl
-		ecl_attitude_fw
+		ecl_attitude_rw
 	)

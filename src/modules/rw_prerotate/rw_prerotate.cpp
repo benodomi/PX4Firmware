@@ -114,6 +114,7 @@ RwPrerotate::RwPrerotate() :
         _command_sub(-1),
         _vehicle_control_mode_sub(-1),
         _vehicle_attitude_sub(-1),
+        _rf_report_sub(-1),
 
         _vehicle_control_mode_pub(nullptr),
         _vehicle_rates_setpoint_pub(nullptr)

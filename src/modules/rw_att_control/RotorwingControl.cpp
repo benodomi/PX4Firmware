@@ -247,6 +247,12 @@ RotorwingAttitudeControl::parameters_update()
 	_pitch_ctrl.set_k_ff(_parameters.p_ff);
 	_pitch_ctrl.set_integrator_max(_parameters.p_integrator_max);
 
+	/* pitch control parameters */
+	_pitch_sp_ctrl.set_time_constant(_parameters.p_tc);
+	_pitch_sp_ctrl.set_k_p(_parameters.p_p);
+	_pitch_sp_ctrl.set_k_i(_parameters.p_i);
+	_pitch_sp_ctrl.set_k_ff(_parameters.p_ff);
+	_pitch_sp_ctrl.set_integrator_max(_parameters.p_integrator_max);
 	/* roll control parameters */
 	_roll_ctrl.set_time_constant(_parameters.r_tc);
 	_roll_ctrl.set_k_p(_parameters.r_p);
@@ -387,17 +393,17 @@ uint8 INDEX_THROTTLE = 3
 uint8 INDEX_PREROTATOR = 4
 */
 
-					_actuators.control[actuator_controls_rw_s::INDEX_ROTOR_ROLL] = _manual.x;
-                    _actuators.control[actuator_controls_rw_s::INDEX_ROTOR_PITCH] = _manual.y;
+					_actuators.control[actuator_controls_rw_s::INDEX_ROTOR_ROLL] = _manual.y;
+                    _actuators.control[actuator_controls_rw_s::INDEX_ROTOR_PITCH] = _manual.z;
 					_actuators.control[actuator_controls_rw_s::INDEX_YAW] = _manual.r;
-                    //TODO-TF: zde by bylo lepsi mit misto '0' 'NaN'
-                    _actuators.control[actuator_controls_rw_s::INDEX_PREROTATOR] = 0;
-                    _actuators.control[actuator_controls_rw_s::INDEX_THROTTLE] = 0;
                     if(_vcontrol_mode.flag_armed){
 	                   _actuators.control[actuator_controls_rw_s::INDEX_PREROTATOR] = _manual.aux1;
-   					   _actuators.control[actuator_controls_rw_s::INDEX_THROTTLE] = _manual.z;
-                    }
-
+   					   _actuators.control[actuator_controls_rw_s::INDEX_THROTTLE] = (_manual.x +0.5f);
+                    }else{
+                        //TODO-TF: zde by bylo lepsi mit misto '0' 'NaN'
+                       _actuators.control[actuator_controls_rw_s::INDEX_PREROTATOR] = 0;
+                       _actuators.control[actuator_controls_rw_s::INDEX_THROTTLE] = 0;
+                   }
 				}
 			}
 		}
@@ -630,6 +636,10 @@ void RotorwingAttitudeControl::run()
 					_pitch_ctrl.reset_integrator();
 				}
 
+				if (_att_sp.pitch_reset_integral) {
+					_pitch_sp_ctrl.reset_integrator();
+				}
+
 				if (_att_sp.yaw_reset_integral) {
 					_yaw_ctrl.reset_integrator();
 					_wheel_ctrl.reset_integrator();
@@ -643,6 +653,7 @@ void RotorwingAttitudeControl::run()
 
 					_roll_ctrl.reset_integrator();
 					_pitch_ctrl.reset_integrator();
+					_pitch_sp_ctrl.reset_integrator();
 					_yaw_ctrl.reset_integrator();
 					_wheel_ctrl.reset_integrator();
 				}
@@ -680,12 +691,16 @@ void RotorwingAttitudeControl::run()
 						_roll_ctrl.set_max_rate(math::radians(_parameters.r_rmax));
 						_pitch_ctrl.set_max_rate_pos(math::radians(_parameters.p_rmax_pos));
 						_pitch_ctrl.set_max_rate_neg(math::radians(_parameters.p_rmax_neg));
+						_pitch_sp_ctrl.set_max_rate_pos(math::radians(_parameters.p_rmax_pos));
+						_pitch_sp_ctrl.set_max_rate_neg(math::radians(_parameters.p_rmax_neg));
 						_yaw_ctrl.set_max_rate(math::radians(_parameters.y_rmax));
 
 					} else {
 						_roll_ctrl.set_max_rate(_parameters.acro_max_x_rate_rad);
 						_pitch_ctrl.set_max_rate_pos(_parameters.acro_max_y_rate_rad);
 						_pitch_ctrl.set_max_rate_neg(_parameters.acro_max_y_rate_rad);
+						_pitch_sp_ctrl.set_max_rate_pos(_parameters.acro_max_y_rate_rad);
+						_pitch_sp_ctrl.set_max_rate_neg(_parameters.acro_max_y_rate_rad);
 						_yaw_ctrl.set_max_rate(_parameters.acro_max_z_rate_rad);
 					}
 				}
@@ -726,6 +741,7 @@ void RotorwingAttitudeControl::run()
 					if (PX4_ISFINITE(roll_sp) && PX4_ISFINITE(pitch_sp)) {
 						_roll_ctrl.control_attitude(control_input);
 						_pitch_ctrl.control_attitude(control_input);
+						_pitch_sp_ctrl.control_attitude(control_input);
 						_yaw_ctrl.control_attitude(control_input); //runs last, because is depending on output of roll and pitch attitude
 						_wheel_ctrl.control_attitude(control_input);
 
@@ -744,13 +760,35 @@ void RotorwingAttitudeControl::run()
 							perf_count(_nonfinite_output_perf);
 						}
 
-						float pitch_u = _pitch_ctrl.control_euler_rate(control_input);
+                        float pitch_u = _pitch_ctrl.control_euler_rate(control_input);
+                        pitch_u = _pitch_sp_ctrl.control_euler_rate(control_input);
 						_actuators.control[actuator_controls_rw_s::INDEX_THROTTLE] = (PX4_ISFINITE(pitch_u)) ? pitch_u + trim_pitch : trim_pitch;
 
 						if (!PX4_ISFINITE(pitch_u)) {
 							_pitch_ctrl.reset_integrator();
+    						_pitch_sp_ctrl.reset_integrator();
 							perf_count(_nonfinite_output_perf);
-						}
+						}else{
+                            /* scale effort by battery status */
+    						if (_parameters.bat_scale_en &&
+    						    _actuators.control[actuator_controls_rw_s::INDEX_THROTTLE] > 0.1f) {
+
+        							bool updated = false;
+        							orb_check(_battery_status_sub, &updated);
+
+        							if (updated) {
+        								battery_status_s battery_status = {};
+
+        								if (orb_copy(ORB_ID(battery_status), _battery_status_sub, &battery_status) == PX4_OK) {
+        									if (battery_status.scale > 0.0f) {
+        										_battery_scale = battery_status.scale;
+        									}
+        								}
+        							}
+    							    _actuators.control[actuator_controls_rw_s::INDEX_THROTTLE] *= _battery_scale;
+                                }
+
+                        }
 
 						float yaw_u = 0.0f;
 
@@ -829,12 +867,14 @@ void RotorwingAttitudeControl::run()
 					// pure rate control
 					_roll_ctrl.set_bodyrate_setpoint(_rates_sp.roll);
 					_pitch_ctrl.set_bodyrate_setpoint(_rates_sp.pitch);
+					_pitch_sp_ctrl.set_bodyrate_setpoint(_rates_sp.pitch);
 					_yaw_ctrl.set_bodyrate_setpoint(_rates_sp.yaw);
 
 					float roll_u = _roll_ctrl.control_bodyrate(control_input);
 					_actuators.control[actuator_controls_rw_s::INDEX_ROTOR_ROLL] = (PX4_ISFINITE(roll_u)) ? roll_u + trim_roll : trim_roll;
 
-					float pitch_u = _pitch_ctrl.control_bodyrate(control_input);
+                    float pitch_u = _pitch_ctrl.control_bodyrate(control_input);
+                    pitch_u = _pitch_sp_ctrl.control_bodyrate(control_input);
 					_actuators.control[actuator_controls_rw_s::INDEX_THROTTLE] = (PX4_ISFINITE(pitch_u)) ? pitch_u + trim_pitch : trim_pitch;
 
 					float yaw_u = _yaw_ctrl.control_bodyrate(control_input);
