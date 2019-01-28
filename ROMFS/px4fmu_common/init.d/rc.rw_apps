@@ -27,7 +27,10 @@ rw_att_control start
 #rw_pos_control_l1 start
 
 fw_pos_control_l1 start
+
 rotor_frequency
+
+rw_prerotate start
 
 #
 # Start Land Detector.
