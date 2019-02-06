@@ -356,20 +356,36 @@ PARAM_DEFINE_FLOAT(FW_WR_IMAX, 1.0f);
 PARAM_DEFINE_FLOAT(FW_W_RMAX, 30.0f);
 
 /**
- * Roll rate feed forward
- *
- * Direct feed forward from rate setpoint to control surface output. Use this
- * to obtain a tigher response of the controller without introducing
- * noise amplification.
- *
- * @unit %/rad/s
- * @min 0.0
- * @max 10.0
- * @decimal 2
- * @increment 0.05
- * @group FW Attitude Control
- */
+* Roll rate feed forward
+*
+* Direct feed forward from rate setpoint to control surface output. Use this
+* to obtain a tigher response of the controller without introducing
+* noise amplification.
+*
+* @unit %/rad/s
+* @min 0.0
+* @max 10.0
+* @decimal 2
+* @increment 0.05
+* @group FW Attitude Control
+*/
 PARAM_DEFINE_FLOAT(FW_RR_FF, 0.5f);
+
+
+/**
+* Roll rate throttle feed forward
+*
+* Direct feed forward from throttle control. This should reduce
+* moment forces created by main motor.
+*
+* @unit ??
+* @min -10.0
+* @max 10.0
+* @decimal 2
+* @increment 0.05
+* @group RW Attitude Control
+*/
+PARAM_DEFINE_FLOAT(FW_RR_FFT, 0.0f);
 
 /**
  * Pitch rate feed forward

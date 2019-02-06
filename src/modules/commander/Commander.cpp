@@ -292,6 +292,87 @@ int commander_main(int argc, char *argv[])
 		return 1;
 	}
 
+    if (!strcmp(argv[1], "state")) {
+        switch (internal_state.main_state) {
+            case commander_state_s::MAIN_STATE_MANUAL:
+                PX4_INFO("Current state is MANUAL");
+                break;
+            case commander_state_s::MAIN_STATE_ALTCTL:
+                PX4_INFO("Current state is ALTCTL");
+                break;
+            case commander_state_s::MAIN_STATE_POSCTL:
+                PX4_INFO("Current state is POSCTL");
+                break;
+            case commander_state_s::MAIN_STATE_AUTO_MISSION:
+                PX4_INFO("Current state is MISSION");
+                break;
+            case commander_state_s::MAIN_STATE_AUTO_LOITER:
+                PX4_INFO("Current state is LOITER");
+                break;
+            case commander_state_s::MAIN_STATE_AUTO_RTL:
+                PX4_INFO("Current state is RTL");
+                break;
+            case commander_state_s::MAIN_STATE_ACRO:
+                PX4_INFO("Current state is ACRO");
+                break;
+            case commander_state_s::MAIN_STATE_OFFBOARD:
+                PX4_INFO("Current state is OFFBOARD");
+                break;
+            case commander_state_s::MAIN_STATE_STAB:
+                PX4_INFO("Current state is STAB");
+                break;
+            case commander_state_s::MAIN_STATE_RATTITUDE:
+                PX4_INFO("Current state is RATTITUDE");
+                break;
+            case commander_state_s::MAIN_STATE_AUTO_TAKEOFF :
+                PX4_INFO("Current state is TAKEOFF");
+                break;
+            case commander_state_s::MAIN_STATE_AUTO_LAND :
+                PX4_INFO("Current state is LAND");
+                break;
+            case commander_state_s::MAIN_STATE_AUTO_FOLLOW_TARGET :
+                PX4_INFO("Current state is TARGET");
+                break;
+            case commander_state_s::MAIN_STATE_AUTO_PRECLAND :
+                PX4_INFO("Current state is PRECLAND");
+                break;
+            case commander_state_s::MAIN_STATE_ORBIT :
+                PX4_INFO("Current state is ORBIT");
+                break;
+            case commander_state_s::MAIN_STATE_MAX :
+                PX4_INFO("Current state is MAX");
+                break;
+            case commander_state_s::MAIN_STATE_PREROTATE :
+                PX4_INFO("Current state is PREROTATE");
+                break;
+            case commander_state_s::MAIN_STATE_RR_MANUAL:
+                PX4_INFO("Current state is ROVERROOF MANUAL");
+                break;
+            case commander_state_s::MAIN_STATE_RR_STAB:
+                PX4_INFO("Current state is ROVERROOF STABILIZED");
+                break;
+        }
+
+        PX4_INFO("MANUAL enabled %d", control_mode.flag_control_manual_enabled);
+        PX4_INFO("AUTO enabled %d", control_mode.flag_control_auto_enabled);
+        PX4_INFO("OFFBOARD enabled %d", control_mode.flag_control_offboard_enabled);
+        PX4_INFO("RATES enabled %d", control_mode.flag_control_rates_enabled);
+        PX4_INFO("Attitude enabled %d", control_mode.flag_control_attitude_enabled);
+        PX4_INFO("Rattitude enabled %d", control_mode.flag_control_rattitude_enabled);
+        PX4_INFO("FORCE enabled %d", control_mode.flag_control_manual_enabled);
+        PX4_INFO("ACCEL enabled %d", control_mode.flag_control_manual_enabled);
+        PX4_INFO("VELOCITY enabled %d", control_mode.flag_control_velocity_enabled);
+        PX4_INFO("POSITION enabled %d", control_mode.flag_control_position_enabled);
+        PX4_INFO("ALTITUDE enabled %d", control_mode.flag_control_altitude_enabled);
+        PX4_INFO("CLIMB enabled %d", control_mode.flag_control_climb_rate_enabled);
+        PX4_INFO("TERMINATION enabled %d", control_mode.flag_control_termination_enabled);
+        PX4_INFO("DHG enabled %d", control_mode.flag_control_fixed_hdg_enabled);
+        PX4_INFO("ROVERROOF enabled %d", control_mode.flag_control_roverroof_enabled);
+        PX4_INFO("PREROTATE enabled %d", control_mode.flag_control_prerotator_enabled);
+
+        return 1;
+    }
+
 	if (!strcmp(argv[1], "start")) {
 
 		if (thread_running) {
@@ -491,6 +572,16 @@ int commander_main(int argc, char *argv[])
 			} else if (!strcmp(argv[2], "auto:precland")) {
 				new_main_state = commander_state_s::MAIN_STATE_AUTO_PRECLAND;
 
+            //TF:
+            } else if (!strcmp(argv[2], "rr_stabilized")) {
+				new_main_state = commander_state_s::MAIN_STATE_RR_STAB;
+
+			} else if (!strcmp(argv[2], "rr_manual")) {
+				new_main_state = commander_state_s::MAIN_STATE_RR_MANUAL;
+
+			} else if (!strcmp(argv[2], "prerotate")) {
+				new_main_state = commander_state_s::MAIN_STATE_PREROTATE;
+
 			} else {
 				PX4_ERR("argument %s unsupported.", argv[2]);
 			}
@@ -529,7 +620,7 @@ void usage(const char *reason)
 		PX4_INFO("%s", reason);
 	}
 
-	PX4_INFO("usage: commander {start|stop|status|calibrate|check|arm|disarm|takeoff|land|transition|mode}\n");
+	PX4_INFO("usage: commander {start|stop|status|calibrate|check|arm|disarm|takeoff|land|transition|mode|state}\n");
 }
 
 void print_status()
@@ -778,11 +869,20 @@ Commander::handle_command(vehicle_status_s *status_local, const vehicle_command_
 						break;
 					}
 
-                    // Refuse to arm if in manual with non-zero throttle
+
+                    //TF-TODO: ochrana pred naarmovanim
+
+                    // // Refuse to arm if in manual with non-zero throttle
+					// if (cmd_arms
+					//     && (status_local->nav_state == vehicle_status_s::NAVIGATION_STATE_MANUAL
+					// 	|| status_local->nav_state == vehicle_status_s::NAVIGATION_STATE_ACRO
+					// 	|| status_local->nav_state == vehicle_status_s::NAVIGATION_STATE_STAB
+					// 	|| status_local->nav_state == vehicle_status_s::NAVIGATION_STATE_RATTITUDE)
+					//     && (sp_man.z > 0.1f)) {
+
+
 					if (cmd_arms
-					    && (status_local->nav_state == vehicle_status_s::NAVIGATION_STATE_MANUAL
-						|| status_local->nav_state == vehicle_status_s::NAVIGATION_STATE_ACRO
-						|| status_local->nav_state == vehicle_status_s::NAVIGATION_STATE_STAB
+					    && (status_local->nav_state == vehicle_status_s::NAVIGATION_STATE_STAB
 						|| status_local->nav_state == vehicle_status_s::NAVIGATION_STATE_RATTITUDE)
 					    && (sp_man.z > 0.1f)) {
 
@@ -1066,6 +1166,8 @@ Commander::handle_command(vehicle_status_s *status_local, const vehicle_command_
 	case vehicle_command_s::VEHICLE_CMD_DO_SET_ROI_LOCATION:
 	case vehicle_command_s::VEHICLE_CMD_DO_SET_ROI_WPNEXT_OFFSET:
 	case vehicle_command_s::VEHICLE_CMD_DO_SET_ROI_NONE:
+	case vehicle_command_s::VEHICLE_CMD_PREROTATOR_START:
+    case vehicle_command_s::VEHICLE_CMD_PREROTATOR_TERMINATE:
 		/* ignore commands that are handled by other parts of the system */
 		break;
 
@@ -3229,8 +3331,29 @@ set_control_mode()
 	control_mode.flag_armed = armed.armed;
 	control_mode.flag_external_manual_override_ok = (!status.is_rotary_wing && !status.is_vtol);
 	control_mode.flag_control_offboard_enabled = false;
+    //TF:
+    control_mode.flag_control_prerotator_enabled = false;
+    control_mode.flag_control_roverroof_enabled = false;
+
 
 	switch (status.nav_state) {
+
+    //TF:
+    case vehicle_status_s::NAVIGATION_STATE_PREROTATE:
+    	control_mode.flag_control_manual_enabled = false;
+		control_mode.flag_control_auto_enabled = true;
+		control_mode.flag_control_rates_enabled = false;
+		control_mode.flag_control_attitude_enabled = false;
+		control_mode.flag_control_rattitude_enabled = false;
+		control_mode.flag_control_altitude_enabled = false;
+		control_mode.flag_control_climb_rate_enabled = false;
+		control_mode.flag_control_position_enabled = false;
+		control_mode.flag_control_velocity_enabled = false;
+		control_mode.flag_control_acceleration_enabled = false;
+		control_mode.flag_control_termination_enabled = false;
+        control_mode.flag_control_prerotator_enabled = true;
+		break;
+
 	case vehicle_status_s::NAVIGATION_STATE_MANUAL:
 		control_mode.flag_control_manual_enabled = true;
 		control_mode.flag_control_auto_enabled = false;
@@ -3247,6 +3370,38 @@ set_control_mode()
 
 	case vehicle_status_s::NAVIGATION_STATE_STAB:
 		control_mode.flag_control_manual_enabled = true;
+		control_mode.flag_control_auto_enabled = false;
+		control_mode.flag_control_rates_enabled = true;
+		control_mode.flag_control_attitude_enabled = true;
+		control_mode.flag_control_rattitude_enabled = false;
+		control_mode.flag_control_altitude_enabled = false;
+		control_mode.flag_control_climb_rate_enabled = false;
+		control_mode.flag_control_position_enabled = false;
+		control_mode.flag_control_velocity_enabled = false;
+		control_mode.flag_control_acceleration_enabled = false;
+		control_mode.flag_control_termination_enabled = false;
+		break;
+
+    //TF:
+	case vehicle_status_s::NAVIGATION_STATE_RR_MANUAL:
+        control_mode.flag_control_roverroof_enabled = true;
+		control_mode.flag_control_manual_enabled = true;
+		control_mode.flag_control_auto_enabled = false;
+		control_mode.flag_control_rates_enabled = stabilization_required();
+		control_mode.flag_control_attitude_enabled = stabilization_required();
+		control_mode.flag_control_rattitude_enabled = false;
+		control_mode.flag_control_altitude_enabled = false;
+		control_mode.flag_control_climb_rate_enabled = false;
+		control_mode.flag_control_position_enabled = false;
+		control_mode.flag_control_velocity_enabled = false;
+		control_mode.flag_control_acceleration_enabled = false;
+		control_mode.flag_control_termination_enabled = false;
+		break;
+
+    //TF:
+	case vehicle_status_s::NAVIGATION_STATE_RR_STAB:
+        control_mode.flag_control_roverroof_enabled = true;
+        control_mode.flag_control_manual_enabled = true;
 		control_mode.flag_control_auto_enabled = false;
 		control_mode.flag_control_rates_enabled = true;
 		control_mode.flag_control_attitude_enabled = true;

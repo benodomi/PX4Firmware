@@ -48,7 +48,7 @@
 #ifndef ROTORWINGPOSITIONCONTROL_HPP_
 #define ROTORWINGPOSITIONCONTROL_HPP_
 
-#include "../rw_pos_control_l1/launchdetection/LaunchDetector.h"
+#include "launchdetection/LaunchDetector.h"
 #include "roverroof_takeoff/RoverroofTakeoff.h"
 
 #include <cfloat>

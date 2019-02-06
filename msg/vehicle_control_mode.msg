@@ -17,4 +17,6 @@ bool flag_control_altitude_enabled		# true if altitude is controlled
 bool flag_control_climb_rate_enabled		# true if climb rate is controlled
 bool flag_control_termination_enabled		# true if flighttermination is enabled
 bool flag_control_fixed_hdg_enabled			# true if using a fixed heading for user control
-bool flag_control_prerotator_enabled
+#TF:
+bool flag_control_roverroof_enabled         # true if plane is mounted in rover-roof mount
+bool flag_control_prerotator_enabled        # true if prerotator is active

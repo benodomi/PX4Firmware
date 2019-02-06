@@ -158,6 +158,7 @@ private:
 		float r_p;
 		float r_i;
 		float r_ff;
+		//float r_fft;
 		float r_integrator_max;
 		float r_rmax;
 		float y_p;
@@ -234,6 +235,7 @@ private:
 		param_t r_p;
 		param_t r_i;
 		param_t r_ff;
+		//param_t r_fft;
 		param_t r_integrator_max;
 		param_t r_rmax;
 		param_t y_p;
@@ -295,8 +297,8 @@ private:
 
 	} _parameter_handles{};		/**< handles for interesting parameters */
 
-	ECL_RollController			_roll_ctrl;
 	ECL_PitchController			_pitch_ctrl;
+	ECL_RollController			_roll_ctrl;
 	ECL_PitchSetpointController	_pitch_sp_ctrl;
 	ECL_YawController			_yaw_ctrl;
 	ECL_WheelController			_wheel_ctrl;

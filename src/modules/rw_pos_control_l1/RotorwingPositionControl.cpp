@@ -568,8 +568,8 @@ RotorwingPositionControl::tecs_status_publish()
 	t.airspeed_sp = _tecs.TAS_setpoint_adj();
 	t.airspeed_filtered = _tecs.tas_state();
 
-	t.flight_path_angle_sp = _tecs.hgt_rate_setpoint();
-	t.flight_path_angle = _tecs.vert_vel_state();
+	t.height_rate_setpoint = _tecs.hgt_rate_setpoint();
+	t.height_rate = _tecs.vert_vel_state();
 
 	t.airspeed_derivative_sp = _tecs.TAS_rate_setpoint();
 	t.airspeed_derivative = _tecs.speed_derivative();
@@ -916,7 +916,7 @@ RotorwingPositionControl::control_position(const Vector2f &curr_pos, const Vecto
 		}
 
 		if (pos_sp_curr.type == position_setpoint_s::SETPOINT_TYPE_IDLE) {
-			_att_sp.thrust = 0.0f;
+			_att_sp.thrust_body[0] = 0.0f;
 			_att_sp.roll_body = 0.0f;
 			_att_sp.pitch_body = 0.0f;
 
@@ -1185,30 +1185,30 @@ RotorwingPositionControl::control_position(const Vector2f &curr_pos, const Vecto
 		/* making sure again that the correct thrust is used,
 		 * without depending on library calls for safety reasons.
 		   the pre-takeoff throttle and the idle throttle normally map to the same parameter. */
-		_att_sp.thrust = _parameters.throttle_idle;
+		_att_sp.thrust_body[0] = _parameters.throttle_idle;
 
 	} else if (_control_mode_current == FW_POSCTRL_MODE_AUTO &&
 		   pos_sp_curr.type == position_setpoint_s::SETPOINT_TYPE_TAKEOFF &&
 		   _roverroof_takeoff.runwayTakeoffEnabled()) {
 
-		_att_sp.thrust = _roverroof_takeoff.getThrottle(min(get_tecs_thrust(), throttle_max));
+		_att_sp.thrust_body[0] = _roverroof_takeoff.getThrottle(min(get_tecs_thrust(), throttle_max));
 
 	} else if (_control_mode_current == FW_POSCTRL_MODE_AUTO &&
 		   pos_sp_curr.type == position_setpoint_s::SETPOINT_TYPE_IDLE) {
 
-		_att_sp.thrust = 0.0f;
+		_att_sp.thrust_body[0] = 0.0f;
 
 	} else if (_control_mode_current == FW_POSCTRL_MODE_OTHER) {
-		_att_sp.thrust = min(_att_sp.thrust, _parameters.throttle_max);
+		_att_sp.thrust_body[0] = min(_att_sp.thrust_body[0], _parameters.throttle_max);
 
 	} else {
 		/* Copy thrust and pitch values from tecs */
 		if (_vehicle_land_detected.landed) {
 			// when we are landed state we want the motor to spin at idle speed
-			_att_sp.thrust = min(_parameters.throttle_idle, throttle_max);
+			_att_sp.thrust_body[0] = min(_parameters.throttle_idle, throttle_max);
 
 		} else {
-			_att_sp.thrust = min(get_tecs_thrust(), throttle_max);
+			_att_sp.thrust_body[0] = min(get_tecs_thrust(), throttle_max);
 		}
 	}
 

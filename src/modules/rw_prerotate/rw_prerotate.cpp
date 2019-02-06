@@ -8,6 +8,8 @@
 #include <unistd.h>
 #include <errno.h>
 #include <math.h>
+#include <mathlib/mathlib.h>
+#include <matrix/math.hpp>
 #include <poll.h>
 #include <drivers/drv_hrt.h>
 #include <arch/board/board.h>
@@ -44,6 +46,8 @@ public:
     /* Start the flip state switch task */
     /* @return OK on success*/
     int start();
+
+    int prerotate_start();
     /**
      * This function handles the Mavlink command long messages
      * It will execute appropriate actions according to input
@@ -146,8 +150,8 @@ void RwPrerotate::handle_command(struct vehicle_command_s *cmd)
     case vehicle_command_s::VEHICLE_CMD_PREROTATOR_START:
 
         warnx("Prerotation initiated");
-
-        _prerotate_state = PREROTATE_STATE_START;
+        _prerotate_state = PREROTATE_STATE_READY;
+        warnx("Prerotation initiated 2");
         break;
     case vehicle_command_s::VEHICLE_CMD_PREROTATOR_TERMINATE:
 
@@ -281,12 +285,19 @@ void RwPrerotate::task_main()
          */
         vehicle_control_mode_poll();
 
-
+        uint64_t start = hrt_absolute_time();
         /*
          * switch to faster update during the flip
          */
+        _vehicle_control_mode.flag_control_prerotator_enabled = true;
+        warnx("Pomala");
+        if ((_prerotate_state > PREROTATE_STATE_DISABLED)&&(!_vehicle_control_mode.flag_control_prerotator_enabled)){
+            errx(1,"Neni zapnuty PREROTATE mode.");
+            _prerotate_state = PREROTATE_STATE_DISABLED;
+        }
         while ((_prerotate_state > PREROTATE_STATE_DISABLED)&&(_vehicle_control_mode.flag_control_prerotator_enabled)){
-
+        //while ((_prerotate_state > PREROTATE_STATE_DISABLED)){
+            warnx("smycka");
             // update commands
             orb_check(_command_sub, &updated);
             if (updated) {
@@ -306,12 +317,14 @@ void RwPrerotate::task_main()
             // disable _v_control_mode.flag_control_manual_enabled
             if (_vehicle_control_mode.flag_control_manual_enabled) {
                 _vehicle_control_mode.flag_control_manual_enabled = false;
+                warnx("ZMENA FLAGU..");
                 topic_changed = true;
             }
 
             // disable _v_control_mode.flag_conttrol_attitude_enabled
             if (_vehicle_control_mode.flag_control_attitude_enabled) {
                 _vehicle_control_mode.flag_control_attitude_enabled = false;
+                warnx("ZMENA FLAGU..");
                 topic_changed = true;
             }
 
@@ -326,91 +339,146 @@ void RwPrerotate::task_main()
             }
 
             switch (_prerotate_state) {
+
+            /*
+                State of nothing to do
+            */
             case PREROTATE_STATE_DISABLED:
                 break;
 
+            /*
+                Prepare rotor head and flags for prerotation
+            */
             case PREROTATE_STATE_READY:
+                warnx("Zacatek: PREROTATE_STATE_READY");
+                //_vehicle_control_mode.flag_control_manual_enabled = false;
+                //_vehicle_control_mode.flag_control_attitude_enabled = false;
+                //orb_publish(ORB_ID(vehicle_control_mode), _vehicle_control_mode_pub, &_vehicle_control_mode);
+                warnx("nastaveny control mode");
                 _actuators.control[actuator_controls_rw_s::INDEX_ROTOR_ROLL] = 0;
                 _actuators.control[actuator_controls_rw_s::INDEX_ROTOR_PITCH] = 1;
                 _actuators.control[actuator_controls_rw_s::INDEX_THROTTLE] = -1;
                 _actuators.control[actuator_controls_rw_s::INDEX_PREROTATOR] = -1;
+
+                // _vehicle_rates_setpoint.roll = 1;
+                // _vehicle_rates_setpoint.pitch = -1;
+                // _vehicle_rates_setpoint.yaw = -1;
+                // _vehicle_rates_setpoint.thrust = 1;
+                // orb_publish(ORB_ID(vehicle_rates_setpoint), _vehicle_rates_setpoint_pub, &_vehicle_rates_setpoint);
+
+
+                warnx("Nastaveny vystupy");
+                start = hrt_absolute_time();
+                _prerotate_state = PREROTATE_STATE_START;
+                //warnx(start);
                 break;
 
+            /*
+                Because of high mass of rotor and not so powerfull prerotator motors
+                this state puts some initial PPM value to ESC input. Itihiar PPM
+                value is set in parametr ''. Then it wait to prerotate to some
+                target rotor speed stored in parametr ''.
+            */
             case PREROTATE_STATE_START:
                 _actuators.control[actuator_controls_rw_s::INDEX_ROTOR_ROLL] = 0;
                 _actuators.control[actuator_controls_rw_s::INDEX_ROTOR_PITCH] = 1;
                 _actuators.control[actuator_controls_rw_s::INDEX_THROTTLE] = -1;
                 _actuators.control[actuator_controls_rw_s::INDEX_PREROTATOR] = prerotator_start_up/50.0f - 1.0f;
 
-                //if (_rf_report.indicated_frequency_rpm > )
+                //
+                // _vehicle_rates_setpoint.roll = 1;
+                // _vehicle_rates_setpoint.pitch = -1;
+                // _vehicle_rates_setpoint.yaw = -1;
+                // _vehicle_rates_setpoint.thrust = 1;
+                // orb_publish(ORB_ID(vehicle_rates_setpoint), _vehicle_rates_setpoint_pub, &_vehicle_rates_setpoint);
+
+
+                if (hrt_elapsed_time(&start) > 2000000) {   // Wait 5 second
+                    _prerotate_state = PREROTATE_STATE_RAMPUP;
+                    start = hrt_absolute_time();
+                    warnx("Prechazim na dalsi krok: RAMPUP.");
+                }
+
+                //if (_rf_report.indicated_frequency_rpm > _prer_min_rpm){
+                //  start = hrt_absolute_time();
+                //  _prerotate_state = PREROTATE_STATE_RAMPUP;
+                //  errx(1, "Prechazim na dalsi krok: start.");
+                //}
                 break;
 
+            /*
+                In this state the rotor is rotating at some minimal speed ('')
+                Rotor is getting higher speed until the target speed ('') is
+                reached. Every ('')
+                Every ('') seconds it wait rotor speed stabilisation to vertify
+                that actual is speed corresponding with set output. It waiting for
+                acceleration is smaller then parametr ('').
+            */
             case PREROTATE_STATE_RAMPUP:
+
+
+                // _vehicle_rates_setpoint.roll = -1;
+                // _vehicle_rates_setpoint.pitch = 1;
+                // _vehicle_rates_setpoint.yaw = 1;
+                // _vehicle_rates_setpoint.thrust = -1;
+                // orb_publish(ORB_ID(vehicle_rates_setpoint), _vehicle_rates_setpoint_pub, &_vehicle_rates_setpoint);
+
+
+                //TF-TODO: nahradit za parametr
+                _actuators.control[actuator_controls_rw_s::INDEX_PREROTATOR] = (hrt_absolute_time()-start)/1000000.0f * 2.0f - 1.0f;
+                warnx("PREROTATOR RUMPUP %.4f %.4f> %.4f", (double)(hrt_absolute_time()-start), (double)start, (double)_actuators.control[actuator_controls_rw_s::INDEX_PREROTATOR]);
+
+                _actuators.timestamp = hrt_absolute_time();
+
+                if (_actuators_0_pub != nullptr) {
+					orb_publish(_actuators_id, _actuators_0_pub, &_actuators);
+
+				} else if (_actuators_id) {
+					_actuators_0_pub = orb_advertise(_actuators_id, &_actuators);
+				}
+
+                if (hrt_elapsed_time(&start) > 15000000) {   // Wait 15 second
+                    _prerotate_state = PREROTATE_STATE_HOLD;
+                    start = hrt_absolute_time();
+                    warnx("Prechazim na dalsi krok: HOLD.");
+                }
+
                 break;
 
-
+            /*
+                In this state it hold prerotator output with the same value.
+            */
             case PREROTATE_STATE_HOLD:
+
+                _actuators.control[actuator_controls_rw_s::INDEX_PREROTATOR] = 0;
+                _prerotate_state = PREROTATE_STATE_DONE;
+                start = hrt_absolute_time();
+                warnx("Prechazim na dalsi krok: DONE.");
+
                 break;
 
-
+            /*
+                Aircraft flags are set to previous configuration.
+            */
             case PREROTATE_STATE_DONE:
+                //TF-TODO: opravdu nastavit predchozi hodnotu.
+                _prerotate_state = PREROTATE_STATE_DISABLED;
+                warnx("NASTAVUJI PUVODNI DATA");
                 _vehicle_control_mode.flag_control_manual_enabled = true;
                 _vehicle_control_mode.flag_control_attitude_enabled = true;
                 orb_publish(ORB_ID(vehicle_control_mode), _vehicle_control_mode_pub, &_vehicle_control_mode);
-
-                // switch back to disabled flip state
-                _prerotate_state = PREROTATE_STATE_DISABLED;
+                warnx("DONE.....");
                 break;
-
-            // case FLIP_STATE_ROLL:
-            //     /*
-            //      * 400 degree/second roll to 90 degrees
-            //      */
-            // {
-            //     _vehicle_rates_setpoint.roll = rotate_rate;
-            //     _vehicle_rates_setpoint.pitch = 0;
-            //     _vehicle_rates_setpoint.yaw = 0;
-            //     _vehicle_rates_setpoint.thrust = 0.75;
-            //
-            //     orb_publish(ORB_ID(vehicle_rates_setpoint), _vehicle_rates_setpoint_pub, &_vehicle_rates_setpoint);
-            //
-            //     if ((_attitude.roll > 0.0f && _attitude.roll < rotate_target_45) || (_attitude.roll < 0.0f && _attitude.roll > -rotate_target_45)) {
-            //         _prerotate_state = FLIP_STATE_RECOVER;
-            //     }
-            // }
-            //     break;
-            //
-            // case FLIP_STATE_RECOVER:
-            //     /*
-            //      * level the vehicle
-            //      */
-            //     _vehicle_control_mode.flag_control_attitude_enabled = true;
-            //     orb_publish(ORB_ID(vehicle_control_mode), _vehicle_control_mode_pub, &_vehicle_control_mode);
-            //
-            //     _prerotate_state = FLIP_STATE_FINISHED;
-            //     break;
-            //
-            // case FLIP_STATE_FINISHED:
-            //     /*
-            //      * go back to disabled state
-            //      */
-            //
-            //     // enable manual control and attitude control
-            //     _vehicle_control_mode.flag_control_manual_enabled = true;
-            //     _vehicle_control_mode.flag_control_attitude_enabled = true;
-            //     orb_publish(ORB_ID(vehicle_control_mode), _vehicle_control_mode_pub, &_vehicle_control_mode);
-            //
-            //     // switch back to disabled flip state
-            //     _prerotate_state = FLIP_STATE_DISABLED;
-            //     break;
 
             }
 
 
             if (_actuators_0_pub != nullptr) {
+                warnx("ODESLANI DATnull");
                 orb_publish(_actuators_id, _actuators_0_pub, &_actuators);
 
             } else if (_actuators_id) {
+                warnx("ODESLANI DAT1");
                 _actuators_0_pub = orb_advertise(_actuators_id, &_actuators);
             }
 
@@ -418,6 +486,14 @@ void RwPrerotate::task_main()
             usleep(sleeptime_us);
         }
     }
+}
+
+int RwPrerotate::prerotate_start()
+{
+    warnx("Prerotate_start initiated");
+    _prerotate_state = PREROTATE_STATE_READY;
+
+    return OK;
 }
 
 int RwPrerotate::start()
@@ -431,6 +507,7 @@ int RwPrerotate::start()
                                     2048,
                                     (px4_main_t)&RwPrerotate::task_main_trampoline,
                                     nullptr);
+    warnx("START funkce");
 
     if (_prerotate_task < 0) {
         warn("task start failed");
@@ -445,7 +522,7 @@ int rw_prerotate_main(int argc, char *argv[])
 {
     /* warn if no input argument */
     if (argc < 2) {
-        warnx("usage: rw_prerotate {start|stop|status|state}");
+        warnx("usage: rw_prerotate {start|stop|status|state|prerotate}");
         return 1;
     }
 
@@ -483,6 +560,17 @@ int rw_prerotate_main(int argc, char *argv[])
 
         delete rw_prerotate::g_prerotate;
         rw_prerotate::g_prerotate = nullptr;
+        return 0;
+    }
+
+    if (!strcmp(argv[1], "prerotate")) {
+        if (rw_prerotate::g_prerotate == nullptr) {
+            warnx("not running");
+            return 1;
+        }
+
+        rw_prerotate::g_prerotate->prerotate_start();
+
         return 0;
     }
 

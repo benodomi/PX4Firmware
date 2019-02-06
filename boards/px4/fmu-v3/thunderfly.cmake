@@ -82,7 +82,7 @@ px4_add_board(
 		mc_att_control
 		mc_pos_control
         rw_att_control
-        #rw_pos_control_l1
+        rw_pos_control_l1
         rw_prerotate
 		navigator
 		position_estimator_inav

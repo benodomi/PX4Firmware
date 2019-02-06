@@ -32,12 +32,12 @@
 ############################################################################
 
 #add_subdirectory(launchdetection)
-#add_subdirectory(roverroof_takeoff)
+add_subdirectory(roverroof_takeoff)
 
 px4_add_module(
 	MODULE modules__rw_pos_control_l1
 	MAIN rw_pos_control_l1
-	STACK_MAIN 1200
+	#STACK_MAIN 1200
 	SRCS
 		RotorwingPositionControl.cpp
 	DEPENDS
@@ -46,6 +46,5 @@ px4_add_module(
 		ecl_tecs
 		launchdetection
 		landing_slope
-		runway_takeoff
-		#roverroof_takeoff
+		roverroof_takeoff
 	)

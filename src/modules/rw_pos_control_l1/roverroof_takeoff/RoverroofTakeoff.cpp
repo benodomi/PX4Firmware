@@ -48,7 +48,7 @@
 
 using matrix::Vector2f;
 
-namespace rowerrooftakeoff
+namespace roverrooftakeoff
 {
 
 RoverroofTakeoff::RoverroofTakeoff(ModuleParams *parent) :

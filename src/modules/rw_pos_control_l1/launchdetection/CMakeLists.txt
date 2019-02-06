@@ -31,6 +31,7 @@
 #
 ############################################################################
 
-px4_add_library(roverroof_takeoff
-	RoverroofTakeoff.cpp
+px4_add_library(launchdetection
+	LaunchDetector.cpp
+	CatapultLaunchMethod.cpp
 )
