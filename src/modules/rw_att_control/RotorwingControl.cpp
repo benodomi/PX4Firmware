@@ -713,23 +713,18 @@ void RotorwingAttitudeControl::run()
 						control_input.pitch_rate_setpoint = _pitch_ctrl.get_desired_rate();
 						control_input.yaw_rate_setpoint = _yaw_ctrl.get_desired_rate();
 
-                        /* Run attitude RATE controllers which need the desired attitudes from above, add trim */
-                        float roll_u = _roll_ctrl.control_euler_rate(control_input);
-						_actuators.control[actuator_controls_rw_s::INDEX_ROTOR_ROLL] = (PX4_ISFINITE(roll_u)) ? roll_u + trim_roll + _actuators.control[actuator_controls_rw_s::INDEX_THROTTLE] * _parameters.r_fft: trim_roll;
-
-						if (!PX4_ISFINITE(roll_u)) {
-							_roll_ctrl.reset_integrator();
-							perf_count(_nonfinite_output_perf);
-						}
-
                         float pitch_u = _pitch_ctrl.control_euler_rate(control_input);
                         _actuators.control[actuator_controls_rw_s::INDEX_THROTTLE] = (PX4_ISFINITE(pitch_u)) ? pitch_u + trim_pitch : trim_pitch;
 
                          if(_vcontrol_mode.flag_control_roverroof_enabled){
-                             _actuators.control[actuator_controls_rw_s::INDEX_THROTTLE] = -2.0f * (0.5f + ((PX4_ISFINITE(pitch_u)) ? pitch_u + trim_pitch : trim_pitch)/2.0f);
+                             _actuators.control[actuator_controls_rw_s::INDEX_THROTTLE] = (-2.0f*((PX4_ISFINITE(pitch_u)) ? pitch_u + trim_pitch : trim_pitch))-1.0f;
                          }else{
                              _actuators.control[actuator_controls_rw_s::INDEX_THROTTLE] =  ((((PX4_ISFINITE(pitch_u)) ? pitch_u + trim_pitch : trim_pitch))-1.0f)*2.0f;
                          }
+
+
+                         _actuators.control[actuator_controls_rw_s::INDEX_THROTTLE] = math::constrain(
+                                     _actuators.control[actuator_controls_rw_s::INDEX_THROTTLE], -1.0f, 1.0f);
 
 						if (!PX4_ISFINITE(pitch_u)) {
 							_pitch_ctrl.reset_integrator();
@@ -756,10 +751,14 @@ void RotorwingAttitudeControl::run()
                                 }
                         }
 
-                    // ROLL
-    					/* Run attitude RATE controllers which need the desired attitudes from above, add trim */
-    					// float roll_u = _roll_ctrl.control_euler_rate(control_input);
-    					// _actuators.control[actuator_controls_rw_s::INDEX_ROTOR_ROLL] = (PX4_ISFINITE(roll_u)) ? roll_u + trim_roll : trim_roll;
+                        /* Run attitude RATE controllers which need the desired attitudes from above, add trim */
+                        float roll_u = _roll_ctrl.control_euler_rate(control_input);
+                        _actuators.control[actuator_controls_rw_s::INDEX_ROTOR_ROLL] = (PX4_ISFINITE(roll_u)) ? roll_u + trim_roll + (_actuators.control[actuator_controls_rw_s::INDEX_THROTTLE]+1.0f)/2 * _parameters.r_fft: trim_roll;
+
+                        if (!PX4_ISFINITE(roll_u)) {
+                            _roll_ctrl.reset_integrator();
+                            perf_count(_nonfinite_output_perf);
+                        }
 
                         _actuators.control[actuator_controls_rw_s::INDEX_ROTOR_PITCH] = -2.0f * (_manual.z-0.5f);
                         //_actuators.control[actuator_controls_rw_s::INDEX_ROTOR_PITCH] = 0.0f;
