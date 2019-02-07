@@ -33,7 +33,7 @@
 
 #include <px4_module.h>
 #include <drivers/drv_hrt.h>
-#include <ecl/attitude_rw/ecl_pitch_setpoint_controller.h>
+//#include <ecl/attitude_rw/ecl_pitch_setpoint_controller.h>
 #include <ecl/attitude_rw/ecl_pitch_controller.h>
 #include <ecl/attitude_rw/ecl_roll_controller.h>
 #include <ecl/attitude_rw/ecl_wheel_controller.h>
@@ -158,7 +158,7 @@ private:
 		float r_p;
 		float r_i;
 		float r_ff;
-		//float r_fft;
+		float r_fft;
 		float r_integrator_max;
 		float r_rmax;
 		float y_p;
@@ -235,7 +235,7 @@ private:
 		param_t r_p;
 		param_t r_i;
 		param_t r_ff;
-		//param_t r_fft;
+		param_t r_fft;
 		param_t r_integrator_max;
 		param_t r_rmax;
 		param_t y_p;
@@ -299,7 +299,7 @@ private:
 
 	ECL_PitchController			_pitch_ctrl;
 	ECL_RollController			_roll_ctrl;
-	ECL_PitchSetpointController	_pitch_sp_ctrl;
+	//ECL_PitchSetpointController	_pitch_sp_ctrl;
 	ECL_YawController			_yaw_ctrl;
 	ECL_WheelController			_wheel_ctrl;
 
