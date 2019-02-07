@@ -403,6 +403,13 @@ void Simulator::handle_message(mavlink_message_t *msg, bool publish)
 		publish_distance_topic(&dist);
 		break;
 
+	case MAVLINK_MSG_ID_ROTOR_FREQUENCY:
+		mavlink_rotor_frequency_t rotorfreq;
+		mavlink_msg_rotor_frequency_decode(msg, &rotorfreq);
+        PX4_WARN("RotorFreq: %f", rotorfreq.measured_frequency_rpm);
+		/*publish_distance_topic(&dist);*/
+		break;
+
 	case MAVLINK_MSG_ID_HIL_GPS:
 		mavlink_hil_gps_t gps_sim;
 		mavlink_msg_hil_gps_decode(msg, &gps_sim);
