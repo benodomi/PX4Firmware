@@ -761,12 +761,7 @@ void RotorwingAttitudeControl::run()
                         }
 
                         _actuators.control[actuator_controls_rw_s::INDEX_ROTOR_PITCH] = -2.0f * (_manual.z-0.5f);
-                        //_actuators.control[actuator_controls_rw_s::INDEX_ROTOR_PITCH] = 0.0f;
 
-    					// if (!PX4_ISFINITE(roll_u)) {
-    					// 	_roll_ctrl.reset_integrator();
-    					// 	perf_count(_nonfinite_output_perf);
-    					// }
 
 						float yaw_u = 0.0f;
 
@@ -791,8 +786,8 @@ void RotorwingAttitudeControl::run()
 						}
 
                         /*TF: Prerotator port*/
-						_actuators.control[actuator_controls_rw_s::INDEX_PREROTATOR] = (PX4_ISFINITE(_manual.aux1))
-                                ? _manual.aux1 : 0.0f;
+						_actuators.control[actuator_controls_rw_s::INDEX_PREROTATOR] =
+                                (PX4_ISFINITE(_manual.aux1))? _manual.aux1 : -1.0f;
 
 						/* scale effort by battery status */
 						if (_parameters.bat_scale_en &&
@@ -892,9 +887,6 @@ void RotorwingAttitudeControl::run()
             _actuators.control[actuator_controls_rw_s::INDEX_YAW] += _parameters.roll_to_yaw_ff * math::constrain(
                         _actuators.control[actuator_controls_rw_s::INDEX_ROTOR_ROLL], -1.0f, 1.0f);
 
-            //TF: _actuators.control[actuator_controls_rw_s::INDEX_PREROTATOR] = _flaps_applied;
-            //_actuators.control[5] = _manual.flaps;
-            //_actuators.control[actuator_controls_rw_s::INDEX_AIRBRAKES] = _flaperons_applied;
             // FIXME: this should use _vcontrol_mode.landing_gear_pos in the future
             _actuators.control[5] = _manual.aux2;
             _actuators.control[6] = _manual.aux3;
