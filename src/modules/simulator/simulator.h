@@ -51,6 +51,7 @@
 #include <uORB/topics/battery_status.h>
 #include <uORB/topics/irlock_report.h>
 #include <uORB/topics/parameter_update.h>
+#include <uORB/topics/rotor_frequency.h>
 #include <drivers/drv_accel.h>
 #include <drivers/drv_gyro.h>
 #include <drivers/drv_baro.h>
@@ -250,9 +251,10 @@ private:
 		_visual_odometry_pub(nullptr),
 		_dist_pub(nullptr),
 		_battery_pub(nullptr),
+		_rotor_frequency_pub(nullptr),
 		_param_sub(-1),
 		_initialized(false),
-		_realtime_factor(1.0),
+		_realtime_factor(1.0),		
 #ifndef __PX4_QURT
 		_rc_channels_pub(nullptr),
 		_attitude_pub(nullptr),
@@ -329,6 +331,7 @@ private:
 	orb_advert_t _dist_pub;
 	orb_advert_t _battery_pub;
 	orb_advert_t _irlock_report_pub;
+	orb_advert_t _rotor_frequency_pub;
 
 	int				_param_sub;
 
@@ -346,6 +349,7 @@ private:
 	int publish_flow_topic(mavlink_hil_optical_flow_t *flow);
 	int publish_odometry_topic(mavlink_message_t *odom_mavlink);
 	int publish_distance_topic(mavlink_distance_sensor_t *dist);
+	int publish_rotorfreq_topic(mavlink_rotor_frequency_t *rotorfreq_mavlink);
 
 #ifndef __PX4_QURT
 	// uORB publisher handlers

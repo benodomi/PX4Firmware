@@ -406,8 +406,8 @@ void Simulator::handle_message(mavlink_message_t *msg, bool publish)
 	case MAVLINK_MSG_ID_ROTOR_FREQUENCY:
 		mavlink_rotor_frequency_t rotorfreq;
 		mavlink_msg_rotor_frequency_decode(msg, &rotorfreq);
-        PX4_WARN("RotorFreq: %f", rotorfreq.measured_frequency_rpm);
-		/*publish_distance_topic(&dist);*/
+        //PX4_WARN("Mavlink get RotorFreq: %f %f", rotorfreq.measured_frequency_rpm, rotorfreq.estimated_accurancy_rpm);
+		publish_rotorfreq_topic(&rotorfreq);
 		break;
 
 	case MAVLINK_MSG_ID_HIL_GPS:
@@ -1255,6 +1255,23 @@ int Simulator::publish_distance_topic(mavlink_distance_sensor_t *dist_mavlink)
 
 	int dist_multi;
 	orb_publish_auto(ORB_ID(distance_sensor), &_dist_pub, &dist, &dist_multi, ORB_PRIO_HIGH);
+
+	return OK;
+}
+
+int Simulator::publish_rotorfreq_topic(mavlink_rotor_frequency_t *rotorfreq_mavlink)
+{
+	uint64_t timestamp = hrt_absolute_time();
+
+	struct rotor_frequency_s rotorfreq;
+	memset(&rotorfreq, 0, sizeof(rotor_frequency_s));
+
+	rotorfreq.timestamp = timestamp;
+	rotorfreq.indicated_frequency_rpm= rotorfreq_mavlink->measured_frequency_rpm;
+	rotorfreq.estimated_accurancy_rpm = rotorfreq_mavlink->estimated_accurancy_rpm;
+
+	int multi=0;
+	orb_publish_auto(ORB_ID(rotor_frequency), &_rotor_frequency_pub, &rotorfreq, &multi, ORB_PRIO_HIGH);
 
 	return OK;
 }
