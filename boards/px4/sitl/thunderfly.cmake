@@ -49,6 +49,7 @@ px4_add_board(
 		wind_estimator
 		rw_att_control
 		# rw_pos_control_l1  # pouziva se fw_pos control
+        rw_prerotate
 
 	SYSTEMCMDS
 		#bl_update
