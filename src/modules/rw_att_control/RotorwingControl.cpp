@@ -271,6 +271,8 @@ RotorwingAttitudeControl::parameters_update()
 	_wheel_ctrl.set_integrator_max(_parameters.w_integrator_max);
 	_wheel_ctrl.set_max_rate(math::radians(_parameters.w_rmax));
 
+    _prerotate.set_target_rpm(500);
+
 	return PX4_OK;
 }
 
@@ -346,6 +348,7 @@ RotorwingAttitudeControl::vehicle_manual_poll()
 						_attitude_sp_pub = orb_advertise(_attitude_setpoint_id, &_att_sp);
 					}
 
+                //TF: This pass PREROTATOR MODE
 				} else if (_vcontrol_mode.flag_control_rates_enabled &&
                        !_vcontrol_mode.flag_control_attitude_enabled) {
 
@@ -369,17 +372,17 @@ RotorwingAttitudeControl::vehicle_manual_poll()
 					/* manual/direct control */
 
 					_actuators.control[actuator_controls_rw_s::INDEX_ROTOR_ROLL] = _manual.y;
-                    _actuators.control[actuator_controls_rw_s::INDEX_ROTOR_PITCH] = -1.0f *  _manual.z;
+                    _actuators.control[actuator_controls_rw_s::INDEX_ROTOR_PITCH] =  _manual.z;
 					_actuators.control[actuator_controls_rw_s::INDEX_YAW] = _manual.r;
 
-                    if(_vcontrol_mode.flag_armed && (_manual.z > 0.005f)){
+                    if(_vcontrol_mode.flag_armed && (_manual.z > 0.000f)){
 
                         _actuators.control[actuator_controls_rw_s::INDEX_PREROTATOR] = _manual.aux1;
 
                         if(_vcontrol_mode.flag_control_roverroof_enabled){
 				            _actuators.control[actuator_controls_rw_s::INDEX_THROTTLE] = _manual.x;
                         } else {
-                            _actuators.control[actuator_controls_rw_s::INDEX_THROTTLE] = 0.5f-_manual.x;
+                            _actuators.control[actuator_controls_rw_s::INDEX_THROTTLE] = -1.0f *  _manual.x;
                         }
                     }else{
                         //TODO-TF: zde by bylo lepsi mit misto '0' 'NaN'
@@ -760,7 +763,8 @@ void RotorwingAttitudeControl::run()
                             perf_count(_nonfinite_output_perf);
                         }
 
-                        _actuators.control[actuator_controls_rw_s::INDEX_ROTOR_PITCH] = -2.0f * (_manual.z-0.5f);
+                        //_actuators.control[actuator_controls_rw_s::INDEX_ROTOR_PITCH] = -2.0f * (_manual.z-0.5f);
+                        _actuators.control[actuator_controls_rw_s::INDEX_ROTOR_PITCH] = (_manual.z);
 
 
 						float yaw_u = 0.0f;
@@ -788,26 +792,6 @@ void RotorwingAttitudeControl::run()
                         /*TF: Prerotator port*/
 						_actuators.control[actuator_controls_rw_s::INDEX_PREROTATOR] =
                                 (PX4_ISFINITE(_manual.aux1))? _manual.aux1 : -1.0f;
-
-						/* scale effort by battery status */
-						if (_parameters.bat_scale_en &&
-						    _actuators.control[actuator_controls_rw_s::INDEX_PREROTATOR] > 0.1f) {
-
-							bool updated = false;
-							orb_check(_battery_status_sub, &updated);
-
-							if (updated) {
-								battery_status_s battery_status = {};
-
-								if (orb_copy(ORB_ID(battery_status), _battery_status_sub, &battery_status) == PX4_OK) {
-									if (battery_status.scale > 0.0f) {
-										_battery_scale = battery_status.scale;
-									}
-								}
-							}
-
-							_actuators.control[actuator_controls_rw_s::INDEX_PREROTATOR] *= _battery_scale;
-						}
 
 					} else {
 						perf_count(_nonfinite_input_perf);
@@ -881,7 +865,10 @@ void RotorwingAttitudeControl::run()
                     //_actuators.control[actuator_controls_rw_s::INDEX_PREROTATOR] = counter;
 
                 }
+            } else if (_vcontrol_mode.flag_control_prerotator_enabled){
+                PX4_WARN("PREROTATE... :) ");
             }
+
             // Add feed-forward from roll control output to yaw control output
             // This can be used to counteract the adverse yaw effect when rolling the plane
             _actuators.control[actuator_controls_rw_s::INDEX_YAW] += _parameters.roll_to_yaw_ff * math::constrain(

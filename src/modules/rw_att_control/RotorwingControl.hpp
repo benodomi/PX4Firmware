@@ -65,6 +65,8 @@
 #include <uORB/topics/vehicle_status.h>
 #include <vtol_att_control/vtol_type.h>
 
+#include <rw_prerotate/rw_prerotate.h>
+
 using matrix::Eulerf;
 using matrix::Quatf;
 
@@ -302,6 +304,8 @@ private:
 	//ECL_PitchSetpointController	_pitch_sp_ctrl;
 	ECL_YawController			_yaw_ctrl;
 	ECL_WheelController			_wheel_ctrl;
+
+    RW_Prerotate    _prerotate;
 
 	void control_flaps(const float dt);
 
