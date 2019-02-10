@@ -372,23 +372,17 @@ RotorwingAttitudeControl::vehicle_manual_poll()
 					/* manual/direct control */
 
 					_actuators.control[actuator_controls_rw_s::INDEX_ROTOR_ROLL] = _manual.y;
-                    _actuators.control[actuator_controls_rw_s::INDEX_ROTOR_PITCH] =  _manual.z;
+                    _actuators.control[actuator_controls_rw_s::INDEX_ROTOR_PITCH] =  -1.0f * _manual.z;
 					_actuators.control[actuator_controls_rw_s::INDEX_YAW] = _manual.r;
 
-                    if(_vcontrol_mode.flag_armed && (_manual.z > 0.000f)){
+                    _actuators.control[actuator_controls_rw_s::INDEX_PREROTATOR] = _manual.aux1;
 
-                        _actuators.control[actuator_controls_rw_s::INDEX_PREROTATOR] = _manual.aux1;
+                    if(_vcontrol_mode.flag_control_roverroof_enabled){
+			            _actuators.control[actuator_controls_rw_s::INDEX_THROTTLE] = _manual.x;
+                    } else {
+                        _actuators.control[actuator_controls_rw_s::INDEX_THROTTLE] = -1.0f *  _manual.x;
+                    }
 
-                        if(_vcontrol_mode.flag_control_roverroof_enabled){
-				            _actuators.control[actuator_controls_rw_s::INDEX_THROTTLE] = _manual.x;
-                        } else {
-                            _actuators.control[actuator_controls_rw_s::INDEX_THROTTLE] = -1.0f *  _manual.x;
-                        }
-                    }else{
-                        //TODO-TF: zde by bylo lepsi mit misto '0' 'NaN'
-                       _actuators.control[actuator_controls_rw_s::INDEX_PREROTATOR] = -1.0f;
-                       _actuators.control[actuator_controls_rw_s::INDEX_THROTTLE] = -1.0f;
-                   }
 				}
 			}
 		}
@@ -764,7 +758,7 @@ void RotorwingAttitudeControl::run()
                         }
 
                         //_actuators.control[actuator_controls_rw_s::INDEX_ROTOR_PITCH] = -2.0f * (_manual.z-0.5f);
-                        _actuators.control[actuator_controls_rw_s::INDEX_ROTOR_PITCH] = (_manual.z);
+                        _actuators.control[actuator_controls_rw_s::INDEX_ROTOR_PITCH] = -1.0f * (_manual.z);
 
 
 						float yaw_u = 0.0f;
