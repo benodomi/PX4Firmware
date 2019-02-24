@@ -455,7 +455,7 @@ bool set_nav_state(vehicle_status_s *status, actuator_armed_s *armed, commander_
 
             //TF:
             case commander_state_s::MAIN_STATE_PREROTATE:
-                status->nav_state = vehicle_status_s::NAVIGATION_STATE_PREROTATE;
+                status->nav_state = vehicle_status_s::NAVIGATION_STATE_RR_PREROTATE;
                 break;
 
 			case commander_state_s::MAIN_STATE_RR_MANUAL:

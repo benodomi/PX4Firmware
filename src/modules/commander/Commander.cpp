@@ -791,6 +791,18 @@ Commander::handle_command(vehicle_status_s *status_local, const vehicle_command_
 										 &internal_state);
 					}
 
+                } else if (custom_main_mode == PX4_CUSTOM_MAIN_MODE_RR_PREROTATE) {
+                    /* //TF: RoverRoof MANUAL */
+                    main_ret = main_state_transition(*status_local, commander_state_s::MAIN_STATE_PREROTATE, status_flags, &internal_state);
+
+                } else if (custom_main_mode == PX4_CUSTOM_MAIN_MODE_RR_MANUAL) {
+                    /* //TF: RoverRoof MANUAL */
+                    main_ret = main_state_transition(*status_local, commander_state_s::MAIN_STATE_RR_MANUAL, status_flags, &internal_state);
+
+                } else if (custom_main_mode == PX4_CUSTOM_MAIN_MODE_RR_STABILIZED) {
+                    /* //TF: RoverRoof STABILIZED */
+                    main_ret = main_state_transition(*status_local, commander_state_s::MAIN_STATE_RR_STAB, status_flags, &internal_state);
+
 				} else if (custom_main_mode == PX4_CUSTOM_MAIN_MODE_ACRO) {
 					/* ACRO */
 					main_ret = main_state_transition(*status_local, commander_state_s::MAIN_STATE_ACRO, status_flags, &internal_state);
@@ -3342,7 +3354,7 @@ set_control_mode()
 
     //TF:
     // same as manual mode. But it allows prerotator
-    case vehicle_status_s::NAVIGATION_STATE_PREROTATE:
+    case vehicle_status_s::NAVIGATION_STATE_RR_PREROTATE:
 		control_mode.flag_control_manual_enabled = true;
 		control_mode.flag_control_auto_enabled = false;
 		control_mode.flag_control_rates_enabled = true;

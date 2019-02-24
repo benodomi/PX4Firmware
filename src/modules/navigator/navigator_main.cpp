@@ -718,6 +718,9 @@ Navigator::run()
 		case vehicle_status_s::NAVIGATION_STATE_TERMINATION:
 		case vehicle_status_s::NAVIGATION_STATE_OFFBOARD:
 		case vehicle_status_s::NAVIGATION_STATE_STAB:
+        //TF:
+		case vehicle_status_s::NAVIGATION_STATE_RR_STAB:
+		case vehicle_status_s::NAVIGATION_STATE_RR_MANUAL:
 		default:
 			_pos_sp_triplet_published_invalid_once = false;
 			navigation_mode_new = nullptr;

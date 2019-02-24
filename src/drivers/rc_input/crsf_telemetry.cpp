@@ -149,6 +149,14 @@ bool CRSFTelemetry::send_flight_mode()
 		flight_mode = "Manual";
 		break;
 
+	case vehicle_status_s::NAVIGATION_STATE_RR_MANUAL:
+		flight_mode = "Roverroof manual";
+		break;
+
+	case vehicle_status_s::NAVIGATION_STATE_RR_STAB:
+		flight_mode = "Roverroof stabilized";
+		break;
+
 	case vehicle_status_s::NAVIGATION_STATE_ALTCTL:
 		flight_mode = "Altitude";
 		break;

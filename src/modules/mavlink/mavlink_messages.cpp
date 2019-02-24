@@ -158,6 +158,21 @@ void get_mavlink_navigation_mode(const struct vehicle_status_s *const status, ui
 		custom_mode->main_mode = PX4_CUSTOM_MAIN_MODE_MANUAL;
 		break;
 
+    case vehicle_status_s::NAVIGATION_STATE_RR_PREROTATE:
+        *mavlink_base_mode	|= MAV_MODE_FLAG_MANUAL_INPUT_ENABLED;
+        custom_mode->main_mode = PX4_CUSTOM_MAIN_MODE_RR_PREROTATE;
+        break;
+
+    case vehicle_status_s::NAVIGATION_STATE_RR_MANUAL:
+        *mavlink_base_mode	|= MAV_MODE_FLAG_MANUAL_INPUT_ENABLED;
+        custom_mode->main_mode = PX4_CUSTOM_MAIN_MODE_RR_MANUAL;
+        break;
+
+    case vehicle_status_s::NAVIGATION_STATE_RR_STAB:
+        *mavlink_base_mode	|= MAV_MODE_FLAG_MANUAL_INPUT_ENABLED;
+        custom_mode->main_mode = PX4_CUSTOM_MAIN_MODE_RR_STABILIZED;
+        break;
+
 	case vehicle_status_s::NAVIGATION_STATE_ACRO:
 		*mavlink_base_mode |= MAV_MODE_FLAG_MANUAL_INPUT_ENABLED;
 		custom_mode->main_mode = PX4_CUSTOM_MAIN_MODE_ACRO;
@@ -4843,7 +4858,8 @@ public:
     }
     unsigned get_size()
     {
-        return MAVLINK_MSG_ID_ROTOR_FREQUENCY_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES;
+        return MAVLINK_MSG_ID_ROTOR_FREQUENCY_LEN +
+               MAVLINK_NUM_NON_PAYLOAD_BYTES;
     }
 
 private:
@@ -4868,11 +4884,11 @@ protected:
             mavlink_rotor_frequency_t _msg_rotor_frequency;  //make sure mavlink_ca_trajectory_t is the definition of your custom MAVLink message
 
             //_msg_rotor_frequency.time_usec = _rotor_frequency.timestamp;
-            _msg_rotor_frequency.indicated_frequency_rpm = _rotor_frequency.indicated_frequency_rpm;
+            _msg_rotor_frequency.measured_frequency_rpm = _rotor_frequency.indicated_frequency_rpm;
             _msg_rotor_frequency.estimated_accurancy_rpm  = _rotor_frequency.estimated_accurancy_rpm;
-            _msg_rotor_frequency.indicated_frequency_hz = _rotor_frequency.indicated_frequency_hz;
-            _msg_rotor_frequency.estimated_accurancy_hz  = _rotor_frequency.estimated_accurancy_hz;
-            _msg_rotor_frequency.count  = _rotor_frequency.count;
+            //_msg_rotor_frequency.measured_frequency_hz = _rotor_frequency.indicated_frequency_hz;
+            //_msg_rotor_frequency.estimated_accurancy_hz  = _rotor_frequency.estimated_accurancy_hz;
+            //_msg_rotor_frequency.count  = _rotor_frequency.count;
 
             mavlink_msg_rotor_frequency_send_struct(_mavlink->get_channel(), &_msg_rotor_frequency);
         }
