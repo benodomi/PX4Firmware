@@ -305,7 +305,7 @@ private:
 	ECL_YawController			_yaw_ctrl;
 	ECL_WheelController			_wheel_ctrl;
 
-    RW_Prerotate    _prerotate;
+    //RW_Prerotate    _prerotate;
 
 	void control_flaps(const float dt);
 

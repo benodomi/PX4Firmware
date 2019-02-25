@@ -271,7 +271,7 @@ RotorwingAttitudeControl::parameters_update()
 	_wheel_ctrl.set_integrator_max(_parameters.w_integrator_max);
 	_wheel_ctrl.set_max_rate(math::radians(_parameters.w_rmax));
 
-    _prerotate.set_target_rpm(500);
+    //_prerotate.set_target_rpm(500);
 
 	return PX4_OK;
 }
