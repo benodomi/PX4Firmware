@@ -1,7 +1,7 @@
 [submodule "mavlink/include/mavlink/v2.0"]
 	path = mavlink/include/mavlink/v2.0
-	url = git@github.com:ThunderFly-aerospace/c_library_v2.git
-	branch = autogyro
+	url = https://github.com/ThunderFly-aerospace/c_library_v2.git
+	branch = master
 [submodule "src/drivers/uavcan/libuavcan"]
 	path = src/drivers/uavcan/libuavcan
 	url = https://github.com/UAVCAN/libuavcan.git
@@ -20,7 +20,7 @@
 	branch = master
 [submodule "Tools/sitl_gazebo"]
 	path = Tools/sitl_gazebo
-	url = git@github.com:ThunderFly-aerospace/sitl_gazebo.git
+	url = https://github.com/ThunderFly-aerospace/sitl_gazebo.git
 	branch = autogyro-sitl
 [submodule "src/lib/matrix"]
 	path = src/lib/matrix
@@ -33,7 +33,7 @@
 [submodule "src/lib/ecl"]
 	path = src/lib/ecl
 	#url = https://github.com/PX4/ecl.git
-        url = git@github.com:ThunderFly-aerospace/ecl.git
+        url = https://github.com/ThunderFly-aerospace/ecl.git
 	branch = master
 [submodule "boards/atlflight/cmake_hexagon"]
 	path = boards/atlflight/cmake_hexagon
