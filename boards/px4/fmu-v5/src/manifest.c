@@ -46,10 +46,12 @@
  * Included Files
  ****************************************************************************/
 
-#include <px4_config.h>
+#include <nuttx/config.h>
+#include <board_config.h>
+
 #include <stdbool.h>
+
 #include "systemlib/px4_macros.h"
-#include "px4_log.h"
 
 /****************************************************************************
  * Pre-Processor Definitions
@@ -87,6 +89,7 @@ static const px4_hw_mft_item_t hw_mft_list_v0540[] = {
 
 static px4_hw_mft_list_entry_t mft_lists[] = {
 	{0x0000, hw_mft_list_v0500, arraySize(hw_mft_list_v0500)},
+	{0x0105, hw_mft_list_v0500, arraySize(hw_mft_list_v0500)}, // Alias for CUAV V5 R:5 V:1
 	{0x0400, hw_mft_list_v0540, arraySize(hw_mft_list_v0540)},
 };
 
@@ -136,7 +139,7 @@ __EXPORT px4_hw_mft_item board_query_manifest(px4_hw_mft_item_id_t id)
 		}
 
 		if (boards_manifest == px4_hw_mft_list_uninitialized) {
-			PX4_ERR("Board %4x is not supported!", ver_rev);
+			syslog(LOG_ERR, "[boot] Board %4x is not supported!\n", ver_rev);
 		}
 	}
 

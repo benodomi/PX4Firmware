@@ -59,6 +59,8 @@
 #include <net/if.h>
 #endif
 
+#include <containers/List.hpp>
+#include <systemlib/uthash/utlist.h>
 #include <parameters/param.h>
 #include <perf/perf_counter.h>
 #include <pthread.h>
@@ -154,21 +156,21 @@ public:
 
 	static int		get_uart_fd(unsigned index);
 
-	int			get_uart_fd();
+	int			get_uart_fd() const { return _uart_fd; }
 
 	/**
 	 * Get the MAVLink system id.
 	 *
 	 * @return		The system ID of this vehicle
 	 */
-	int			get_system_id();
+	int			get_system_id() const { return mavlink_system.sysid; }
 
 	/**
 	 * Get the MAVLink component id.
 	 *
 	 * @return		The component ID of this vehicle
 	 */
-	int			get_component_id();
+	int			get_component_id() const { return mavlink_system.compid; }
 
 	const char *_device_name;
 
@@ -181,6 +183,7 @@ public:
 		MAVLINK_MODE_CONFIG,
 		MAVLINK_MODE_IRIDIUM,
 		MAVLINK_MODE_MINIMAL,
+		MAVLINK_MODE_EXTVISION,
 
 		MAVLINK_MODE_COUNT
 	};
@@ -223,6 +226,9 @@ public:
 
 		case MAVLINK_MODE_MINIMAL:
 			return "Minimal";
+
+		case MAVLINK_MODE_EXTVISION:
+			return "ExtVision";
 
 		default:
 			return "Unknown";
@@ -294,11 +300,10 @@ public:
 	 */
 	bool			get_manual_input_mode_generation() { return _generate_rc; }
 
-
 	/**
 	 * This is the beginning of a MAVLINK_START_UART_SEND/MAVLINK_END_UART_SEND transaction
 	 */
-	void 			begin_send();
+	void 			begin_send() { pthread_mutex_lock(&_send_mutex); }
 
 	/**
 	 * Send bytes out on the link.
@@ -330,7 +335,7 @@ public:
 	 */
 	MavlinkOrbSubscription *add_orb_subscription(const orb_id_t topic, int instance = 0, bool disable_sharing = false);
 
-	int			get_instance_id();
+	int			get_instance_id() const { return _instance_id; }
 
 	/**
 	 * Enable / disable hardware flow control.
@@ -339,7 +344,7 @@ public:
 	 */
 	int			enable_flow_control(enum FLOW_CONTROL_MODE enabled);
 
-	mavlink_channel_t	get_channel();
+	mavlink_channel_t	get_channel() const { return _channel; }
 
 	void			configure_stream_threadsafe(const char *stream_name, float rate = -1.0f);
 
@@ -389,7 +394,7 @@ public:
 	 */
 	void			send_protocol_version();
 
-	MavlinkStream 		*get_streams() const { return _streams; }
+	List<MavlinkStream *> &get_streams() { return _streams; }
 
 	float			get_rate_mult() const { return _rate_mult; }
 
@@ -494,9 +499,9 @@ public:
 
 	bool ftp_enabled() const { return _ftp_on; }
 
-	bool hash_check_enabled() { return _param_hash_check_enabled.get(); }
-
-	bool forward_heartbeats_enabled() { return _param_heartbeat_forwarding_enabled.get(); }
+	bool hash_check_enabled() const { return _param_hash_check_enabled.get(); }
+	bool forward_heartbeats_enabled() const { return _param_heartbeat_forwarding_enabled.get(); }
+	bool odometry_loopback_enabled() const { return _param_send_odom_loopback.get(); }
 
 	struct ping_statistics_s {
 		uint64_t last_ping_time;
@@ -543,8 +548,8 @@ private:
 
 	unsigned		_main_loop_delay;	/**< mainloop delay, depends on data rate */
 
-	MavlinkOrbSubscription	*_subscriptions;
-	MavlinkStream		*_streams;
+	List<MavlinkOrbSubscription *>	_subscriptions;
+	List<MavlinkStream *>		_streams;
 
 	MavlinkShell			*_mavlink_shell;
 	MavlinkULog			*_mavlink_ulog;
@@ -642,10 +647,12 @@ private:
 		(ParamBool<px4::params::MAV_FWDEXTSP>) _param_forward_externalsp,
 		(ParamInt<px4::params::MAV_BROADCAST>) _param_broadcast_mode,
 		(ParamBool<px4::params::MAV_HASH_CHK_EN>) _param_hash_check_enabled,
-		(ParamBool<px4::params::MAV_HB_FORW_EN>) _param_heartbeat_forwarding_enabled
+		(ParamBool<px4::params::MAV_HB_FORW_EN>) _param_heartbeat_forwarding_enabled,
+		(ParamBool<px4::params::MAV_ODOM_LP>) _param_send_odom_loopback
 	)
 
 	perf_counter_t		_loop_perf;			/**< loop performance counter */
+	perf_counter_t		_loop_interval_perf;		/**< loop interval performance counter */
 
 	void			mavlink_update_parameters();
 
@@ -677,11 +684,11 @@ private:
 
 	int message_buffer_count();
 
-	int message_buffer_is_empty();
+	int message_buffer_is_empty() const { return (_message_buffer.read_ptr == _message_buffer.write_ptr); }
 
 	int message_buffer_get_ptr(void **ptr, bool *is_part);
 
-	void message_buffer_mark_read(int n);
+	void message_buffer_mark_read(int n) { _message_buffer.read_ptr = (_message_buffer.read_ptr + n) % _message_buffer.size; }
 
 	void pass_message(const mavlink_message_t *msg);
 

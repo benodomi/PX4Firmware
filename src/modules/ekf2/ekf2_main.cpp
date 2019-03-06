@@ -38,7 +38,7 @@
  * @author Roman Bapst
  */
 
-#include <cfloat>
+#include <float.h>
 
 #include <drivers/drv_hrt.h>
 #include <lib/ecl/EKF/ekf.h>
@@ -283,6 +283,7 @@ private:
 
 	uORB::Publication<vehicle_local_position_s> _vehicle_local_position_pub;
 	uORB::Publication<vehicle_global_position_s> _vehicle_global_position_pub;
+	uORB::Publication<vehicle_odometry_s> _vehicle_odometry_pub;
 
 	Ekf _ekf;
 
@@ -484,8 +485,10 @@ private:
 		_K_pstatic_coef_xp,	///< static pressure position error coefficient along the positive X body axis
 		(ParamFloat<px4::params::EKF2_PCOEF_XN>)
 		_K_pstatic_coef_xn,	///< static pressure position error coefficient along the negative X body axis
-		(ParamFloat<px4::params::EKF2_PCOEF_Y>)
-		_K_pstatic_coef_y,	///< static pressure position error coefficient along the Y body axis
+		(ParamFloat<px4::params::EKF2_PCOEF_YP>)
+		_K_pstatic_coef_yp,	///< static pressure position error coefficient along the positive Y body axis
+		(ParamFloat<px4::params::EKF2_PCOEF_YN>)
+		_K_pstatic_coef_yn,	///< static pressure position error coefficient along the negative Y body axis
 		(ParamFloat<px4::params::EKF2_PCOEF_Z>)
 		_K_pstatic_coef_z,	///< static pressure position error coefficient along the Z body axis
 
@@ -509,6 +512,7 @@ Ekf2::Ekf2():
 	_perf_ekf_update(perf_alloc_once(PC_ELAPSED, "EKF2 update")),
 	_vehicle_local_position_pub(ORB_ID(vehicle_local_position)),
 	_vehicle_global_position_pub(ORB_ID(vehicle_global_position)),
+	_vehicle_odometry_pub(ORB_ID(vehicle_odometry)),
 	_params(_ekf.getParamHandle()),
 	_obs_dt_min_ms(_params->sensor_interval_min_ms),
 	_mag_delay_ms(_params->mag_delay_ms),
@@ -725,7 +729,7 @@ void Ekf2::run()
 
 		if (ret < 0) {
 			// Poll error, sleep and try again
-			usleep(10000);
+			px4_usleep(10000);
 			continue;
 
 		} else if (ret == 0) {
@@ -803,30 +807,17 @@ void Ekf2::run()
 			imu_bias_reset_request = !_ekf.reset_imu_bias();
 		}
 
-		// in replay mode we are getting the actual timestamp from the sensor topic
-		hrt_abstime now = 0;
-
-		if (_replay_mode) {
-			now = sensors.timestamp;
-
-		} else {
-			now = hrt_absolute_time();
-		}
+		const hrt_abstime now = sensors.timestamp;
 
 		// push imu data into estimator
-		float gyro_integral[3];
-		float gyro_dt = sensors.gyro_integral_dt / 1.e6f;
-		gyro_integral[0] = sensors.gyro_rad[0] * gyro_dt;
-		gyro_integral[1] = sensors.gyro_rad[1] * gyro_dt;
-		gyro_integral[2] = sensors.gyro_rad[2] * gyro_dt;
+		imuSample imu_sample_new;
+		imu_sample_new.time_us = now;
+		imu_sample_new.delta_ang_dt = sensors.gyro_integral_dt * 1.e-6f;
+		imu_sample_new.delta_ang = Vector3f{sensors.gyro_rad} * imu_sample_new.delta_ang_dt;
+		imu_sample_new.delta_vel_dt = sensors.accelerometer_integral_dt * 1.e-6f;
+		imu_sample_new.delta_vel = Vector3f{sensors.accelerometer_m_s2} * imu_sample_new.delta_vel_dt;
 
-		float accel_integral[3];
-		float accel_dt = sensors.accelerometer_integral_dt / 1.e6f;
-		accel_integral[0] = sensors.accelerometer_m_s2[0] * accel_dt;
-		accel_integral[1] = sensors.accelerometer_m_s2[1] * accel_dt;
-		accel_integral[2] = sensors.accelerometer_m_s2[2] * accel_dt;
-
-		_ekf.setIMUData(now, sensors.gyro_integral_dt, sensors.accelerometer_integral_dt, gyro_integral, accel_integral);
+		_ekf.setIMUData(imu_sample_new);
 
 		// publish attitude immediately (uses quaternion from output predictor)
 		publish_attitude(sensors, now);
@@ -925,11 +916,11 @@ void Ekf2::run()
 					_ekf.set_air_density(airdata.rho);
 
 					// calculate static pressure error = Pmeas - Ptruth
-					// model position error sensitivity as a body fixed ellipse with different scale in the positive and negtive X direction
-					const float max_airspeed_sq = _aspd_max.get() * _aspd_max.get();
-					float K_pstatic_coef_x;
-
+					// model position error sensitivity as a body fixed ellipse with a different scale in the positive and
+					// negative X and Y directions
 					const Vector3f vel_body_wind = get_vel_body_wind();
+
+					float K_pstatic_coef_x;
 
 					if (vel_body_wind(0) >= 0.0f) {
 						K_pstatic_coef_x = _K_pstatic_coef_xp.get();
@@ -938,12 +929,22 @@ void Ekf2::run()
 						K_pstatic_coef_x = _K_pstatic_coef_xn.get();
 					}
 
+					float K_pstatic_coef_y;
+
+					if (vel_body_wind(1) >= 0.0f) {
+						K_pstatic_coef_y = _K_pstatic_coef_yp.get();
+
+					} else {
+						K_pstatic_coef_y = _K_pstatic_coef_yn.get();
+					}
+
+					const float max_airspeed_sq = _aspd_max.get() * _aspd_max.get();
 					const float x_v2 = fminf(vel_body_wind(0) * vel_body_wind(0), max_airspeed_sq);
 					const float y_v2 = fminf(vel_body_wind(1) * vel_body_wind(1), max_airspeed_sq);
 					const float z_v2 = fminf(vel_body_wind(2) * vel_body_wind(2), max_airspeed_sq);
 
 					const float pstatic_err = 0.5f * airdata.rho *
-								  (K_pstatic_coef_x * x_v2) + (_K_pstatic_coef_y.get() * y_v2) + (_K_pstatic_coef_z.get() * z_v2);
+								  (K_pstatic_coef_x * x_v2) + (K_pstatic_coef_y * y_v2) + (_K_pstatic_coef_z.get() * z_v2);
 
 					// correct baro measurement using pressure error estimate and assuming sea level gravity
 					balt_data_avg += pstatic_err / (airdata.rho * CONSTANTS_ONE_G);
@@ -1026,7 +1027,7 @@ void Ekf2::run()
 
 		if ((_gps_blend_mask.get() == 0) && gps1_updated) {
 			// When GPS blending is disabled we always use the first receiver instance
-			_ekf.setGpsData(_gps_state[0].time_usec, &_gps_state[0]);
+			_ekf.setGpsData(_gps_state[0].time_usec, _gps_state[0]);
 
 		} else if ((_gps_blend_mask.get() > 0) && (gps1_updated || gps2_updated)) {
 			// blend dual receivers if available
@@ -1071,7 +1072,7 @@ void Ekf2::run()
 				}
 
 				// write selected GPS to EKF
-				_ekf.setGpsData(_gps_output[_gps_select_index].time_usec, &_gps_output[_gps_select_index]);
+				_ekf.setGpsData(_gps_output[_gps_select_index].time_usec, _gps_output[_gps_select_index]);
 
 				// log blended solution as a third GPS instance
 				ekf_gps_position_s gps;
@@ -1297,7 +1298,13 @@ void Ekf2::run()
 				// generate vehicle local position data
 				vehicle_local_position_s &lpos = _vehicle_local_position_pub.get();
 
+				// generate vehicle odometry data
+				vehicle_odometry_s &odom = _vehicle_odometry_pub.get();
+
 				lpos.timestamp = now;
+				odom.timestamp = lpos.timestamp;
+
+				odom.local_frame = odom.LOCAL_FRAME_NED;
 
 				// Position of body origin in local NED frame
 				float position[3];
@@ -1308,12 +1315,22 @@ void Ekf2::run()
 				lpos.y = (_ekf.local_position_is_valid()) ? position[1] : 0.0f;
 				lpos.z = position[2];
 
+				// Vehicle odometry position
+				odom.x = lpos.x;
+				odom.y = lpos.y;
+				odom.z = lpos.z;
+
 				// Velocity of body origin in local NED frame (m/s)
 				float velocity[3];
 				_ekf.get_velocity(velocity);
 				lpos.vx = velocity[0];
 				lpos.vy = velocity[1];
 				lpos.vz = velocity[2];
+
+				// Vehicle odometry linear velocity
+				odom.vx = lpos.vx;
+				odom.vy = lpos.vy;
+				odom.vz = lpos.vz;
 
 				// vertical position time derivative (m/s)
 				_ekf.get_pos_d_deriv(&lpos.z_deriv);
@@ -1351,6 +1368,16 @@ void Ekf2::run()
 				_ekf.copy_quaternion(q.data());
 
 				lpos.yaw = matrix::Eulerf(q).psi();
+
+				// Vehicle odometry quaternion
+				q.copyTo(odom.q);
+
+				// Vehicle odometry angular rates
+				float gyro_bias[3];
+				_ekf.get_gyro_bias(gyro_bias);
+				odom.rollspeed = sensors.gyro_rad[0] - gyro_bias[0];
+				odom.pitchspeed = sensors.gyro_rad[1] - gyro_bias[1];
+				odom.yawspeed = sensors.gyro_rad[2] - gyro_bias[2];
 
 				lpos.dist_bottom_valid = _ekf.get_terrain_valid();
 
@@ -1394,8 +1421,42 @@ void Ekf2::run()
 					lpos.hagl_max = INFINITY;
 				}
 
+				// Get covariances to vehicle odometry
+				float covariances[24];
+				_ekf.get_covariances(covariances);
+
+				// get the covariance matrix size
+				const size_t POS_URT_SIZE = sizeof(odom.pose_covariance) / sizeof(odom.pose_covariance[0]);
+				const size_t VEL_URT_SIZE = sizeof(odom.velocity_covariance) / sizeof(odom.velocity_covariance[0]);
+
+				// initially set pose covariances to 0
+				for (size_t i = 0; i < POS_URT_SIZE; i++) {
+					odom.pose_covariance[i] = 0.0;
+				}
+
+				// set the position variances
+				odom.pose_covariance[odom.COVARIANCE_MATRIX_X_VARIANCE] = covariances[7];
+				odom.pose_covariance[odom.COVARIANCE_MATRIX_Y_VARIANCE] = covariances[8];
+				odom.pose_covariance[odom.COVARIANCE_MATRIX_Z_VARIANCE] = covariances[9];
+
+				// TODO: implement propagation from quaternion covariance to Euler angle covariance
+				// by employing the covariance law
+
+				// initially set velocity covariances to 0
+				for (size_t i = 0; i < VEL_URT_SIZE; i++) {
+					odom.velocity_covariance[i] = 0.0;
+				}
+
+				// set the linear velocity variances
+				odom.velocity_covariance[odom.COVARIANCE_MATRIX_VX_VARIANCE] = covariances[4];
+				odom.velocity_covariance[odom.COVARIANCE_MATRIX_VY_VARIANCE] = covariances[5];
+				odom.velocity_covariance[odom.COVARIANCE_MATRIX_VZ_VARIANCE] = covariances[6];
+
 				// publish vehicle local position data
 				_vehicle_local_position_pub.update();
+
+				// publish vehicle odometry data
+				_vehicle_odometry_pub.update();
 
 				if (_ekf.global_position_is_valid() && !_preflt_fail) {
 					// generate and publish global position data
@@ -2415,7 +2476,7 @@ int Ekf2::print_usage(const char *reason)
 ### Description
 Attitude and position estimator using an Extended Kalman Filter. It is used for Multirotors and Fixed-Wing.
 
-The documentation can be found on the [tuning_the_ecl_ekf](https://dev.px4.io/en/tutorials/tuning_the_ecl_ekf.html) page.
+The documentation can be found on the [ECL/EKF Overview & Tuning](https://docs.px4.io/en/advanced_config/tuning_the_ecl_ekf.html) page.
 
 ekf2 can be started in replay mode (`-r`): in this mode it does not access the system time, but only uses the
 timestamps from the sensor topics.

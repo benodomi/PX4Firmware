@@ -52,7 +52,6 @@
 #include <uORB/topics/vehicle_command_ack.h>
 
 #include <drivers/drv_hrt.h>
-#include <px4_includes.h>
 #include <px4_getopt.h>
 #include <px4_log.h>
 #include <px4_posix.h>
@@ -622,6 +621,7 @@ void Logger::add_default_topics()
 	add_topic("battery_status", 500);
 	add_topic("camera_capture");
 	add_topic("camera_trigger");
+	add_topic("camera_trigger_secondary");
 	add_topic("cpuload");
 	add_topic("distance_sensor", 100);
 	add_topic("ekf2_innovations", 200);

@@ -74,25 +74,19 @@
 #include <px4_tasks.h>
 #include <px4_time.h>
 #include <circuit_breaker/circuit_breaker.h>
-#include <systemlib/err.h>
-#include <systemlib/hysteresis/hysteresis.h>
 #include <systemlib/mavlink_log.h>
-#include <parameters/param.h>
 
 #include <cmath>
-#include <cfloat>
+#include <float.h>
 #include <cstring>
 
-#include <uORB/topics/actuator_armed.h>
 #include <uORB/topics/actuator_controls.h>
 #include <uORB/topics/battery_status.h>
 #include <uORB/topics/cpuload.h>
 #include <uORB/topics/geofence_result.h>
-#include <uORB/topics/home_position.h>
 #include <uORB/topics/manual_control_setpoint.h>
 #include <uORB/topics/mavlink_log.h>
 #include <uORB/topics/mission.h>
-#include <uORB/topics/mission_result.h>
 #include <uORB/topics/offboard_control_mode.h>
 #include <uORB/topics/parameter_update.h>
 #include <uORB/topics/power_button_state.h>
@@ -100,14 +94,11 @@
 #include <uORB/topics/subsystem_info.h>
 #include <uORB/topics/system_power.h>
 #include <uORB/topics/telemetry_status.h>
-#include <uORB/topics/vehicle_command.h>
 #include <uORB/topics/vehicle_command_ack.h>
-#include <uORB/topics/vehicle_global_position.h>
+#include <uORB/topics/vehicle_control_mode.h>
 #include <uORB/topics/vehicle_land_detected.h>
-#include <uORB/topics/vehicle_local_position.h>
 #include <uORB/topics/vehicle_status_flags.h>
 #include <uORB/topics/vtol_vehicle_status.h>
-#include <uORB/uORB.h>
 
 typedef enum VEHICLE_MODE_FLAG {
 	VEHICLE_MODE_FLAG_CUSTOM_MODE_ENABLED = 1, /* 0b00000001 Reserved for future use. | */
@@ -145,8 +136,6 @@ static hrt_abstime commander_boot_timestamp = 0;
 static unsigned int leds_counter;
 /* To remember when last notification was sent */
 static uint64_t last_print_mode_reject_time = 0;
-
-static systemlib::Hysteresis auto_disarm_hysteresis(false);
 
 static float min_stick_change = 0.25f;
 
@@ -310,7 +299,7 @@ int commander_main(int argc, char *argv[])
 		unsigned i;
 
 		for (i = 0; i < max_wait_steps; i++) {
-			usleep(max_wait_us / max_wait_steps);
+			px4_usleep(max_wait_us / max_wait_steps);
 
 			if (thread_running) {
 				break;
@@ -567,6 +556,8 @@ Commander::Commander() :
 	ModuleParams(nullptr),
 	_failure_detector(this)
 {
+	_auto_disarm_landed.set_hysteresis_time_from(false, 10_s);
+	_auto_disarm_killed.set_hysteresis_time_from(false, 5_s);
 	_battery_sub = orb_subscribe(ORB_ID(battery_status));
 }
 
@@ -1101,7 +1092,9 @@ Commander::set_home_position()
 			const vehicle_local_position_s &lpos = _local_position_sub.get();
 
 			// Set home position
-			home_position_s &home = _home_pub.get();
+			home_position_s home{};
+
+			home.timestamp = hrt_absolute_time();
 
 			home.lat = gpos.lat;
 			home.lon = gpos.lon;
@@ -1116,16 +1109,15 @@ Commander::set_home_position()
 
 			home.yaw = lpos.yaw;
 
-			//Play tune first time we initialize HOME
+			home.manual_home = false;
+
+			// play tune first time we initialize HOME
 			if (!status_flags.condition_home_position_valid) {
 				tune_home_set(true);
 			}
 
-			/* mark home position as set */
-			status_flags.condition_home_position_valid = _home_pub.update();
-
-			home.timestamp = hrt_absolute_time();
-			home.manual_home = false;
+			// mark home position as set
+			status_flags.condition_home_position_valid = _home_pub.update(home);
 
 			return status_flags.condition_home_position_valid;
 		}
@@ -1629,7 +1621,7 @@ Commander::run()
 					 * so lets reset to a classic non-usb state.
 					 */
 					mavlink_log_critical(&mavlink_log_pub, "USB disconnected, rebooting.")
-					usleep(400000);
+					px4_usleep(400000);
 					px4_shutdown_request(true, false);
 				}
 			}
@@ -1747,26 +1739,41 @@ Commander::run()
 			was_falling = land_detector.freefall;
 		}
 
-		// Auto disarm when landed
-		if (!have_taken_off_since_arming) {
-			// pilot has ten seconds time to take off
-			auto_disarm_hysteresis.set_hysteresis_time_from(false, 10_s);
+
+		// Auto disarm when landed or kill switch engaged
+		if (armed.armed) {
+
+			// Check for auto-disarm on landing
+			if (_disarm_when_landed_timeout.get() > 0) {
+
+				if (!have_taken_off_since_arming) {
+					// pilot has ten seconds time to take off
+					_auto_disarm_landed.set_hysteresis_time_from(false, 10_s);
+
+				} else {
+					_auto_disarm_landed.set_hysteresis_time_from(false, _disarm_when_landed_timeout.get() * 1_s);
+				}
+
+				_auto_disarm_landed.set_state_and_update(land_detector.landed);
+
+				if (_auto_disarm_landed.get_state()) {
+					arm_disarm(false, &mavlink_log_pub, "auto disarm on land");
+				}
+			}
+
+
+			// Auto disarm after 5 seconds if kill switch is engaged
+			_auto_disarm_killed.set_state_and_update(armed.manual_lockdown);
+
+			if (_auto_disarm_killed.get_state()) {
+				arm_disarm(false, &mavlink_log_pub, "kill switch still engaged, disarming");
+			}
 
 		} else {
-			auto_disarm_hysteresis.set_hysteresis_time_from(false, _disarm_when_landed_timeout.get() * 1_s);
+			_auto_disarm_landed.set_state_and_update(false);
+			_auto_disarm_killed.set_state_and_update(false);
 		}
 
-		// Check for auto-disarm
-		if (armed.armed && land_detector.landed && _disarm_when_landed_timeout.get() > FLT_EPSILON) {
-			auto_disarm_hysteresis.set_state_and_update(true);
-
-		} else {
-			auto_disarm_hysteresis.set_state_and_update(false);
-		}
-
-		if (auto_disarm_hysteresis.get_state()) {
-			arm_disarm(false, &mavlink_log_pub, "auto disarm on land");
-		}
 
 		if (!warning_action_on) {
 			// store the last good main_state when not in an navigation
@@ -2101,7 +2108,7 @@ Commander::run()
 										     &mavlink_log_pub, &status_flags, arm_requirements, hrt_elapsed_time(&commander_boot_timestamp));
 
 						if (arming_ret != TRANSITION_CHANGED) {
-							usleep(100000);
+							px4_usleep(100000);
 							print_reject_arm("NOT ARMING: Preflight checks failed");
 						}
 					}
@@ -2428,10 +2435,10 @@ Commander::run()
 			status_changed = true;
 
 			if (status.failsafe) {
-				mavlink_log_info(&mavlink_log_pub, "Failsafe mode enabled");
+				mavlink_log_info(&mavlink_log_pub, "Failsafe mode activated");
 
 			} else {
-				mavlink_log_info(&mavlink_log_pub, "Failsafe mode disabled");
+				mavlink_log_info(&mavlink_log_pub, "Failsafe mode deactivated");
 			}
 
 			failsafe_old = status.failsafe;
@@ -2556,7 +2563,7 @@ Commander::run()
 
 		arm_auth_update(now, params_updated || param_init_forced);
 
-		usleep(COMMANDER_MONITORING_INTERVAL);
+		px4_usleep(COMMANDER_MONITORING_INTERVAL);
 	}
 
 	thread_should_exit = true;
@@ -2691,6 +2698,10 @@ control_status_leds(vehicle_status_s *status_local, const actuator_armed_s *actu
 	}
 
 	last_overload = overload;
+
+	/* board supports HW armed indicator */
+
+	BOARD_INDICATE_ARMED_STATE(actuator_armed->armed);
 
 #if !defined(CONFIG_ARCH_LEDS) && defined(BOARD_HAS_CONTROL_STATUS_LEDS)
 
@@ -3537,7 +3548,6 @@ void *commander_low_prio_loop(void *arg)
 	/* wakeup source(s) */
 	px4_pollfd_struct_t fds[1];
 
-	/* use the gyro to pace output - XXX BROKEN if we are using the L3GD20 */
 	fds[0].fd = cmd_sub;
 	fds[0].events = POLLIN;
 
@@ -3574,19 +3584,19 @@ void *commander_low_prio_loop(void *arg)
 
 					if (((int)(cmd.param1)) == 1) {
 						answer_command(cmd, vehicle_command_s::VEHICLE_CMD_RESULT_ACCEPTED, command_ack_pub);
-						usleep(100000);
+						px4_usleep(100000);
 						/* reboot */
 						px4_shutdown_request(true, false);
 
 					} else if (((int)(cmd.param1)) == 2) {
 						answer_command(cmd, vehicle_command_s::VEHICLE_CMD_RESULT_ACCEPTED, command_ack_pub);
-						usleep(100000);
+						px4_usleep(100000);
 						/* shutdown */
 						px4_shutdown_request(false, false);
 
 					} else if (((int)(cmd.param1)) == 3) {
 						answer_command(cmd, vehicle_command_s::VEHICLE_CMD_RESULT_ACCEPTED, command_ack_pub);
-						usleep(100000);
+						px4_usleep(100000);
 						/* reboot to bootloader */
 						px4_shutdown_request(true, true);
 
@@ -3733,7 +3743,7 @@ void *commander_low_prio_loop(void *arg)
 #ifdef __PX4_QURT
 						// TODO FIXME: on snapdragon the save happens too early when the params
 						// are not set yet. We therefore need to wait some time first.
-						usleep(1000000);
+						px4_usleep(1000000);
 #endif
 
 						int ret = param_save_default();
@@ -4115,7 +4125,7 @@ void Commander::battery_status_check()
 
 				if (battery.warning == battery_status_s::BATTERY_WARNING_EMERGENCY) {
 					mavlink_log_critical(&mavlink_log_pub, "DANGEROUSLY LOW BATTERY, SHUT SYSTEM DOWN");
-					usleep(200000);
+					px4_usleep(200000);
 
 					int ret_val = px4_shutdown_request(false, false);
 
@@ -4123,7 +4133,7 @@ void Commander::battery_status_check()
 						mavlink_log_critical(&mavlink_log_pub, "SYSTEM DOES NOT SUPPORT SHUTDOWN");
 
 					} else {
-						while (1) { usleep(1); }
+						while (1) { px4_usleep(1); }
 					}
 				}
 			}
