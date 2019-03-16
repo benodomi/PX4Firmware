@@ -38,7 +38,7 @@ px4_add_romfs_files(
 	1000_rc_fw_easystar.hil
 	1001_rc_quad_x.hil
 	1002_standard_vtol.hil
-	
+
 	# [2000, 2999] Standard planes"
 	2100_standard_plane
 	2105_maja
@@ -134,7 +134,11 @@ px4_add_romfs_files(
 	15001_coax_heli
 
 	16001_helicopter
-	
+
+    # 17000, 17999 - AutoGyro
+    #17001 TF-G1
+    17002_auto_g2
+
 	24001_dodeca_cox
 
 	50000_generic_ground_vehicle
