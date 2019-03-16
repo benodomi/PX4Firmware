@@ -9,14 +9,16 @@ CH1: Aileron mixer
 Two scalers total (output, roll).
 
 M: 1
-S: 0 0  10000  10000      0 -10000  10000
+O: 7500 7500 0 -10000 10000
+S: 0 0  -10000  -10000      0 -10000  10000
 
 CH2: Elevator mixer
 ------------
 Two scalers total (output, roll).
 
 M: 1
-S: 0 1  -10000  -10000      0 -10000  10000
+O: 7500 7500 0 -10000 10000
+S: 0 1  10000  10000      0 -10000  10000
 
 CH3: Rudder mixer
 ------------
