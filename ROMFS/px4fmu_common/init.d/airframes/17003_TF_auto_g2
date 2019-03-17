@@ -1,0 +1,32 @@
+#!/bin/sh
+#
+# @name Auto-G2
+#
+# @type AutoGyro
+# @class Autogyro
+#
+# @output MAIN1 aileron
+# @output MAIN2 elevator
+# @output MAIN3 throttle
+# @output MAIN4 rudder
+# @output MAIN5 prerotator
+#
+# @output AUX1 feed-through of RC AUX1 channel
+# @output AUX2 feed-through of RC AUX2 channel
+# @output AUX3 feed-through of RC AUX3 channel
+#
+# @maintainer Roman Dvorak <romandvorak@mlab.cz>, ThunderFly
+#
+
+sh /etc/init.d/rc.fw_defaults
+
+if [ $AUTOCNF = yes ]
+then
+	param set PWM_AUX_RATE 50
+	param set PWM_RATE 50
+fi
+
+set MIXER TF-auto_g2
+
+# rotation 16: roll - 180deg
+set SENS_BOARD_ROT 16
