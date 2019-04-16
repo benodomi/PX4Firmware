@@ -110,7 +110,7 @@ private:
 #endif
 
 	DEFINE_PARAMETERS(
-		(ParamBool<px4::params::SYS_STCK_EN>) _stack_check_enabled
+		(ParamBool<px4::params::SYS_STCK_EN>) _param_sys_stck_en
 	)
 
 	work_s _work{};
@@ -151,7 +151,7 @@ int LoadMon::task_spawn(int argc, char *argv[])
 		return ret;
 	}
 
-	_object = obj;
+	_object.store(obj);
 	_task_id = task_id_is_work_queue;
 	return 0;
 }
@@ -170,7 +170,7 @@ void LoadMon::_cycle()
 
 #ifdef __PX4_NUTTX
 
-	if (_stack_check_enabled.get()) {
+	if (_param_sys_stck_en.get()) {
 		_stack_usage();
 	}
 

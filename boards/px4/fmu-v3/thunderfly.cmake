@@ -60,7 +60,8 @@ px4_add_board(
 		tap_esc
 		telemetry # all available telemetry drivers
 		test_ppm
-		#uavcan
+		tone_alarm
+		uavcan
 
 	MODULES
 		attitude_estimator_q
@@ -83,9 +84,9 @@ px4_add_board(
 		mc_pos_control
         rw_att_control
         rw_pos_control_l1
-        rw_prerotate
+#        rw_prerotate
 		navigator
-		position_estimator_inav
+##		position_estimator_inav ##TF: odebrano pri merge s master
 		sensors
 		vmount
 #		vtol_att_control
@@ -118,11 +119,12 @@ px4_add_board(
 		ver
 
 	EXAMPLES
-#		bottle_drop # OBC challenge
-#		fixedwing_control # Tutorial code from https://px4.io/dev/example_fixedwing_control
-#		hello
-#		hwtest # Hardware test
+		bottle_drop # OBC challenge
+		fixedwing_control # Tutorial code from https://px4.io/dev/example_fixedwing_control
+		hello
+		hwtest # Hardware test
 #		#matlab_csv_serial
+		position_estimator_inav
 #		#publisher
 		px4_mavlink_debug # Tutorial code from https://px4.io/dev/debug_values
 		px4_simple_app # Tutorial code from https://px4.io/dev/px4_simple_app

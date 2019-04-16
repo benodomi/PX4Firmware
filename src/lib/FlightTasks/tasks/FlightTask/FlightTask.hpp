@@ -69,6 +69,7 @@ public:
 
 	/**
 	 * Initialize the uORB subscriptions using an array
+	 * @param subscription_array handling uORB subscribtions externally across task switches
 	 * @return true on success, false on error
 	 */
 	virtual bool initializeSubscriptions(SubscriptionArray &subscription_array);
@@ -86,9 +87,10 @@ public:
 
 	/**
 	 * To be called to adopt parameters from an arrived vehicle command
+	 * @param command received command message containing the parameters
 	 * @return true if accepted, false if declined
 	 */
-	virtual bool applyCommandParameters(const vehicle_command_s &command) { return true; }
+	virtual bool applyCommandParameters(const vehicle_command_s &command) { return false; }
 
 	/**
 	 * Call before activate() or update()
@@ -105,6 +107,7 @@ public:
 
 	/**
 	 * Get the output data
+	 * @return task output setpoints that get executed by the positon controller
 	 */
 	const vehicle_local_position_setpoint_s getPositionSetpoint();
 
@@ -237,9 +240,9 @@ protected:
 	vehicle_trajectory_waypoint_s _desired_waypoint{};
 
 	DEFINE_PARAMETERS_CUSTOM_PARENT(ModuleParams,
-					(ParamFloat<px4::params::MPC_XY_VEL_MAX>) MPC_XY_VEL_MAX,
-					(ParamFloat<px4::params::MPC_Z_VEL_MAX_DN>) MPC_Z_VEL_MAX_DN,
-					(ParamFloat<px4::params::MPC_Z_VEL_MAX_UP>) MPC_Z_VEL_MAX_UP,
-					(ParamFloat<px4::params::MPC_TILTMAX_AIR>) MPC_TILTMAX_AIR
+					(ParamFloat<px4::params::MPC_XY_VEL_MAX>) _param_mpc_xy_vel_max,
+					(ParamFloat<px4::params::MPC_Z_VEL_MAX_DN>) _param_mpc_z_vel_max_dn,
+					(ParamFloat<px4::params::MPC_Z_VEL_MAX_UP>) _param_mpc_z_vel_max_up,
+					(ParamFloat<px4::params::MPC_TILTMAX_AIR>) _param_mpc_tiltmax_air
 				       )
 };

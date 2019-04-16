@@ -229,8 +229,6 @@ AttitudeEstimatorQ::~AttitudeEstimatorQ()
 
 int AttitudeEstimatorQ::start()
 {
-	ASSERT(_control_task == -1);
-
 	/* start the task */
 	_control_task = px4_task_spawn_cmd("attitude_estimator_q",
 					   SCHED_DEFAULT,
@@ -341,6 +339,7 @@ void AttitudeEstimatorQ::task_main()
 		}
 
 		// Update vision and motion capture heading
+		_ext_hdg_good = false;
 		bool vision_updated = false;
 		orb_check(_vision_odom_sub, &vision_updated);
 

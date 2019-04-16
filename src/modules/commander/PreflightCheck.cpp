@@ -44,6 +44,8 @@
 #include "health_flag_helper.h"
 #include "rc_check.h"
 
+#include <math.h>
+
 #include <parameters/param.h>
 #include <systemlib/mavlink_log.h>
 #include <uORB/Subscription.hpp>
@@ -383,20 +385,6 @@ static bool airspeedCheck(orb_advert_t *mavlink_log_pub, vehicle_status_s &statu
 	int fd_airspeed = orb_subscribe(ORB_ID(airspeed));
 	airspeed_s airspeed = {};
 
-	int fd_diffpres = orb_subscribe(ORB_ID(differential_pressure));
-	differential_pressure_s differential_pressure = {};
-
-	if ((orb_copy(ORB_ID(differential_pressure), fd_diffpres, &differential_pressure) != PX4_OK) ||
-	    (hrt_elapsed_time(&differential_pressure.timestamp) > 1_s)) {
-		if (report_fail && !optional) {
-			mavlink_log_critical(mavlink_log_pub, "Preflight Fail: Airspeed Sensor missing");
-		}
-
-		present = false;
-		success = false;
-		goto out;
-	}
-
 	if ((orb_copy(ORB_ID(airspeed), fd_airspeed, &airspeed) != PX4_OK) ||
 	    (hrt_elapsed_time(&airspeed.timestamp) > 1_s)) {
 		if (report_fail && !optional) {
@@ -425,11 +413,11 @@ static bool airspeedCheck(orb_advert_t *mavlink_log_pub, vehicle_status_s &statu
 	}
 
 	/**
-	 * Check if differential pressure is off by more than 15Pa which equals ~5m/s when measuring no airspeed.
+	 * Check if airspeed is higher than 4m/s (accepted max) while the vehicle is landed / not flying
 	 * Negative and positive offsets are considered. Do not check anymore while arming because pitot cover
 	 * might have been removed.
 	 */
-	if (fabsf(differential_pressure.differential_pressure_filtered_pa) > 15.0f && !prearm) {
+	if (fabsf(airspeed.indicated_airspeed_m_s) > 4.0f && !prearm) {
 		if (report_fail) {
 			mavlink_log_critical(mavlink_log_pub, "Preflight Fail: check Airspeed Cal or Pitot");
 		}
@@ -443,7 +431,6 @@ out:
 	set_health_flags(subsystem_info_s::SUBSYSTEM_TYPE_DIFFPRESSURE, present, !optional, success, status);
 
 	orb_unsubscribe(fd_airspeed);
-	orb_unsubscribe(fd_diffpres);
 
 	return success;
 }
@@ -531,7 +518,7 @@ static bool ekf2Check(orb_advert_t *mavlink_log_pub, vehicle_status_s &vehicle_s
 
 	if (status.hgt_test_ratio > test_limit) {
 		if (report_fail) {
-			mavlink_log_critical(mavlink_log_pub, "Preflight Fail: Height estimate Error");
+			mavlink_log_critical(mavlink_log_pub, "Preflight Fail: Height estimate error");
 		}
 
 		success = false;
@@ -543,7 +530,7 @@ static bool ekf2Check(orb_advert_t *mavlink_log_pub, vehicle_status_s &vehicle_s
 
 	if (status.vel_test_ratio > test_limit) {
 		if (report_fail) {
-			mavlink_log_critical(mavlink_log_pub, "Preflight Fail: Velocity estimate Error");
+			mavlink_log_critical(mavlink_log_pub, "Preflight Fail: Velocity estimate error");
 		}
 
 		success = false;
@@ -555,7 +542,7 @@ static bool ekf2Check(orb_advert_t *mavlink_log_pub, vehicle_status_s &vehicle_s
 
 	if (status.pos_test_ratio > test_limit) {
 		if (report_fail) {
-			mavlink_log_critical(mavlink_log_pub, "Preflight Fail: Horizontal estimate Pos Error");
+			mavlink_log_critical(mavlink_log_pub, "Preflight Fail: Position estimate error");
 		}
 
 		success = false;
@@ -567,7 +554,7 @@ static bool ekf2Check(orb_advert_t *mavlink_log_pub, vehicle_status_s &vehicle_s
 
 	if (status.mag_test_ratio > test_limit) {
 		if (report_fail) {
-			mavlink_log_critical(mavlink_log_pub, "Preflight Fail: Yaw estimate Error");
+			mavlink_log_critical(mavlink_log_pub, "Preflight Fail: Yaw estimate error");
 		}
 
 		success = false;
@@ -577,14 +564,19 @@ static bool ekf2Check(orb_advert_t *mavlink_log_pub, vehicle_status_s &vehicle_s
 	// check accelerometer delta velocity bias estimates
 	param_get(param_find("COM_ARM_EKF_AB"), &test_limit);
 
-	if (fabsf(status.states[13]) > test_limit || fabsf(status.states[14]) > test_limit
-	    || fabsf(status.states[15]) > test_limit) {
-		if (report_fail) {
-			mavlink_log_critical(mavlink_log_pub, "Preflight Fail: High Accelerometer Bias");
-		}
+	for (uint8_t index = 13; index < 16; index++) {
+		// allow for higher uncertainty in estimates for axes that are less observable to prevent false positives
+		// adjust test threshold by 3-sigma
+		float test_uncertainty = 3.0f * sqrtf(fmaxf(status.covariances[index], 0.0f));
 
-		success = false;
-		goto out;
+		if (fabsf(status.states[index]) > test_limit + test_uncertainty) {
+			if (report_fail) {
+				mavlink_log_critical(mavlink_log_pub, "Preflight Fail: High Accelerometer Bias");
+			}
+
+			success = false;
+			goto out;
+		}
 	}
 
 	// check gyro delta angle bias estimates

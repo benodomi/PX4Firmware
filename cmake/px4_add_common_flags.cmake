@@ -66,6 +66,7 @@ function(px4_add_common_flags)
 		-Werror
 
 		-Warray-bounds
+		-Wcast-align
 		-Wdisabled-optimization
 		-Wdouble-promotion
 		-Wfatal-errors
@@ -97,7 +98,6 @@ function(px4_add_common_flags)
 			add_compile_options(
 				-Qunused-arguments
 
-				-Wno-address-of-packed-member
 				-Wno-unknown-warning-option
 				-Wno-unused-const-variable
 				-Wno-varargs
@@ -176,6 +176,7 @@ function(px4_add_common_flags)
 		${PX4_SOURCE_DIR}/src/lib/matrix
 		${PX4_SOURCE_DIR}/src/modules
 		${PX4_SOURCE_DIR}/src/platforms
+		${PX4_SOURCE_DIR}/src/platforms/common
 		)
 
 	add_definitions(

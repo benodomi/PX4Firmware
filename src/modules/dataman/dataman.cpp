@@ -46,6 +46,7 @@
 #include <px4_module.h>
 #include <px4_posix.h>
 #include <px4_tasks.h>
+#include <px4_getopt.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -56,7 +57,6 @@
 #include <string.h>
 #include <semaphore.h>
 #include <unistd.h>
-#include <platforms/px4_getopt.h>
 #include <drivers/drv_hrt.h>
 
 #include "dataman.h"
@@ -1020,7 +1020,7 @@ _ram_flash_flush()
 	dm_operations_data.ram_flash.flush_timeout_usec = 0;
 
 	ssize_t ret = up_progmem_getpage(k_dataman_flash_sector->address);
-	ret = up_progmem_erasepage(ret);
+	ret = up_progmem_eraseblock(ret);
 
 	if (ret < 0) {
 		PX4_WARN("Error erasing flash sector %u", k_dataman_flash_sector->page);

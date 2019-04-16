@@ -67,20 +67,14 @@ static hrt_abstime px4_timestart_monotonic = 0;
 static int32_t dsp_offset = 0;
 #endif
 
-static hrt_abstime _start_delay_time = 0;
-static hrt_abstime _delay_interval = 0;
-static hrt_abstime max_time = 0;
-static pthread_mutex_t _hrt_mutex = PTHREAD_MUTEX_INITIALIZER;
-
 #if defined(ENABLE_LOCKSTEP_SCHEDULER)
-static LockstepScheduler lockstep_scheduler;
+static LockstepScheduler *lockstep_scheduler = new LockstepScheduler();
 #endif
 
 
 hrt_abstime hrt_absolute_time_offset();
 static void hrt_call_reschedule();
 static void hrt_call_invoke();
-static hrt_abstime _hrt_absolute_time_internal();
 __EXPORT hrt_abstime hrt_reset();
 
 hrt_abstime hrt_absolute_time_offset()
@@ -158,8 +152,13 @@ uint64_t hrt_system_time()
 /*
  * Get absolute time.
  */
-hrt_abstime _hrt_absolute_time_internal()
+hrt_abstime hrt_absolute_time()
 {
+#if defined(ENABLE_LOCKSTEP_SCHEDULER)
+	// optimized case (avoid ts_to_abstime) if lockstep scheduler is used
+	const uint64_t abstime = lockstep_scheduler->get_absolute_time();
+	return abstime - px4_timestart_monotonic;
+#else // defined(ENABLE_LOCKSTEP_SCHEDULER)
 	struct timespec ts;
 	px4_clock_gettime(CLOCK_MONOTONIC, &ts);
 #ifdef __PX4_QURT
@@ -167,6 +166,7 @@ hrt_abstime _hrt_absolute_time_internal()
 #else
 	return ts_to_abstime(&ts);
 #endif
+#endif // defined(ENABLE_LOCKSTEP_SCHEDULER)
 }
 
 #ifdef __PX4_QURT
@@ -177,42 +177,12 @@ int hrt_set_absolute_time_offset(int32_t time_diff_us)
 }
 #endif
 
-/*
- * Get absolute time.
- */
-hrt_abstime hrt_absolute_time()
-{
-	pthread_mutex_lock(&_hrt_mutex);
-
-	hrt_abstime ret;
-
-	if (_start_delay_time > 0) {
-		ret = _start_delay_time;
-
-	} else {
-		ret = _hrt_absolute_time_internal();
-	}
-
-	ret -= _delay_interval;
-
-	if (ret < max_time) {
-		PX4_ERR("WARNING! TIME IS NEGATIVE! %d vs %d", (int)ret, (int)max_time);
-		ret = max_time;
-	}
-
-	max_time = ret;
-	pthread_mutex_unlock(&_hrt_mutex);
-
-	return ret;
-}
-
 hrt_abstime hrt_reset()
 {
 #ifndef __PX4_QURT
 	px4_timestart_monotonic = 0;
 #endif
-	max_time = 0;
-	return _hrt_absolute_time_internal();
+	return hrt_absolute_time();
 }
 
 /*
@@ -235,8 +205,9 @@ hrt_abstime ts_to_abstime(const struct timespec *ts)
  * This function is safe to use even if the timestamp is updated
  * by an interrupt during execution.
  */
-hrt_abstime hrt_elapsed_time(const volatile hrt_abstime *then)
+hrt_abstime hrt_elapsed_time_atomic(const volatile hrt_abstime *then)
 {
+	// This is not atomic as the value on the application layer of POSIX is limited.
 	hrt_abstime delta = hrt_absolute_time() - *then;
 	return delta;
 }
@@ -315,41 +286,6 @@ void	hrt_init()
 	}
 
 	memset(&_hrt_work, 0, sizeof(_hrt_work));
-}
-
-void	hrt_start_delay()
-{
-	pthread_mutex_lock(&_hrt_mutex);
-	_start_delay_time = _hrt_absolute_time_internal();
-	pthread_mutex_unlock(&_hrt_mutex);
-}
-
-void	hrt_stop_delay_delta(hrt_abstime delta)
-{
-	pthread_mutex_lock(&_hrt_mutex);
-
-	uint64_t delta_measured = _hrt_absolute_time_internal() - _start_delay_time;
-
-	if (delta_measured < delta) {
-		delta = delta_measured;
-	}
-
-	_delay_interval += delta;
-	_start_delay_time = 0;
-
-	pthread_mutex_unlock(&_hrt_mutex);
-
-}
-
-void	hrt_stop_delay()
-{
-	pthread_mutex_lock(&_hrt_mutex);
-	uint64_t delta = _hrt_absolute_time_internal() - _start_delay_time;
-	_delay_interval += delta;
-	_start_delay_time = 0;
-
-	pthread_mutex_unlock(&_hrt_mutex);
-
 }
 
 static void
@@ -603,7 +539,7 @@ int px4_clock_gettime(clockid_t clk_id, struct timespec *tp)
 {
 	if (clk_id == CLOCK_MONOTONIC) {
 #if defined(ENABLE_LOCKSTEP_SCHEDULER)
-		const uint64_t abstime = lockstep_scheduler.get_absolute_time();
+		const uint64_t abstime = lockstep_scheduler->get_absolute_time();
 		abstime_to_ts(tp, abstime - px4_timestart_monotonic);
 		return 0;
 #else // defined(ENABLE_LOCKSTEP_SCHEDULER)
@@ -635,7 +571,7 @@ int px4_clock_settime(clockid_t clk_id, const struct timespec *ts)
 			px4_timestart_monotonic = time_us;
 		}
 
-		lockstep_scheduler.set_absolute_time(time_us);
+		lockstep_scheduler->set_absolute_time(time_us);
 		return 0;
 	}
 }
@@ -649,9 +585,9 @@ int px4_usleep(useconds_t usec)
 		return system_usleep(usec);
 	}
 
-	const uint64_t time_finished = lockstep_scheduler.get_absolute_time() + usec;
+	const uint64_t time_finished = lockstep_scheduler->get_absolute_time() + usec;
 
-	return lockstep_scheduler.usleep_until(time_finished);
+	return lockstep_scheduler->usleep_until(time_finished);
 }
 
 unsigned int px4_sleep(unsigned int seconds)
@@ -662,10 +598,10 @@ unsigned int px4_sleep(unsigned int seconds)
 		return system_sleep(seconds);
 	}
 
-	const uint64_t time_finished = lockstep_scheduler.get_absolute_time() +
+	const uint64_t time_finished = lockstep_scheduler->get_absolute_time() +
 				       ((uint64_t)seconds * 1000000);
 
-	return lockstep_scheduler.usleep_until(time_finished);
+	return lockstep_scheduler->usleep_until(time_finished);
 }
 
 int px4_pthread_cond_timedwait(pthread_cond_t *cond,
@@ -674,6 +610,6 @@ int px4_pthread_cond_timedwait(pthread_cond_t *cond,
 {
 	const uint64_t time_us = ts_to_abstime(ts);
 	const uint64_t scheduled = time_us + px4_timestart_monotonic;
-	return lockstep_scheduler.cond_timedwait(cond, mutex, scheduled);
+	return lockstep_scheduler->cond_timedwait(cond, mutex, scheduled);
 }
 #endif

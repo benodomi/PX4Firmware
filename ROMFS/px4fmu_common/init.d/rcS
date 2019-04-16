@@ -27,9 +27,11 @@ set FAILSAFE none
 set FAILSAFE_AUX none
 set FCONFIG /fs/microsd/etc/config.txt
 set FEXTRAS /fs/microsd/etc/extras.txt
-set FRC /fs/microsd/etc/rc.txt
+
 set FMU_ARGS ""
 set FMU_MODE pwm
+set FRC /fs/microsd/etc/rc.txt
+set IO_PRESENT no
 set IOFW "/etc/extras/px4_io-v2_default.bin"
 set IO_PRESENT no
 set LOG_FILE /fs/microsd/bootlog.txt
@@ -56,6 +58,12 @@ set PWM_RATE p:PWM_RATE
 set SDCARD_MIXERS_PATH /fs/microsd/etc/mixers
 set USE_IO no
 set VEHICLE_TYPE none
+
+# Airframe parameter versioning: airframe maintainers can set this in the
+# airframe startup script, and then increase it by one whenever an airframe
+# parameter is updated - it will ensure that these parameters will be updated
+# when the firmware is flashed.
+set PARAM_DEFAULTS_VER 1
 
 #
 # Mount the procfs.
@@ -169,67 +177,69 @@ else
 	fi
 
 	#
+	# Set AUTOCNF flag to use it in AUTOSTART scripts.
+	#
+	if param compare SYS_AUTOCONFIG 1
+	then
+		# Wipe out params except RC*, flight modes, total flight time, accel cal, gyro cal
+		param reset_nostart RC* COM_FLTMODE* LND_FLIGHT_T_* TC_* CAL_ACC* CAL_GYRO*
+		set AUTOCNF yes
+	else
+		if param compare SYS_AUTOCONFIG 2
+		then
+			set AUTOCNF yes
+		else
+			set AUTOCNF no
+		fi
+	fi
+
+	#
+	# Optional board defaults: rc.board_defaults
+	#
+	set BOARD_RC_DEFAULTS /etc/init.d/rc.board_defaults
+	if [ -f $BOARD_RC_DEFAULTS ]
+	then
+		echo "Board defaults: ${BOARD_RC_DEFAULTS}"
+		sh $BOARD_RC_DEFAULTS
+	fi
+	unset BOARD_RC_DEFAULTS
+
+	rgbled_ncp5623c start
+	
+	#
+	# Waypoint storage.
+	# REBOOTWORK this needs to start in parallel.
+	#
+	dataman start $DATAMAN_OPT
+
+	#
+	# Start the socket communication send_event handler.
+	#
+	send_event start
+
+	#
+	# Start the resource load monitor.
+	#
+	load_mon start
+
+	#
+	# Start system state indicator.
+	#
+	rgbled start
+	rgbled_ncp5623c start
+	rgbled_pwm start
+
+	if blinkm start
+	then
+		blinkm systemstate
+	fi
+
+	#
 	# Start the tone_alarm driver.
 	# Needs to be started after the parameters are loaded (for CBRK_BUZZER).
 	# Note that this will still play the already published startup tone.
 	#
 	tone_alarm start
-
-	#
-	# Start system state indicator.
-	#
-	if ! rgbled start
-	then
-		if blinkm start
-		then
-			blinkm systemstate
-		fi
-	fi
-
-	rgbled_ncp5623c start
-
-	#
-	# FMUv5 may have both PWM I2C RGB LED support.
-	#
-	rgbled_pwm start
-
-	#
-	# Set AUTOCNF flag to use it in AUTOSTART scripts.
-	#
-	if param compare SYS_AUTOCONFIG 1
-	then
-		# Wipe out params except RC*, flight modes and total flight time.
-		param reset_nostart RC* COM_FLTMODE* LND_FLIGHT_T_* TC_* CAL_ACC* CAL_GYRO*
-		set AUTOCNF yes
-	else
-		set AUTOCNF no
-
-		#
-		# Release 1.4.0 transitional support: set to old default if unconfigured,
-		# this preserves the previous behaviour.
-		#
-		if param compare BAT_N_CELLS 0
-		then
-			param set BAT_N_CELLS 3
-		fi
-	fi
-
-	###############################################################################
-	#               Begin setup for board specific configurations.                #
-	###############################################################################
-
-	#
-	# run boards rc.board if available
-	#
-	if [ -f $BOARD_RC ]
-	then
-		echo "Board init: ${BOARD_RC}"
-		sh $BOARD_RC
-	fi
-
-	###############################################################################
-	#                 End Setup for board specific configurations.                #
-	###############################################################################
 
 	if param compare SYS_FMU_TASK 1
 	then
@@ -348,9 +358,23 @@ else
 		set OUTPUT_MODE hil
 		sensors start -h
 		commander start --hil
+
 		# disable GPS
 		param set GPS_1_CONFIG 0
+
 	else
+		#
+		# board sensors: rc.sensors
+		#
+		set BOARD_RC_SENSORS /etc/init.d/rc.board_sensors
+		if [ -f $BOARD_RC_SENSORS ]
+		then
+			echo "Board sensors: ${BOARD_RC_SENSORS}"
+			sh $BOARD_RC_SENSORS
+		fi
+		unset BOARD_RC_SENSORS
+
+
 		sh /etc/init.d/rc.sensors
 		commander start
 	fi
@@ -377,7 +401,7 @@ else
 		fi
 
 		camera_trigger start
-		param set CAM_FBACK_MODE 1
+
 		camera_feedback start
 	fi
 
@@ -423,6 +447,15 @@ else
 	#
 	sh /etc/init.d/rc.vehicle_setup
 
+	# Camera capture driver
+	if param greater CAM_CAP_FBACK 0
+	then
+		if camera_capture start
+		then
+			camera_capture on
+		fi
+	fi
+
 	#
 	# Start the navigator.
 	#
@@ -441,10 +474,6 @@ else
 	#
 	sh /etc/init.d/rc.thermal_cal
 
-	#
-	# Start the logger.
-	#
-	sh /etc/init.d/rc.logging
 
 	#
 	# Start vmount to control mounts such as gimbals, disabled by default.
@@ -454,14 +483,44 @@ else
 		vmount start
 	fi
 
+	# Check for flow sensor, launched as a background task to scan
+	px4flow start &
+
 	#
-	# Start any custom addons.
+	# Optional board supplied extras: rc.board_extras
+	#
+	set BOARD_RC_EXTRAS /etc/init.d/rc.board_extras
+	if [ -f $BOARD_RC_EXTRAS ]
+	then
+		echo "Board extras: ${BOARD_RC_EXTRAS}"
+		sh $BOARD_RC_EXTRAS
+	fi
+	unset BOARD_RC_EXTRAS
+
+	#
+	# Start any custom addons from the sdcard.
 	#
 	if [ -f $FEXTRAS ]
 	then
 		echo "Addons script: ${FEXTRAS}"
 		sh $FEXTRAS
 	fi
+
+	#
+	# Start the logger.
+	#
+	sh /etc/init.d/rc.logging
+
+
+	if ! param compare SYS_PARAM_VER ${PARAM_DEFAULTS_VER}
+	then
+		echo "Switched to different parameter version. Resetting parameters."
+		param set SYS_PARAM_VER ${PARAM_DEFAULTS_VER}
+		param set SYS_AUTOCONFIG 2
+		param save
+		reboot
+	fi
+
 #
 # End of autostart.
 #
@@ -470,6 +529,7 @@ fi
 #
 # Unset all script parameters to free RAM.
 #
+unset AUTOCNF
 unset AUX_MODE
 unset DATAMAN_OPT
 unset FAILSAFE
@@ -479,6 +539,8 @@ unset FEXTRAS
 unset FRC
 unset FMU_ARGS
 unset FMU_MODE
+unset FRC
+unset IO_PRESENT
 unset IOFW
 unset IO_PRESENT
 unset LOG_FILE
@@ -491,6 +553,7 @@ unset MIXER_FILE
 unset MK_MODE
 unset MKBLCTRL_ARG
 unset OUTPUT_MODE
+unset PARAM_DEFAULTS_VER
 unset PARAM_FILE
 unset PWM_AUX_DISARMED
 unset PWM_AUX_MAX
@@ -502,6 +565,8 @@ unset PWM_RATE
 unset PWM_DISARMED
 unset PWM_MAX
 unset PWM_MIN
+unset PWM_OUT
+unset PWM_RATE
 unset SDCARD_MIXERS_PATH
 unset USE_IO
 unset VEHICLE_TYPE

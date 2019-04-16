@@ -12,6 +12,7 @@ px4_add_board(
 	SERIAL_PORTS
 		GPS1:/dev/ttyS3
 		TEL1:/dev/ttyS4
+		TEL2:/dev/ttyS1
 
 	DRIVERS
 		barometer # all available barometer drivers
@@ -35,6 +36,7 @@ px4_add_board(
 		lights/blinkm
 		lights/oreoled
 		lights/rgbled
+		lights/rgbled_ncp5623c
 		lights/rgbled_pwm
 		magnetometer # all available magnetometer drivers
 		mkblctrl
@@ -47,6 +49,7 @@ px4_add_board(
 		tap_esc
 		telemetry # all available telemetry drivers
 		#test_ppm # NOT Portable YET
+		tone_alarm
 
 	MODULES
 		attitude_estimator_q
@@ -68,7 +71,6 @@ px4_add_board(
 		mc_att_control
 		mc_pos_control
 		navigator
-		position_estimator_inav
 		sensors
 		vmount
 		vtol_att_control
@@ -106,12 +108,11 @@ px4_add_board(
 		hello
 		hwtest # Hardware test
 		#matlab_csv_serial
-		#publisher
-		px4_mavlink_debug # Tutorial code from https://px4.io/dev/debug_values
-		px4_simple_app # Tutorial code from https://px4.io/dev/px4_simple_app
+		position_estimator_inav
+		px4_mavlink_debug # Tutorial code from http://dev.px4.io/en/debug/debug_values.html
+		px4_simple_app # Tutorial code from http://dev.px4.io/en/apps/hello_sky.html
 		rover_steering_control # Rover example app
 		segway
-		#subscriber
 		uuv_example_app
 
 	)
