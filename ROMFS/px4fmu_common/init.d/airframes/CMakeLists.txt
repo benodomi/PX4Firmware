@@ -38,13 +38,15 @@ px4_add_romfs_files(
 	1000_rc_fw_easystar.hil
 	1001_rc_quad_x.hil
 	1002_standard_vtol.hil
-
+	1100_rc_quad_x_sih.hil
+	
 	# [2000, 2999] Standard planes"
 	2100_standard_plane
 	2105_maja
 	2106_albatross
 	2200_mini_talon
-    2106_TF-A1
+    	
+	2107_TF-A1
 
 	# [3000, 3999] Flying wing"
 	3000_generic_wing
@@ -136,8 +138,8 @@ px4_add_romfs_files(
 
 	16001_helicopter
 
-    # [17000, 17999] Rotorwings, Autogyros
-    17001_TF-G1
+   	# [17000, 17999] Rotorwings, Autogyros
+    	17001_TF-G1
 
 	24001_dodeca_cox
 
