@@ -65,6 +65,8 @@
 #include <version/version.h>
 #include <mathlib/mathlib.h>
 
+
+#include "mavlink_orb_subscription.h" 
 #include "mavlink_receiver.h"
 #include "mavlink_main.h"
 #include "mavlink_messages.h"
