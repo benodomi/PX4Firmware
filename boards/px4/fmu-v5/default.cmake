@@ -19,6 +19,7 @@ px4_add_board(
 
 	DRIVERS
 		barometer # all available barometer drivers
+        rotor_frequency
 		batt_smbus
 		camera_capture
 		camera_trigger
