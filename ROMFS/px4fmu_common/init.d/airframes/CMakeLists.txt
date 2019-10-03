@@ -141,7 +141,11 @@ px4_add_romfs_files(
 	15001_coax_heli
 
 	16001_helicopter
-	
+
+    # [17000, 17999] AutoGyro
+    17001_TF-R1
+    17002_TF-AutoG2
+
 	24001_dodeca_cox
 
 	50000_generic_ground_vehicle
