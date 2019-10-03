@@ -1,9 +1,9 @@
 #!nsh
 #
-# @name ThunderFly TF-AutoG2
+# @name ThunderFly TF:AutoG2
 #
 # @type AutoGyro
-# @class Autogyro
+# @class AutoGyro
 #
 # @output MAIN1 rotor_head_L
 # @output MAIN2 rotor_head_R

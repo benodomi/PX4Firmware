@@ -3,7 +3,7 @@
 # @name ThunderFly TF-G1
 #
 # @type AutoGyro
-# @class Autogyro
+# @class AutoGyro
 #
 # @output MAIN1 rotor_head_L
 # @output MAIN2 rotor_head_R
