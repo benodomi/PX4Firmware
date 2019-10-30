@@ -262,6 +262,8 @@ rtps:
     id: 114
   - msg: airspeed_validated
     id: 115
+  - msg: onboard_computer_status
+    id: 116
   ########## multi topics: begin ##########
   - msg: actuator_controls_0
     id: 150
@@ -322,7 +324,7 @@ rtps:
   - msg: vehicle_angular_velocity_groundtruth
     id: 168
     alias: vehicle_angular_velocity
-    msg: vehicle_visual_odometry_aligned
+  - msg: vehicle_visual_odometry_aligned
     id: 169
     alias: vehicle_odometry
   ########## multi topics: end ##########

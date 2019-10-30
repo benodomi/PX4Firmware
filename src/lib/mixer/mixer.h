@@ -192,7 +192,7 @@ public:
 	 * @param control_cb		Callback invoked when reading controls.
 	 */
 	Mixer(ControlCallback control_cb, uintptr_t cb_handle);
-	virtual ~Mixer() {}
+	virtual ~Mixer() = default;
 
 	/**
 	 * Perform the mixing function.
@@ -241,7 +241,7 @@ public:
 	virtual unsigned get_trim(float *trim) = 0;
 
 	/*
-	 * @brief      Sets the thrust factor used to calculate mapping from desired thrust to pwm.
+	 * @brief      Sets the thrust factor used to calculate mapping from desired thrust to motor control signal output.
 	 *
 	 * @param[in]  val   The value
 	 */
@@ -444,7 +444,7 @@ public:
 	}
 
 	/**
-	 * @brief      Sets the thrust factor used to calculate mapping from desired thrust to pwm.
+	 * @brief      Sets the thrust factor used to calculate mapping from desired thrust to motor control signal output.
 	 *
 	 * @param[in]  val   The value
 	 */
@@ -471,7 +471,7 @@ class NullMixer : public Mixer
 {
 public:
 	NullMixer();
-	~NullMixer() {}
+	~NullMixer() = default;
 
 	/**
 	 * Factory method.
@@ -708,7 +708,7 @@ public:
 	}
 
 	/**
-	 * @brief      Sets the thrust factor used to calculate mapping from desired thrust to pwm.
+	 * @brief      Sets the thrust factor used to calculate mapping from desired thrust to motor control signal output.
 	 *
 	 * @param[in]  val   The value
 	 */
