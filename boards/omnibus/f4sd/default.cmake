@@ -19,6 +19,7 @@ px4_add_board(
 		#camera_trigger
 		#differential_pressure # all available differential pressure drivers
 		#distance_sensor # all available distance sensor drivers
+		dshot
 		gps
 		#heater
 		#imu # all available imu drivers
@@ -60,6 +61,7 @@ px4_add_board(
 		mc_att_control
 		mc_pos_control
 		navigator
+		battery_status
 		sensors
 		sih
 		#vmount
