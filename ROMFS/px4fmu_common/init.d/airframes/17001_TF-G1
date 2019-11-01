@@ -7,14 +7,17 @@
 #
 # @output MAIN1 rotor_head_L
 # @output MAIN2 rotor_head_R
-# @output MAIN3 elevator
-# @output MAIN4 rudder L
-# @output MAIN5 rudder R
-# @output MAIN6 throttle
+# @output MAIN3 A-tail L
+# @output MAIN4 A-tail R
+# @output MAIN5 throttle
+# @output MAIN6 prerotator
 # @output MAIN7 front_wheel
+# @output MAIN8 release_device
 #
-# @output AUX1 prerotator
-# @output AUX2 release_device
+# @output AUX1 none
+# @output AUX2 none
+# @output AUX3 none
+# @output AUX4 none
 #
 # @maintainer ThunderFly_s.r.o., Roman Dvorak <dvorak.roman@thunderfly.cz>
 #
@@ -42,7 +45,6 @@ then
     param set FW_P_RMAX_NEG 20.0
     param set FW_P_RMAX_POS 60.0
     param set FW_R_LIM 50.0
-
 fi
 
 set MIXER TF-G1
