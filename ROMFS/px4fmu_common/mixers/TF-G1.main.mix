@@ -5,7 +5,7 @@ Inputs to the mixer come from channel group 0 (vehicle attitude), channels 0
 (roll), 1 (pitch) and 3 (thrust).
 
 CH1, 2: rotor-head mixer
--------------
+-----------------
 Two scalers total (output, roll).
 
 M: 2
@@ -13,39 +13,52 @@ O: 10000 10000 0 -10000 10000
 S: 0 0 7000 7000 0 -10000 10000
 S: 0 1  5000  5000      0 -10000  10000
 
+
 M: 2
 O: 10000 10000 0 -10000 10000
 S: 0 0 7000 7000 0 -10000 10000
 S: 0 1  -5000  -5000      0 -10000  10000
 
 
-CH3: Elevator, prerotator mixer
-------------
-Two scalers total (output, roll).
+CH3, 4: A tail
+-----------------
+Three scalers total (output, roll, pitch).
 
-M: 1
-#O: 7500 7500 0 -10000 10000
-S: 3 6 10000 10000 0 -10000 10000
+On the assumption that the two tail servos are physically reversed, the pitch
+input is inverted between the two servos.
 
+M: 2
+S: 0 2  8000  8000      0 -10000  10000
+S: 3 6  6000  6000      0 -10000  10000
 
-CH4, 5: Rudder mixer
-------------
-Two scalers total (output, yaw).
-
-M: 1
-S: 0 2  10000  10000      0 -10000  10000
-
-M: 1
-S: 0 2  -10000  -10000      0 -10000  10000
+M: 2
+S: 0 2  8000   8000      0 -10000  10000
+S: 3 6  -6000 -6000      0 -10000  10000
 
 
-CH4: Motor speed mixer
+CH5: Motor speed mixer Throttle
 -----------------
 Two scalers total (output, thrust).
 
 M: 1
 S: 0 3      0  20000 -10000 -10000  10000
 
-# AUX1 channel (Prerotator)
+
+CH6: AUX1 channel (Prerotator)
+-----------------
 M: 1
 S: 3 5  10000  10000      0 -10000  10000
+
+
+CH7: Rudder mixer (Front wheel)
+-----------------
+Two scalers total (output, yaw).
+
+M: 1
+S: 0 2  3000  3000      0 -10000  10000
+
+
+CH8: AUX3 channel (Release)
+-----------------
+M: 1
+S: 3 7  10000  10000      0 -10000  10000
