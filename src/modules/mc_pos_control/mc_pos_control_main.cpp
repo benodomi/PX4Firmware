@@ -713,6 +713,23 @@ MulticopterPositionControl::Run()
 			}
 
 			_old_landing_gear_position = gear.landing_gear;
+
+		} else {
+			// no flighttask is active: set attitude setpoint to idle
+			_att_sp.roll_body = _att_sp.pitch_body = 0.0f;
+			_att_sp.yaw_body = _states.yaw;
+			_att_sp.yaw_sp_move_rate = 0.0f;
+			_att_sp.fw_control_yaw = false;
+			_att_sp.apply_flaps = false;
+			matrix::Quatf q_sp = matrix::Eulerf(_att_sp.roll_body, _att_sp.pitch_body, _att_sp.yaw_body);
+			q_sp.copyTo(_att_sp.q_d);
+			_att_sp.q_d_valid = true;
+			_att_sp.thrust_body[2] = 0.0f;
+
+			// reset the numerical derivatives to not generate d term spikes when coming from non-position controlled operation
+			_vel_x_deriv.reset();
+			_vel_y_deriv.reset();
+			_vel_z_deriv.reset();
 		}
 	}
 
