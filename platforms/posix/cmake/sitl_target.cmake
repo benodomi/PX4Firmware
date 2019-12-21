@@ -48,8 +48,10 @@ ExternalProject_Add_Step(sitl_gazebo forceconfigure
 	ALWAYS 1
 	)
 
+add_subdirectory(${PX4_SOURCE_DIR}/Tools/flightgear_bridge ${PX4_BINARY_DIR}/build_flightgear_bridge EXCLUDE_FROM_ALL)
+
 # create targets for each viewer/model/debugger combination
-set(viewers none jmavsim gazebo)
+set(viewers none jmavsim gazebo flightgear)
 set(debuggers none ide gdb lldb ddd valgrind callgrind)
 set(models none shell
 	if750a iris iris_opt_flow iris_vision iris_rplidar iris_irlock iris_obs_avoid solo typhoon_h480
@@ -92,6 +94,8 @@ foreach(viewer ${viewers})
 				add_dependencies(${_targ_name} px4 sitl_gazebo)
 			elseif(viewer STREQUAL "jmavsim")
 				add_dependencies(${_targ_name} px4 git_jmavsim)
+			elseif(viewer STREQUAL "flightgear")
+				add_dependencies(${_targ_name} px4 flightgear_bridge)
 			endif()
 		endforeach()
 	endforeach()

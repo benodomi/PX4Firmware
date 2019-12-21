@@ -291,6 +291,7 @@ void Simulator::update_gps(const mavlink_hil_gps_t *gps_sim)
 
 void Simulator::handle_message(const mavlink_message_t *msg)
 {
+    PX4_INFO("PX4 - Recieve Msg");
 	switch (msg->msgid) {
 	case MAVLINK_MSG_ID_HIL_SENSOR:
 		handle_message_hil_sensor(msg);
@@ -592,6 +593,8 @@ void Simulator::send()
 	// Without this, we get stuck at px4_poll which waits for a time update.
 	send_heartbeat();
 
+    PX4_INFO("Hovno 3 simulator::send\n");
+
 	px4_pollfd_struct_t fds[1] = {};
 	fds[0].fd = _actuator_outputs_sub;
 	fds[0].events = POLLIN;
@@ -612,6 +615,7 @@ void Simulator::send()
 
 		if (fds[0].revents & POLLIN) {
 			// Got new data to read, update all topics.
+            PX4_INFO("Hovno 4 simulator::send controls\n");
 			parameters_update(false);
 			poll_topics();
 			send_controls();
@@ -765,8 +769,12 @@ void Simulator::poll_for_MAVLink_messages()
 
 	mavlink_status_t mavlink_status = {};
 
+    PX4_INFO("Hovno 0\n");
+
 	// Request HIL_STATE_QUATERNION for ground truth.
 	request_hil_state_quaternion();
+
+    PX4_INFO("Hovno 1\n");
 
 	while (true) {
 

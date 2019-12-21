@@ -90,6 +90,9 @@ elif [ "$program" == "gazebo" ] && [ ! -n "$no_sim" ]; then
 		echo "You need to have gazebo simulator installed!"
 		exit 1
 	fi
+elif [ "$program" == "flightgear" ] && [ ! -n "$no_sim" ]; then
+    "${build_path}/bin/flightgear_bridge" &
+    FG_BRIDGE_PID=`echo $!`
 fi
 
 pushd "$rootfs" >/dev/null
@@ -143,5 +146,7 @@ if [[ -z "$DONT_RUN" ]]; then
 		if [[ ! -n "$HEADLESS" ]]; then
 			kill -9 $GUI_PID
 		fi
-	fi
+	elif [ "$program" == "flightgear" ]; then
+        kill -s 9 $FG_BRIDGE_PID
+    fi
 fi
