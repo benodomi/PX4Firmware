@@ -91,6 +91,7 @@ elif [ "$program" == "gazebo" ] && [ ! -n "$no_sim" ]; then
 		exit 1
 	fi
 elif [ "$program" == "flightgear" ] && [ ! -n "$no_sim" ]; then
+	echo "HOVNO"
     "${build_path}/bin/flightgear_bridge" &
     FG_BRIDGE_PID=`echo $!`
 fi
