@@ -186,7 +186,7 @@ void Simulator::send_controls()
 			mavlink_message_t message{};
 			mavlink_msg_hil_actuator_controls_encode(_param_mav_sys_id.get(), _param_mav_comp_id.get(), &message, &hil_act_control);
 
-			PX4_DEBUG("sending controls t=%ld (%ld)", actuators.timestamp, hil_act_control.time_usec);
+			//PX4_DEBUG("sending controls t=%ld (%ld)", actuators.timestamp, hil_act_control.time_usec);
 
 			send_mavlink_message(message);
 		}
@@ -342,7 +342,6 @@ void Simulator::handle_message_hil_gps(const mavlink_message_t *msg)
 {
 	mavlink_hil_gps_t gps_sim;
 	mavlink_msg_hil_gps_decode(msg, &gps_sim);
-
 	update_gps(&gps_sim);
 }
 
@@ -356,7 +355,7 @@ void Simulator::handle_message_hil_sensor(const mavlink_message_t *msg)
 	px4_clock_settime(CLOCK_MONOTONIC, &ts);
 
 	hrt_abstime now_us = hrt_absolute_time();
-
+   // PX4_INFO("Baro: T %f  P%f  AB%f \n",imu.temperature, imu.abs_pressure, imu.pressure_alt);
 #if 0
 	// This is just for to debug missing HIL_SENSOR messages.
 	static hrt_abstime last_time = 0;
@@ -618,7 +617,7 @@ void Simulator::send()
 			parameters_update(false);
 			poll_topics();
 			send_controls();
-			PX4_INFO("Hovno 4 simulator::send controls\n");
+			//PX4_INFO("Hovno 4 simulator::send controls\n");
 		}
 	}
 }
