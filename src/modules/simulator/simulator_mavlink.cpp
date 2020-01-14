@@ -342,6 +342,7 @@ void Simulator::handle_message_hil_gps(const mavlink_message_t *msg)
 {
 	mavlink_hil_gps_t gps_sim;
 	mavlink_msg_hil_gps_decode(msg, &gps_sim);
+   // PX4_INFO("Cog:  %f vn: %f ve: %f  \n",gps_sim.cog/100.0, gps_sim.vn/100.0, gps_sim.ve/100.0 );
 	update_gps(&gps_sim);
 }
 
@@ -355,7 +356,9 @@ void Simulator::handle_message_hil_sensor(const mavlink_message_t *msg)
 	px4_clock_settime(CLOCK_MONOTONIC, &ts);
 
 	hrt_abstime now_us = hrt_absolute_time();
-   // PX4_INFO("Baro: T %f  P%f  AB%f \n",imu.temperature, imu.abs_pressure, imu.pressure_alt);
+    PX4_INFO("Baro: T %f  P%f  AB%f \n",imu.temperature, imu.abs_pressure, imu.pressure_alt);
+
+   // PX4_INFO("Mag:  %f  %f  %f \n",imu.xmag, imu.ymag, imu.zmag);
 #if 0
 	// This is just for to debug missing HIL_SENSOR messages.
 	static hrt_abstime last_time = 0;
