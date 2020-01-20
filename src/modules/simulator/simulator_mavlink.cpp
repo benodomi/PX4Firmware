@@ -356,9 +356,9 @@ void Simulator::handle_message_hil_sensor(const mavlink_message_t *msg)
 	px4_clock_settime(CLOCK_MONOTONIC, &ts);
 
 	hrt_abstime now_us = hrt_absolute_time();
-    PX4_INFO("Baro: T %f  P%f  AB%f \n",imu.temperature, imu.abs_pressure, imu.pressure_alt);
+    //PX4_INFO("Baro: T %f  P%f  AB%f \n",imu.temperature, imu.abs_pressure, imu.pressure_alt);
 
-   // PX4_INFO("Mag:  %f  %f  %f \n",imu.xmag, imu.ymag, imu.zmag);
+    //PX4_INFO("gyro:  %f  %f  %f \n",imu.xgyro, imu.ygyro, imu.zgyro);
 #if 0
 	// This is just for to debug missing HIL_SENSOR messages.
 	static hrt_abstime last_time = 0;
