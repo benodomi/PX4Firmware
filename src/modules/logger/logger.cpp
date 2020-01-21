@@ -607,6 +607,7 @@ void Logger::add_estimator_replay_topics()
 
 	// current EKF2 subscriptions
 	add_topic("airspeed");
+	add_topic("rotor_frequency");
 	add_topic("optical_flow");
 	add_topic("sensor_combined");
 	add_topic("sensor_selection");

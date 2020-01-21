@@ -1,0 +1,51 @@
+#!nsh
+#
+# @name ThunderFly TF-G1
+#
+# @type AutoGyro
+# @class AutoGyro
+#
+# @output MAIN1 rotor_head_L
+# @output MAIN2 rotor_head_R
+# @output MAIN3 A-tail L
+# @output MAIN4 A-tail R
+# @output MAIN5 throttle
+# @output MAIN6 prerotator
+# @output MAIN7 front_wheel
+# @output MAIN8 release_device
+#
+# @output AUX1 none
+# @output AUX2 none
+# @output AUX3 none
+# @output AUX4 none
+#
+# @maintainer ThunderFly_s.r.o., Roman Dvorak <dvorak.roman@thunderfly.cz>
+#
+
+sh /etc/init.d/rc.fw_defaults
+
+pcf8583 start -b 2
+
+if [ $AUTOCNF = yes ]
+then
+	param set BAT_CAPACITY 5500.0
+	param set BAT_N_CELLS 3
+	param set BAT_V_CHARGED 4.199999809265137
+
+    param set PCF8583_MAGNET 2
+    param set PCF8583_ADDR 81
+
+    param set COM_DISARM_LAND  -1
+    param set COM_DISARM_PREFLIGHT -1
+    param set MAV_PROTO_VER 2
+    param set SDLOG_PROFILE 91
+    param set SENS_BOARD_ROT 2
+    param set FW_P_LIM_MAX 25.0
+    param set FW_P_LIM_MIN -5.0
+    param set FW_P_RMAX_NEG 20.0
+    param set FW_P_RMAX_POS 60.0
+    param set FW_R_LIM 50.0
+fi
+
+set MIXER TF-G1
+set MIXER_AUX TF-G1

@@ -31,49 +31,63 @@
  *
  ****************************************************************************/
 
-#ifndef _DRV_UORB_H
-#define _DRV_UORB_H
-
 /**
- * @file drv_orb_dev.h
+ * @file px4_mavlink_debug.cpp
+ * Debug application example for PX4 autopilot
  *
- * uORB published object driver.
+ * @author Example User <mail@example.com>
  */
 
-#include <px4_defines.h>
-#include <sys/types.h>
-#include <sys/ioctl.h>
-#include <stdint.h>
+#include <px4_config.h>
+#include <unistd.h>
+#include <stdio.h>
+#include <string.h>
+#include <poll.h>
 
-#define _ORBIOCBASE		(0x2600)
-#define _ORBIOC(_n)		(_PX4_IOC(_ORBIOCBASE, _n))
+#include <systemlib/err.h>
+#include <drivers/drv_hrt.h>
 
-/*
- * IOCTLs for individual topics.
- */
+#include <uORB/uORB.h>
+#include <uORB/topics/debug_key_value.h>
+#include <uORB/topics/rotor_frequency.h>
 
-/** Fetch the time at which the topic was last updated into *(uint64_t *)arg */
-#define ORBIOCLASTUPDATE	_ORBIOC(10)
+extern "C" __EXPORT int rotor_freq_sim_main(int argc, char *argv[]);
 
-/** Check whether the topic has been updated since it was last read, sets *(bool *)arg */
-#define ORBIOCUPDATED		_ORBIOC(11)
+int rotor_freq_sim_main(int argc, char *argv[])
+{
+	printf("Hello Debug!\n");
 
-/** Set the minimum interval at which the topic can be seen to be updated for this subscription */
-#define ORBIOCSETINTERVAL	_ORBIOC(12)
+	/* advertise named debug value */
+	struct debug_key_value_s dbg_key;
+	strncpy(dbg_key.key, "test", 10);
+	dbg_key.value = 0.0f;
+	orb_advert_t pub_dbg_key = orb_advertise(ORB_ID(debug_key_value), &dbg_key);
 
-/** Get the global advertiser handle for the topic */
-#define ORBIOCGADVERTISER	_ORBIOC(13)
+    struct rotor_frequency_s msg;
+	orb_advert_t rf = orb_advertise(ORB_ID(rotor_frequency), &msg`);
 
-/** Get the priority for the topic */
-#define ORBIOCGPRIORITY		_ORBIOC(14)
+    int value_counter = 0;
 
-/** Set the queue size of the topic */
-#define ORBIOCSETQUEUESIZE	_ORBIOC(15)
+	while (value_counter < 100) {
+		uint64_t timestamp_us = hrt_absolute_time();
 
-/** Get the minimum interval at which the topic can be seen to be updated for this subscription */
-#define ORBIOCGETINTERVAL	_ORBIOC(16)
+		/* send one named value */
+		dbg_key.value = value_counter;
+		dbg_key.timestamp = timestamp_us;
+		orb_publish(ORB_ID(debug_key_value), pub_dbg_key, &dbg_key);
 
-/** Check whether the topic is advertised, sets *(unsigned long *)arg to 1 if advertised, 0 otherwise */
-#define ORBIOCISADVERTISED	_ORBIOC(17)
+        msg.timestamp = hrt_absolute_time();
+        msg.indicated_frequency_hz = value;
+        msg.indicated_frequency_rpm = value*60;
+        msg.estimated_accurancy_hz=value;
+        msg.estimated_accurancy_rpm=value*60;
+        msg.count=_count;
 
-#endif /* _DRV_UORB_H */
+		warnx("sent one more value..");
+
+		value_counter++;
+		px4_usleep(500000);
+	}
+
+	return 0;
+}

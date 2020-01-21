@@ -1,0 +1,32 @@
+#!nsh
+#
+# @name ThunderFly TF:AutoG2
+#
+# @type AutoGyro
+# @class AutoGyro
+#
+# @output MAIN1 rotor_head_L
+# @output MAIN2 rotor_head_R
+# @output MAIN3 elevator
+# @output MAIN4 rudder L
+# @output MAIN5 rudder R
+# @output MAIN6 throttle
+# @output MAIN7 front_wheel
+#
+# @output AUX1 prerotator
+# @output AUX2 release_device
+#
+# @maintainer ThunderFly_s.r.o., Roman Dvorak <dvorak.roman@thunderfly.cz>
+#
+
+sh /etc/init.d/rc.fw_defaults
+
+if [ $AUTOCNF = yes ]
+then
+	param set BAT_CAPACITY 5500.0
+	param set BAT_N_CELLS 4
+	param set BAT_V_CHARGED 4.199999809265137
+fi
+
+set MIXER TF-AutoG2
+set MIXER_AUX TF-G1
