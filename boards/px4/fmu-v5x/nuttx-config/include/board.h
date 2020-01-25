@@ -253,7 +253,7 @@
  *   DMAMAP_SDMMC2_2 = Channel 11, Stream 5 <- Free for other devices
  */
 
-#define DMAMAP_SDMMC2  DMAMAP_SDMMC1_1
+#define DMAMAP_SDMMC2  DMAMAP_SDMMC2_1
 
 
 /* FLASH wait states
@@ -381,7 +381,7 @@
  * SPI1 is sensors1
  * SPI2 is sensors2
  * SPI3 is sensors3
- * SPI4 is MAG
+ * SPI4 is Not Used
  * SPI5 is FRAM
  * SPI6 is EXTERNAL1
  *
@@ -398,10 +398,6 @@
 #define GPIO_SPI3_MISO   GPIO_SPI3_MISO_2   /* PC11 */
 #define GPIO_SPI3_MOSI   GPIO_SPI3_MOSI_1   /* PB2  */
 #define GPIO_SPI3_SCK    GPIO_SPI3_SCK_2    /* PC10 */
-
-#define GPIO_SPI4_MISO   GPIO_SPI4_MISO_2   /* PE13 */
-#define GPIO_SPI4_MOSI   GPIO_SPI4_MOSI_1   /* PE6  */
-#define GPIO_SPI4_SCK    GPIO_SPI4_SCK_2    /* PE12 */
 
 #define GPIO_SPI5_MISO   GPIO_SPI5_MISO_1   /* PF8  */
 #define GPIO_SPI5_MOSI   GPIO_SPI5_MOSI_2   /* PF11 */
@@ -459,6 +455,30 @@
 #define GPIO_SDMMC2_D1   GPIO_SDMMC2_D1_2
 #define GPIO_SDMMC2_D2   GPIO_SDMMC2_D2_2
 #define GPIO_SDMMC2_D3   GPIO_SDMMC2_D3_2
+
+/* The STM32 F7 connects to a TI DP83848TSQ/NOPB
+ * using RMII
+ *
+ *   STM32 F7 BOARD        DP83848TSQ/NOPB
+ *   GPIO     SIGNAL       PIN NAME
+ *   -------- ------------ -------------
+ *   PA7     ETH_CRS_DV    CRS_DV
+ *   PC1     ETH_MDC       MDC
+ *   PA2     ETH_MDIO      MDIO
+ *   PA1     ETH_REF_CL    X1
+ *   PC4     ETH_RXD0      RX_D0
+ *   PC5     ETH_RXD1      RX_D1
+ *   PB11    ETH_TX_EN     TX_EN
+ *   PG13    ETH_TXD0      TX_D0
+ *   PB13    ETH_TXD1      TX_D1
+ *
+ * The PHY address is 1, since COL/PHYAD0 features a pull up.
+ */
+
+#define GPIO_ETH_RMII_TX_EN	GPIO_ETH_RMII_TX_EN_1
+#define GPIO_ETH_RMII_TXD0	GPIO_ETH_RMII_TXD0_2
+#define GPIO_ETH_RMII_TXD1	GPIO_ETH_RMII_TXD1_1
+
 
 /* USB
  *

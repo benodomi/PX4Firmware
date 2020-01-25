@@ -31,18 +31,22 @@
 #
 ############################################################################
 
+# Support IN_LIST if() operator
+cmake_policy(SET CMP0057 NEW)
+
 set(msg_files
 	actuator_armed.msg
 	actuator_controls.msg
-	actuator_direct.msg
 	actuator_outputs.msg
 	adc_report.msg
 	airspeed.msg
+	airspeed_validated.msg
 	battery_status.msg
 	camera_capture.msg
 	camera_trigger.msg
-	collision_report.msg
+	cellular_status.msg
 	collision_constraints.msg
+	collision_report.msg
 	commander_state.msg
 	cpuload.msg
 	debug_array.msg
@@ -51,12 +55,12 @@ set(msg_files
 	debug_vect.msg
 	differential_pressure.msg
 	distance_sensor.msg
-	ekf2_innovations.msg
 	ekf2_timestamps.msg
 	ekf_gps_drift.msg
 	ekf_gps_position.msg
 	esc_report.msg
 	esc_status.msg
+	estimator_innovations.msg
 	estimator_status.msg
 	follow_target.msg
 	geofence_result.msg
@@ -79,6 +83,7 @@ set(msg_files
 	multirotor_motor_limits.msg
 	obstacle_distance.msg
 	offboard_control_mode.msg
+	onboard_computer_status.msg
 	optical_flow.msg
 	orbit_status.msg
 	parameter_update.msg
@@ -99,11 +104,17 @@ set(msg_files
 	safety.msg
 	satellite_info.msg
 	sensor_accel.msg
+	sensor_accel_fifo.msg
+	sensor_accel_integrated.msg
+	sensor_accel_status.msg
 	sensor_baro.msg
 	sensor_bias.msg
 	sensor_combined.msg
 	sensor_correction.msg
 	sensor_gyro.msg
+	sensor_gyro_fifo.msg
+	sensor_gyro_integrated.msg
+	sensor_gyro_status.msg
 	sensor_mag.msg
 	sensor_preflight.msg
 	sensor_selection.msg
@@ -122,7 +133,9 @@ set(msg_files
 	uavcan_parameter_value.msg
 	ulog_stream.msg
 	ulog_stream_ack.msg
+	vehicle_acceleration.msg
 	vehicle_air_data.msg
+	vehicle_angular_velocity.msg
 	vehicle_attitude.msg
 	vehicle_attitude_setpoint.msg
 	vehicle_command.msg
@@ -131,6 +144,7 @@ set(msg_files
 	vehicle_control_mode.msg
 	vehicle_global_position.msg
 	vehicle_gps_position.msg
+	vehicle_imu.msg
 	vehicle_land_detected.msg
 	vehicle_local_position.msg
 	vehicle_local_position_setpoint.msg
@@ -142,8 +156,32 @@ set(msg_files
 	vehicle_status_flags.msg
 	vehicle_trajectory_waypoint.msg
 	vtol_vehicle_status.msg
+	wheel_encoders.msg
 	wind_estimate.msg
+)
+
+set(deprecated_msgs
+	ekf2_innovations.msg	# 2019-11-22, Updated estimator interface and logging; replaced by 'estimator_innovations'.
 	)
+
+foreach(msg IN LISTS deprecated_msgs)
+	if(msg IN_LIST msg_files)
+		get_filename_component(msg_we ${msg} NAME_WE)
+		list(APPEND invalid_msgs ${msg_we})
+	endif()
+endforeach()
+if(invalid_msgs)
+	list(LENGTH invalid_msgs invalid_msgs_size)
+	if(${invalid_msgs_size} GREATER 1)
+		foreach(msg IN LISTS invalid_msgs)
+			string(CONCAT invalid_msgs_cs ${invalid_msgs_cs} "'${msg}', ")
+		endforeach()
+		STRING(REGEX REPLACE ", +$" "" invalid_msgs_cs ${invalid_msgs_cs})
+		message(FATAL_ERROR "${invalid_msgs_cs} are listed as deprecated. Please use different names for the messages.")
+	else()
+		message(FATAL_ERROR "'${invalid_msgs}' is listed as deprecated. Please use a different name for the message.")
+	endif()
+endif()
 
 if(NOT EXTERNAL_MODULES_LOCATION STREQUAL "")
 	# Check that the msg directory and the CMakeLists.txt file exists
@@ -157,9 +195,6 @@ if(NOT EXTERNAL_MODULES_LOCATION STREQUAL "")
 	endif()
 endif()
 
-px4_add_git_submodule(TARGET git_gencpp PATH tools/gencpp)
-px4_add_git_submodule(TARGET git_genmsg PATH tools/genmsg)
-
 # headers
 set(msg_out_path ${PX4_BINARY_DIR}/uORB/topics)
 set(msg_source_out_path	${CMAKE_CURRENT_BINARY_DIR}/topics_sources)
@@ -172,6 +207,10 @@ foreach(msg_file ${msg_files})
 	list(APPEND uorb_sources ${msg_source_out_path}/${msg}.cpp)
 endforeach()
 
+if (px4_constrained_flash_build)
+	set(added_arguments --constrained-flash)
+endif()
+
 # Generate uORB headers
 add_custom_command(OUTPUT ${uorb_headers}
 	COMMAND ${PYTHON_EXECUTABLE} tools/px_generate_uorb_topic_files.py
@@ -182,6 +221,7 @@ add_custom_command(OUTPUT ${uorb_headers}
 		-e templates/uorb
 		-t ${CMAKE_CURRENT_BINARY_DIR}/tmp/headers
 		-q
+		${added_arguments}
 	DEPENDS
 		${msg_files}
 		templates/uorb/msg.h.em
@@ -202,6 +242,7 @@ add_custom_command(OUTPUT ${uorb_sources}
 		-e templates/uorb
 		-t ${CMAKE_CURRENT_BINARY_DIR}/tmp/sources
 		-q
+		${added_arguments}
 	DEPENDS
 		${msg_files}
 		templates/uorb/msg.cpp.em

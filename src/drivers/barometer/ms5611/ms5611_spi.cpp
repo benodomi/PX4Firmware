@@ -37,6 +37,7 @@
  * SPI interface for MS5611
  */
 
+#include <drivers/device/spi.h>
 #include "ms5611.h"
 
 /* SPI protocol address bits */
@@ -45,8 +46,6 @@
 #define ADDR_INCREMENT			(1<<6)
 
 #if defined(PX4_SPIDEV_BARO) || defined(PX4_SPIDEV_EXT_BARO)
-
-device::Device *MS5611_spi_interface(ms5611::prom_u &prom_buf, bool external_bus);
 
 class MS5611_SPI : public device::SPI
 {
@@ -124,14 +123,7 @@ MS5611_SPI::MS5611_SPI(uint8_t bus, uint32_t device, ms5611::prom_u &prom_buf) :
 int
 MS5611_SPI::init()
 {
-	int ret;
-
-#if defined(PX4_SPI_BUS_RAMTRON) && \
-	(PX4_SPI_BUS_BARO == PX4_SPI_BUS_RAMTRON)
-	SPI::set_lockmode(LOCK_THREADS);
-#endif
-
-	ret = SPI::init();
+	int ret = SPI::init();
 
 	if (ret != OK) {
 		PX4_DEBUG("SPI init failed");

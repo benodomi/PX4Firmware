@@ -40,9 +40,9 @@
  * @author Maelok Dong
  */
 
-#include <px4_config.h>
-#include <px4_defines.h>
-#include <px4_getopt.h>
+#include <px4_platform_common/px4_config.h>
+#include <px4_platform_common/defines.h>
+#include <px4_platform_common/getopt.h>
 
 #include <sys/types.h>
 #include <stdint.h>
@@ -76,7 +76,7 @@
 #include <float.h>
 #include <lib/conversion/rotation.h>
 
-#include <px4_work_queue/ScheduledWorkItem.hpp>
+#include <px4_platform_common/px4_work_queue/ScheduledWorkItem.hpp>
 
 /*
  * IST8310 internal constants and data structures.
@@ -377,7 +377,7 @@ extern "C" __EXPORT int ist8310_main(int argc, char *argv[]);
 
 IST8310::IST8310(int bus_number, int address, const char *path, enum Rotation rotation) :
 	I2C("IST8310", path, bus_number, address, IST8310_DEFAULT_BUS_SPEED),
-	ScheduledWorkItem(px4::device_bus_to_wq(get_device_id())),
+	ScheduledWorkItem(MODULE_NAME, px4::device_bus_to_wq(get_device_id())),
 	_sample_perf(perf_alloc(PC_ELAPSED, "ist8310_read")),
 	_comms_errors(perf_alloc(PC_COUNT, "ist8310_com_err")),
 	_range_errors(perf_alloc(PC_COUNT, "ist8310_rng_err")),
@@ -428,7 +428,7 @@ IST8310::init()
 	}
 
 	/* allocate basic report buffers */
-	_reports = new ringbuffer::RingBuffer(2, sizeof(mag_report));
+	_reports = new ringbuffer::RingBuffer(2, sizeof(sensor_mag_s));
 
 	if (_reports == nullptr) {
 		goto out;
@@ -515,8 +515,8 @@ void IST8310::check_conf(void)
 ssize_t
 IST8310::read(struct file *filp, char *buffer, size_t buflen)
 {
-	unsigned count = buflen / sizeof(struct mag_report);
-	struct mag_report *mag_buf = reinterpret_cast<struct mag_report *>(buffer);
+	unsigned count = buflen / sizeof(sensor_mag_s);
+	sensor_mag_s *mag_buf = reinterpret_cast<sensor_mag_s *>(buffer);
 	int ret = 0;
 
 	/* buffer must be large enough */
@@ -533,7 +533,7 @@ IST8310::read(struct file *filp, char *buffer, size_t buflen)
 		 */
 		while (count--) {
 			if (_reports->get(mag_buf)) {
-				ret += sizeof(struct mag_report);
+				ret += sizeof(sensor_mag_s);
 				mag_buf++;
 			}
 		}
@@ -563,7 +563,7 @@ IST8310::read(struct file *filp, char *buffer, size_t buflen)
 		}
 
 		if (_reports->get(mag_buf)) {
-			ret = sizeof(struct mag_report);
+			ret = sizeof(sensor_mag_s);
 		}
 	} while (0);
 
@@ -781,7 +781,7 @@ IST8310::collect()
 	uint8_t check_counter;
 
 	perf_begin(_sample_perf);
-	struct mag_report new_report;
+	sensor_mag_s new_report;
 	const bool sensor_is_external = external();
 
 	float xraw_f;
@@ -874,9 +874,6 @@ IST8310::collect()
 	/* post a report to the ring */
 	_reports->force(&new_report);
 
-	/* notify anyone waiting for data */
-	poll_notify(POLLIN);
-
 	/*
 	  periodically check the range register and configuration
 	  registers. With a bad I2C cable it is possible for the
@@ -899,7 +896,7 @@ out:
 
 int IST8310::calibrate(struct file *filp, unsigned enable)
 {
-	struct mag_report report {};
+	sensor_mag_s report {};
 	ssize_t sz;
 	int ret = 1;
 	float total_x = 0.0f;
@@ -1249,7 +1246,7 @@ void
 test(enum IST8310_BUS busid)
 {
 	struct ist8310_bus_option &bus = find_bus(busid);
-	struct mag_report report {};
+	sensor_mag_s report {};
 	ssize_t sz;
 	int ret;
 	const char *path = bus.devpath;

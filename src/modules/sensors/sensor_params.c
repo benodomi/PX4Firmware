@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2012-2017 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2012-2019 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -115,6 +115,9 @@ PARAM_DEFINE_FLOAT(SENS_DPRES_ANSC, 0);
  * @max 1500
  * @group Sensors
  * @unit hPa
+ *
+ * @reboot_required true
+ *
  */
 PARAM_DEFINE_FLOAT(SENS_BARO_QNH, 1013.25f);
 
@@ -158,6 +161,7 @@ PARAM_DEFINE_FLOAT(SENS_BARO_QNH, 1013.25f);
  * @value 32 Pitch 9°, Yaw 180°
  * @value 33 Pitch 45°
  * @value 34 Pitch 315°
+ * @value 35 Roll 90°, Yaw 270°
  *
  * @reboot_required true
  *
@@ -203,16 +207,47 @@ PARAM_DEFINE_FLOAT(SENS_BOARD_Z_OFF, 0.0f);
  *
  * @value -1 Thermal control unavailable
  * @value 0 Thermal control off
+ * @value 1 Thermal control enabled
+ * @category system
  * @group Sensors
  */
 PARAM_DEFINE_INT32(SENS_EN_THERMAL, -1);
 
 /**
+* Driver level notch frequency for gyro
+*
+* The center frequency for the 2nd order notch filter on the gyro driver.
+* This filter can be enabled to avoid feedback amplification of structural resonances at a specific frequency.
+* This only affects the signal sent to the controllers, not the estimators. 0 disables the filter.
+* See "IMU_GYRO_NF_BW" to set the bandwidth of the filter.
+*
+* @min 0
+* @max 1000
+* @unit Hz
+* @reboot_required true
+* @group Sensors
+*/
+PARAM_DEFINE_FLOAT(IMU_GYRO_NF_FREQ, 0.0f);
+
+/**
+* Driver level notch bandwidth for gyro
+*
+* The frequency width of the stop band for the 2nd order notch filter on the gyro driver.
+* See "IMU_GYRO_NF_FREQ" to activate the filter and to set the notch frequency.
+*
+* @min 0
+* @max 100
+* @unit Hz
+* @reboot_required true
+* @group Sensors
+*/
+PARAM_DEFINE_FLOAT(IMU_GYRO_NF_BW, 20.0f);
+
+/**
 * Driver level cutoff frequency for gyro
 *
-* The cutoff frequency for the 2nd order butterworth filter on the gyro driver. This features
-* is currently supported by the mpu6000 and mpu9250. This only affects the signal sent to the
-* controllers, not the estimators. 0 disables the filter.
+* The cutoff frequency for the 2nd order butterworth filter on the gyro driver.
+* This only affects the signal sent to the controllers, not the estimators. 0 disables the filter.
 *
 * @min 0
 * @max 1000
@@ -223,11 +258,30 @@ PARAM_DEFINE_INT32(SENS_EN_THERMAL, -1);
 PARAM_DEFINE_FLOAT(IMU_GYRO_CUTOFF, 30.0f);
 
 /**
+* Gyro control data maximum publication rate
+*
+* This is the maximum rate the gyro control data (sensor_gyro) will be allowed to publish at.
+* Set to 0 to disable and publish at the native sensor sample rate.
+*
+* @min 0
+* @max 2000
+* @value 0 0 (no limit)
+* @value 50 50 Hz
+* @value 250 250 Hz
+* @value 400 400 Hz
+* @value 1000 1000 Hz
+* @value 2000 2000 Hz
+* @unit Hz
+* @reboot_required true
+* @group Sensors
+*/
+PARAM_DEFINE_INT32(IMU_GYRO_RATEMAX, 0);
+
+/**
 * Driver level cutoff frequency for accel
 *
-* The cutoff frequency for the 2nd order butterworth filter on the accel driver. This features
-* is currently supported by the mpu6000 and mpu9250. This only affects the signal sent to the
-* controllers, not the estimators. 0 disables the filter.
+* The cutoff frequency for the 2nd order butterworth filter on the accel driver.
+* This only affects the signal sent to the controllers, not the estimators. 0 disables the filter.
 *
 * @min 0
 * @max 1000

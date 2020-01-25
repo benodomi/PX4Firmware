@@ -14,11 +14,10 @@ bool condition_local_velocity_valid		# set to true by the commander app if the q
 bool condition_local_altitude_valid
 bool condition_power_input_valid                # set if input power is valid
 bool condition_battery_healthy                # set if battery is available and not low
-
+bool condition_escs_error		      # set to true if one or more ESCs reporting esc_status are offline
 bool circuit_breaker_engaged_power_check
 bool circuit_breaker_engaged_airspd_check
 bool circuit_breaker_engaged_enginefailure_check
-bool circuit_breaker_engaged_gpsfailure_check
 bool circuit_breaker_flight_termination_disabled
 bool circuit_breaker_engaged_usb_check
 bool circuit_breaker_engaged_posfailure_check	# set to true when the position valid checks have been disabled

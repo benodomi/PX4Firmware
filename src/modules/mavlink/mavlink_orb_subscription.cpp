@@ -42,7 +42,7 @@
 bool
 MavlinkOrbSubscription::is_published()
 {
-	const bool published = _sub.published();
+	const bool published = _sub.advertised();
 
 	if (published) {
 		return true;
@@ -50,7 +50,7 @@ MavlinkOrbSubscription::is_published()
 	} else if (!published && _subscribe_from_beginning) {
 		// For some topics like vehicle_command_ack, we want to subscribe
 		// from the beginning in order not to miss or delay the first publish respective advertise.
-		return _sub.forceInit();
+		return _sub.subscribe();
 	}
 
 	return false;
