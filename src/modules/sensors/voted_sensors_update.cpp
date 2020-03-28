@@ -71,10 +71,6 @@ VotedSensorsUpdate::VotedSensorsUpdate(const Parameters &parameters, bool hil_en
 	_mag.voter.set_timeout(300000);
 	_mag.voter.set_equal_value_threshold(1000);
 
-    _gyro.voter.set_timeout(500000);
-	_accel.voter.set_timeout(500000);
-    _baro.voter.set_timeout(500000);
-
 	if (_hil_enabled) { // HIL has less accurate timing so increase the timeouts a bit
 		_gyro.voter.set_timeout(500000);
 		_accel.voter.set_timeout(500000);
