@@ -97,10 +97,9 @@ elif [ "$program" == "gazebo" ] && [ ! -n "$no_sim" ]; then
 elif [ "$program" == "flightgear" ] && [ ! -n "$no_sim" ]; then
 	echo "FG setup"
     cd "${src_path}/Tools/flightgear_bridge/"
-    "${src_path}/Tools/flightgear_bridge/FG_run.sh" &
-    FG_RUN_PID=`echo $!`
+    "${src_path}/Tools/flightgear_bridge/FG_run.py" ${model}.json    
     sleep 20
-    "${build_path}/bin/flightgear_bridge" &
+    "${build_path}/bin/flightgear_bridge" `./get_FGbridge_params.py ${model}.json` &
     FG_BRIDGE_PID=`echo $!`
 
 fi
@@ -157,8 +156,7 @@ if [[ -z "$DONT_RUN" ]]; then
 			kill -9 $GUI_PID
 		fi
 	elif [ "$program" == "flightgear" ]; then
-        kill -s 9 $FG_BRIDGE_PID
-        pkill -P $FG_RUN_PID
-        #kill -s 9 $FG_RUN_PID    
+        kill $FG_BRIDGE_PID
+        kill -9 `cat /tmp/px4fgfspid`
     fi
 fi
