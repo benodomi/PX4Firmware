@@ -95,9 +95,15 @@ elif [ "$program" == "gazebo" ] && [ ! -n "$no_sim" ]; then
 		exit 1
 	fi
 elif [ "$program" == "flightgear" ] && [ ! -n "$no_sim" ]; then
-	echo "HOVNO"
+	echo "FG setup"
+    "${src_path}/Tools/flightgear_bridge/FG_run.sh" &
+    FG_RUN_PID=`echo $!`
+    echo $FG_RUN_PID
+    sleep 20
     "${build_path}/bin/flightgear_bridge" &
     FG_BRIDGE_PID=`echo $!`
+    echo $FG_BRIDGE_PID
+
 fi
 
 pushd "$rootfs" >/dev/null
@@ -153,5 +159,7 @@ if [[ -z "$DONT_RUN" ]]; then
 		fi
 	elif [ "$program" == "flightgear" ]; then
         kill -s 9 $FG_BRIDGE_PID
+        pkill -P $FG_RUN_PID
+        #kill -s 9 $FG_RUN_PID    
     fi
 fi

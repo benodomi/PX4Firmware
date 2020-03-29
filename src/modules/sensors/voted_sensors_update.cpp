@@ -67,7 +67,6 @@ VotedSensorsUpdate::VotedSensorsUpdate(const Parameters &parameters, bool hil_en
 	_corrections.baro_scale_1 = 1.0f;
 	_corrections.baro_scale_2 = 1.0f;
 
-	_baro.voter.set_timeout(300000);
 	_mag.voter.set_timeout(300000);
 	_mag.voter.set_equal_value_threshold(1000);
 
