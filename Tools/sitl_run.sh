@@ -96,13 +96,12 @@ elif [ "$program" == "gazebo" ] && [ ! -n "$no_sim" ]; then
 	fi
 elif [ "$program" == "flightgear" ] && [ ! -n "$no_sim" ]; then
 	echo "FG setup"
+    cd "${src_path}/Tools/flightgear_bridge/"
     "${src_path}/Tools/flightgear_bridge/FG_run.sh" &
     FG_RUN_PID=`echo $!`
-    echo $FG_RUN_PID
     sleep 20
     "${build_path}/bin/flightgear_bridge" &
     FG_BRIDGE_PID=`echo $!`
-    echo $FG_BRIDGE_PID
 
 fi
 
