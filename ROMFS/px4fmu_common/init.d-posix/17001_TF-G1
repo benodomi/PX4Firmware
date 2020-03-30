@@ -51,5 +51,7 @@ then
 
 fi
 
+param set COM_DISARM_PRFLT 0
+
 set MIXER_FILE etc/mixers-sitl/autogyro_sitl.main.mix
 set MIXER custom
