@@ -64,7 +64,18 @@ ifeq ($(WINTOOL),y)
   MKDEP = $(TOPDIR)/tools/mknulldeps.sh
 endif
 
-FLAGS = -Os -g2 \
+ifeq ($(CONFIG_BOARD_USE_PROBES),y)
+   ARCHINCLUDES += -I$(TOPDIR)/arch/$(CONFIG_ARCH)/src/$(CONFIG_ARCH_CHIP)
+   ARCHXXINCLUDES += -I$(TOPDIR)/arch/$(CONFIG_ARCH)/src/$(CONFIG_ARCH_CHIP)
+endif
+
+ifeq ($(CONFIG_DEBUG_CUSTOMOPT),y)
+   MAXOPTIMIZATION = $(CONFIG_DEBUG_OPTLEVEL)
+else
+   MAXOPTIMIZATION = -Os
+endif
+
+FLAGS = $(MAXOPTIMIZATION) -g2 \
 	-fdata-sections \
 	-ffunction-sections \
 	-fno-builtin-printf \

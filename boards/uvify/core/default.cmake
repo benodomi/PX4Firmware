@@ -12,6 +12,7 @@ px4_add_board(
 		GPS1:/dev/ttyS3
 		TEL1:/dev/ttyS1
 		TEL2:/dev/ttyS2
+		TEL3:/dev/ttyS6
 	DRIVERS
 		adc
 		barometer/ms5611
@@ -51,6 +52,7 @@ px4_add_board(
 		logger
 		mavlink
 		mc_att_control
+		mc_hover_thrust_estimator
 		mc_pos_control
 		mc_rate_control
 		navigator

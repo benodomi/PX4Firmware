@@ -50,12 +50,12 @@ static inline int32_t sum(const int16_t samples[16], uint8_t len)
 	return sum;
 }
 
-static inline unsigned clipping(const int16_t samples[16], int16_t clip_limit, uint8_t len)
+static constexpr unsigned clipping(const int16_t samples[16], int16_t clip_limit, uint8_t len)
 {
 	unsigned clip_count = 0;
 
 	for (int n = 0; n < len; n++) {
-		if (abs(samples[n]) > clip_limit) {
+		if (abs(samples[n]) >= clip_limit) {
 			clip_count++;
 		}
 	}
@@ -76,10 +76,7 @@ PX4Gyroscope::PX4Gyroscope(uint32_t device_id, uint8_t priority, enum Rotation r
 {
 	_class_device_instance = register_class_devname(GYRO_BASE_DEVICE_PATH);
 
-	// set software low pass filter for controllers
 	updateParams();
-	ConfigureFilter(_param_imu_gyro_cutoff.get());
-	ConfigureNotchFilter(_param_imu_gyro_nf_freq.get(), _param_imu_gyro_nf_bw.get());
 }
 
 PX4Gyroscope::~PX4Gyroscope()
@@ -123,17 +120,12 @@ void PX4Gyroscope::set_device_type(uint8_t devtype)
 	_device_id = device_id.devid;
 }
 
-void PX4Gyroscope::set_sample_rate(uint16_t rate)
-{
-	_sample_rate = rate;
-
-	ConfigureFilter(_filter.get_cutoff_freq());
-	ConfigureNotchFilter(_notch_filter.getNotchFreq(), _notch_filter.getBandwidth());
-}
-
 void PX4Gyroscope::set_update_rate(uint16_t rate)
 {
+	_update_rate = rate;
 	const uint32_t update_interval = 1000000 / rate;
+
+	// TODO: set this intelligently
 	_integrator_reset_samples = 4000 / update_interval;
 }
 
@@ -155,21 +147,16 @@ void PX4Gyroscope::update(hrt_abstime timestamp_sample, float x, float y, float 
 	// Apply range scale and the calibrating offset/scale
 	const Vector3f val_calibrated{((raw * _scale) - _calibration_offset)};
 
-	// Filtered values: apply notch and then low-pass
-	Vector3f val_filtered{_notch_filter.apply(val_calibrated)};
-	val_filtered = _filter.apply(val_filtered);
-
-
-	// publish control data (filtered) immediately
+	// publish raw data immediately
 	{
-		sensor_gyro_s report{};
+		sensor_gyro_s report;
 
 		report.timestamp_sample = timestamp_sample;
 		report.device_id = _device_id;
 		report.temperature = _temperature;
-		report.x = val_filtered(0);
-		report.y = val_filtered(1);
-		report.z = val_filtered(2);
+		report.x = val_calibrated(0);
+		report.y = val_calibrated(1);
+		report.z = val_calibrated(2);
 		report.timestamp = hrt_absolute_time();
 
 		_sensor_pub.publish(report);
@@ -184,7 +171,7 @@ void PX4Gyroscope::update(hrt_abstime timestamp_sample, float x, float y, float 
 	if (_integrator.put(timestamp_sample, val_calibrated, delta_angle, integral_dt)) {
 
 		// fill sensor_gyro_integrated and publish
-		sensor_gyro_integrated_s report{};
+		sensor_gyro_integrated_s report;
 
 		report.timestamp_sample = timestamp_sample;
 		report.error_count = _error_count;
@@ -213,45 +200,30 @@ void PX4Gyroscope::updateFIFO(const FIFOSample &sample)
 	const uint8_t N = sample.samples;
 	const float dt = sample.dt;
 
-	// filtered data (control)
-	float x_filtered = _filterArrayX.apply(sample.x, N);
-	float y_filtered = _filterArrayY.apply(sample.y, N);
-	float z_filtered = _filterArrayZ.apply(sample.z, N);
-
-	// Apply rotation (before scaling)
-	rotate_3f(_rotation, x_filtered, y_filtered, z_filtered);
-
-	// Apply range scale and the calibration offset
-	const Vector3f val_calibrated{(Vector3f{x_filtered, y_filtered, z_filtered} * _scale) - _calibration_offset};
-
-
-	// publish control data (filtered) immediately
+	// publish raw data immediately
 	{
-		bool publish_control = true;
+		// average
+		float x = (float)sum(sample.x, N) / (float)N;
+		float y = (float)sum(sample.y, N) / (float)N;
+		float z = (float)sum(sample.z, N) / (float)N;
 
-		if (_param_imu_gyro_rate_max.get() > 0) {
-			const uint64_t interval = 1e6f / _param_imu_gyro_rate_max.get();
+		// Apply rotation (before scaling)
+		rotate_3f(_rotation, x, y, z);
 
-			if (hrt_elapsed_time(&_control_last_publish) < interval) {
-				publish_control = false;
-			}
-		}
+		// Apply range scale and the calibration offset
+		const Vector3f val_calibrated{(Vector3f{x, y, z} * _scale) - _calibration_offset};
 
-		if (publish_control) {
-			sensor_gyro_s report{};
+		sensor_gyro_s report;
 
-			report.timestamp_sample = sample.timestamp_sample;
-			report.device_id = _device_id;
-			report.temperature = _temperature;
-			report.x = val_calibrated(0);
-			report.y = val_calibrated(1);
-			report.z = val_calibrated(2);
-			report.timestamp = hrt_absolute_time();
+		report.timestamp_sample = sample.timestamp_sample;
+		report.device_id = _device_id;
+		report.temperature = _temperature;
+		report.x = val_calibrated(0);
+		report.y = val_calibrated(1);
+		report.z = val_calibrated(2);
+		report.timestamp = hrt_absolute_time();
 
-			_sensor_pub.publish(report);
-
-			_control_last_publish = report.timestamp_sample;
-		}
+		_sensor_pub.publish(report);
 	}
 
 
@@ -302,7 +274,7 @@ void PX4Gyroscope::updateFIFO(const FIFOSample &sample)
 			delta_angle *= 1e-6f * dt;
 
 			// fill sensor_gyro_integrated and publish
-			sensor_gyro_integrated_s report{};
+			sensor_gyro_integrated_s report;
 
 			report.timestamp_sample = sample.timestamp_sample;
 			report.error_count = _error_count;
@@ -349,14 +321,13 @@ void PX4Gyroscope::PublishStatus()
 {
 	// publish sensor status
 	if (hrt_elapsed_time(&_status_last_publish) >= 100_ms) {
-		sensor_gyro_status_s status{};
+		sensor_gyro_status_s status;
 
 		status.device_id = _device_id;
 		status.error_count = _error_count;
 		status.full_scale_range = _range;
 		status.rotation = _rotation;
-		status.measure_rate = _update_rate;
-		status.sample_rate = _sample_rate;
+		status.measure_rate_hz = _update_rate;
 		status.temperature = _temperature;
 		status.vibration_metric = _vibration_metric;
 		status.coning_vibration = _coning_vibration;
@@ -380,26 +351,11 @@ void PX4Gyroscope::ResetIntegrator()
 	_timestamp_sample_prev = 0;
 }
 
-void PX4Gyroscope::ConfigureFilter(float cutoff_freq)
-{
-	_filter.set_cutoff_frequency(_sample_rate, cutoff_freq);
-
-	_filterArrayX.set_cutoff_frequency(_sample_rate, cutoff_freq);
-	_filterArrayY.set_cutoff_frequency(_sample_rate, cutoff_freq);
-	_filterArrayZ.set_cutoff_frequency(_sample_rate, cutoff_freq);
-}
-
-void PX4Gyroscope::ConfigureNotchFilter(float notch_freq, float bandwidth)
-{
-	_notch_filter.setParameters(_sample_rate, notch_freq, bandwidth);
-}
-
 void PX4Gyroscope::UpdateClipLimit()
 {
-	// 95% of potential max
-	_clip_limit = (_range / _scale) * 0.95f;
+	// 99.9% of potential max
+	_clip_limit = fmaxf((_range / _scale) * 0.999f, INT16_MAX);
 }
-
 
 void PX4Gyroscope::UpdateVibrationMetrics(const Vector3f &delta_angle)
 {
@@ -417,10 +373,6 @@ void PX4Gyroscope::UpdateVibrationMetrics(const Vector3f &delta_angle)
 void PX4Gyroscope::print_status()
 {
 	PX4_INFO(GYRO_BASE_DEVICE_PATH " device instance: %d", _class_device_instance);
-	PX4_INFO("sample rate: %d Hz", _sample_rate);
-	PX4_INFO("filter cutoff: %.3f Hz", (double)_filter.get_cutoff_freq());
-	PX4_INFO("notch filter freq: %.3f Hz\tbandwidth: %.3f Hz", (double)_notch_filter.getNotchFreq(),
-		 (double)_notch_filter.getBandwidth());
 
 	PX4_INFO("calibration offset: %.5f %.5f %.5f", (double)_calibration_offset(0), (double)_calibration_offset(1),
 		 (double)_calibration_offset(2));

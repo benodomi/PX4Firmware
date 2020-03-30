@@ -1,3 +1,6 @@
+add_definitions(
+	-D__PX4_LINUX
+)
 
 px4_add_board(
 	VENDOR aerotenna
@@ -28,7 +31,6 @@ px4_add_board(
 		imu/mpu9250
 		lights/rgbled
 		linux_pwm_out
-		linux_sbus
 		#magnetometer # all available magnetometer drivers
 		magnetometer/hmc5883
 		pwm_out_sim
@@ -52,6 +54,7 @@ px4_add_board(
 		logger
 		mavlink
 		mc_att_control
+		mc_hover_thrust_estimator
 		mc_pos_control
 		mc_rate_control
 		#micrortps_bridge
@@ -82,7 +85,6 @@ px4_add_board(
 		ver
 		work_queue
 	EXAMPLES
-		bottle_drop # OBC challenge
 		fixedwing_control # Tutorial code from https://px4.io/dev/example_fixedwing_control
 		hello
 		#hwtest # Hardware test
