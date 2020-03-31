@@ -43,6 +43,10 @@ struct fgOutputData {
 	double          pressure_inhg;
 	double          measured_total_pressure_inhg;
 
+    //hardcoded rpm
+    double          rpm;
+
+
 } __attribute__((packed));
 
 
@@ -53,6 +57,8 @@ public:
 
 	mavlink_hil_sensor_t sensor_msg;
 	mavlink_hil_gps_t hil_gps_msg;
+    double rpm;
+
 	double *FGControls;
 	int controlsCount;
 

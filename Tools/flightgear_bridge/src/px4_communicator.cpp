@@ -84,6 +84,16 @@ int PX4Communicator::Send()
     packetlen = mavlink_msg_to_send_buffer(buffer, &msg);
     send(px4MavlinkSock, buffer, packetlen, 0);
 
+
+    mavlink_scaled_pressure_t rpmmessage;
+    rpmmessage.press_abs=vehicle->rpm;
+    rpmmessage.press_diff=0;
+    rpmmessage.temperature=0;
+    rpmmessage.time_boot_ms=0;
+    mavlink_msg_scaled_pressure_encode_chan(1, 200, MAVLINK_COMM_0, &msg, &rpmmessage);
+    packetlen = mavlink_msg_to_send_buffer(buffer, &msg);
+    send(px4MavlinkSock, buffer, packetlen, 0);
+
     return 0;
 }
 

@@ -129,6 +129,8 @@ int FGCommunicator::Recieve(bool blocking)
 				swap64(&outputPacket.pressure_inhg);
 				swap64(&outputPacket.measured_total_pressure_inhg);
 
+                swap64(&outputPacket.rpm);
+
 				//fprintf(stderr,"FG data recieved\n");
 
 				vehicle->setFGData(outputPacket);

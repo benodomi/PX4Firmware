@@ -267,6 +267,17 @@ void Simulator::handle_message(const mavlink_message_t *msg)
 	case MAVLINK_MSG_ID_HIL_STATE_QUATERNION:
 		handle_message_hil_state_quaternion(msg);
 		break;
+
+    case MAVLINK_MSG_ID_SCALED_PRESSURE:
+	    mavlink_scaled_pressure_t rpm;
+	    mavlink_msg_scaled_pressure_decode(msg, &rpm);
+	    rpm_s rpmmsg{};
+	    rpmmsg.timestamp = hrt_absolute_time();
+        rpmmsg.indicated_frequency_rpm=rpm.press_abs;
+        rpmmsg.estimated_accurancy_rpm=0;
+
+        _rpm_pub.publish(rpmmsg);
+        break;
 	}
 }
 
