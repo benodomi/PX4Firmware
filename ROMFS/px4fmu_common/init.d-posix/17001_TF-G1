@@ -1,6 +1,7 @@
 #!/bin/sh
 #
 # @name ThunderFly TF-G1
+# ThunderFly TF-G1 autogyro airframe. Only for FlightGear simulator
 #
 # @type Autogyro
 # @class Autogyro
