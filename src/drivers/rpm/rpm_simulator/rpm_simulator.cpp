@@ -53,8 +53,11 @@
 #include <drivers/drv_hrt.h>
 #include <uORB/uORB.h>
 #include <uORB/topics/rpm.h>
+#include <uORB/Publication.hpp>
 
-__EXPORT int rpm_simulator_main(int argc, char *argv[]);
+__BEGIN_DECLS
+extern int rpm_simulator_main(int argc, char *argv[]);
+__END_DECLS
 
 int rpm_simulator_main(int argc, char *argv[])
 {
