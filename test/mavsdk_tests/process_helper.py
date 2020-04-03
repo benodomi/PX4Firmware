@@ -8,7 +8,7 @@ import subprocess
 import threading
 import pathlib
 import errno
-from typing import Dict, List, TextIO, Optional
+from typing import Any, Dict, List, TextIO, Optional
 
 
 class Runner:
@@ -32,6 +32,7 @@ class Runner:
         self.log_dir = log_dir
         self.log_filename = ""
         self.wait_until_complete = False
+        self.stop_thread: Any[threading.Event] = None
 
     def set_log_filename(self, log_filename: str) -> None:
         self.log_filename = log_filename
@@ -62,14 +63,18 @@ class Runner:
         self.thread = threading.Thread(target=self.process_output)
         self.thread.start()
         if self.wait_until_complete:
-            if self.wait(1.0) != 0:
-                raise TimeoutError("Command not completed")
+            timeout_s = 10.0
+            if self.wait(timeout_s) != 0:
+                raise TimeoutError("Command '{}' not completed within {}"
+                                   .format(self.cmd, timeout_s))
 
     def process_output(self) -> None:
         assert self.process.stdout is not None
         while not self.stop_thread.is_set():
             line = self.process.stdout.readline()
             if line == "\n":
+                continue
+            if not line:
                 continue
             self.output_queue.put(line)
             self.log_fd.write(line)
@@ -88,14 +93,18 @@ class Runner:
             print("stopped.")
             return errno.ETIMEDOUT
 
-    def get_output(self) -> Optional[str]:
-        try:
-            return self.output_queue.get(block=True, timeout=0.1)
-        except queue.Empty:
-            return None
+    def get_output_line(self) -> Optional[str]:
+        while True:
+            try:
+                return self.output_queue.get(block=True, timeout=0.1)
+            except queue.Empty:
+                return None
 
     def stop(self) -> int:
         atexit.unregister(self.stop)
+
+        if not self.stop_thread:
+            return 0
 
         self.stop_thread.set()
 
