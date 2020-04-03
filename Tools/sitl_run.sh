@@ -126,7 +126,7 @@ elif [ "$program" == "flightgear" ] && [ ! -n "$no_sim" ]; then
     cd "${src_path}/Tools/flightgear_bridge/"
     "${src_path}/Tools/flightgear_bridge/FG_run.py" ${model}.json    
     sleep 20
-    "${build_path}/bin/flightgear_bridge" `./get_FGbridge_params.py ${model}.json` &
+    "${build_path}/build_flightgear_bridge/flightgear_bridge" `./get_FGbridge_params.py ${model}.json` &
     FG_BRIDGE_PID=`echo $!`
 
 fi

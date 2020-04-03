@@ -57,8 +57,20 @@ ExternalProject_Add(mavsdk_tests
 	BUILD_ALWAYS 1
 )
 
-add_subdirectory(${PX4_SOURCE_DIR}/Tools/flightgear_bridge ${PX4_BINARY_DIR}/build_flightgear_bridge EXCLUDE_FROM_ALL)
-
+ExternalProject_Add(flightgear_bridge
+	SOURCE_DIR ${PX4_SOURCE_DIR}/Tools/flightgear_bridge
+	CMAKE_ARGS
+		-DCMAKE_INSTALL_PREFIX=${CMAKE_INSTALL_PREFIX}
+	BINARY_DIR ${PX4_BINARY_DIR}/build_flightgear_bridge
+	INSTALL_COMMAND ""
+	DEPENDS
+		git_gazebo
+	USES_TERMINAL_CONFIGURE true
+	USES_TERMINAL_BUILD true
+	EXCLUDE_FROM_ALL true
+	BUILD_ALWAYS 1
+)
+    
 # create targets for each viewer/model/debugger combination
 set(viewers none jmavsim gazebo flightgear)
 set(debuggers none ide gdb lldb ddd valgrind callgrind)
