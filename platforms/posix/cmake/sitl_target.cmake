@@ -25,6 +25,7 @@ add_custom_target(run_config
 
 px4_add_git_submodule(TARGET git_gazebo PATH "${PX4_SOURCE_DIR}/Tools/sitl_gazebo")
 px4_add_git_submodule(TARGET git_jmavsim PATH "${PX4_SOURCE_DIR}/Tools/jMAVSim")
+px4_add_git_submodule(TARGET git_flightgear_bridge PATH "${PX4_SOURCE_DIR}/Tools/flightgear_bridge")
 
 # Add support for external project building
 include(ExternalProject)
@@ -64,7 +65,7 @@ ExternalProject_Add(flightgear_bridge
 	BINARY_DIR ${PX4_BINARY_DIR}/build_flightgear_bridge
 	INSTALL_COMMAND ""
 	DEPENDS
-		git_gazebo
+		git_flightgear_bridge
 	USES_TERMINAL_CONFIGURE true
 	USES_TERMINAL_BUILD true
 	EXCLUDE_FROM_ALL true
