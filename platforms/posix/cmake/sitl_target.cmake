@@ -183,6 +183,7 @@ if( ENABLE_LOCKSTEP_SCHEDULER STREQUAL "no")
 	        USES_TERMINAL
 	        DEPENDS
 		        logs_symlink
+            )
 
         add_dependencies(${_targ_name} px4 flightgear_bridge)
         list(APPEND all_posix_vmd_make_targets ${_targ_name})                                     	
