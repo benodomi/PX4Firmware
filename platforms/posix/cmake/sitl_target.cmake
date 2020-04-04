@@ -72,35 +72,69 @@ ExternalProject_Add(flightgear_bridge
 	BUILD_ALWAYS 1
 )
 
+# create targets for each viewer/model/debugger combination
+set(viewers none jmavsim gazebo)
+set(debuggers none ide gdb lldb ddd valgrind callgrind)
+set(models none shell
+    if750a iris iris_opt_flow iris_opt_flow_mockup iris_vision iris_rplidar iris_irlock iris_obs_avoid iris_rtps solo typhoon_h480
+    plane plane_cam plane_catapult
+    standard_vtol tailsitter tiltrotor
+    rover boat
+    uuv_hippocampus)
+set(worlds none empty baylands ksql_airport mcmillan_airfield sonoma_raceway warehouse)
+set(all_posix_vmd_make_targets)
+foreach(viewer ${viewers})
+    foreach(debugger ${debuggers})
+	    foreach(model ${models})
+		    foreach(world ${worlds})
+			    if (world STREQUAL "none")
+				    if (debugger STREQUAL "none")
+					    if (model STREQUAL "none")
+						    set(_targ_name "${viewer}")
+					    else()
+						    set(_targ_name "${viewer}_${model}")
+					    endif()
+				    else()
+					    if (model STREQUAL "none")
+						    set(_targ_name "${viewer}___${debugger}")
+					    else()
+						    set(_targ_name "${viewer}_${model}_${debugger}")
+					    endif()
+				    endif()
 
-if( ENABLE_LOCKSTEP_SCHEDULER STREQUAL "yes")  
-    # create targets for each viewer/model/debugger combination
-    set(viewers none jmavsim gazebo)
-    set(debuggers none ide gdb lldb ddd valgrind callgrind)
-    set(models none shell
-	    if750a iris iris_opt_flow iris_opt_flow_mockup iris_vision iris_rplidar iris_irlock iris_obs_avoid iris_rtps solo typhoon_h480
-	    plane plane_cam plane_catapult
-	    standard_vtol tailsitter tiltrotor
-	    rover boat
-	    uuv_hippocampus)
-    set(worlds none empty baylands ksql_airport mcmillan_airfield sonoma_raceway warehouse)
-    set(all_posix_vmd_make_targets)
-    foreach(viewer ${viewers})
-	    foreach(debugger ${debuggers})
-		    foreach(model ${models})
-			    foreach(world ${worlds})
-				    if (world STREQUAL "none")
+				    add_custom_target(${_targ_name}
+				    COMMAND ${PX4_SOURCE_DIR}/Tools/sitl_run.sh
+					    $<TARGET_FILE:px4>
+					    ${debugger}
+					    ${viewer}
+					    ${model}
+					    ${world}
+					    ${PX4_SOURCE_DIR}
+					    ${PX4_BINARY_DIR}
+				    WORKING_DIRECTORY ${SITL_WORKING_DIR}
+				    USES_TERMINAL
+				    DEPENDS
+					    logs_symlink
+				    )
+		            list(APPEND all_posix_vmd_make_targets ${_targ_name})
+		            if (viewer STREQUAL "gazebo")
+			            add_dependencies(${_targ_name} px4 sitl_gazebo)
+		            elseif(viewer STREQUAL "jmavsim")
+			            add_dependencies(${_targ_name} px4 git_jmavsim)
+		            endif()
+			    else()
+				    if (viewer STREQUAL "gazebo")
 					    if (debugger STREQUAL "none")
 						    if (model STREQUAL "none")
-							    set(_targ_name "${viewer}")
+							    set(_targ_name "${viewer}___${world}")
 						    else()
-							    set(_targ_name "${viewer}_${model}")
+							    set(_targ_name "${viewer}_${model}__${world}")
 						    endif()
 					    else()
 						    if (model STREQUAL "none")
-							    set(_targ_name "${viewer}___${debugger}")
+							    set(_targ_name "${viewer}__${debugger}_${world}")
 						    else()
-							    set(_targ_name "${viewer}_${model}_${debugger}")
+							    set(_targ_name "${viewer}_${model}_${debugger}_${world}")
 						    endif()
 					    endif()
 
@@ -118,99 +152,40 @@ if( ENABLE_LOCKSTEP_SCHEDULER STREQUAL "yes")
 					    DEPENDS
 						    logs_symlink
 					    )
-			            list(APPEND all_posix_vmd_make_targets ${_targ_name})
-			            if (viewer STREQUAL "gazebo")
-				            add_dependencies(${_targ_name} px4 sitl_gazebo)
-			            elseif(viewer STREQUAL "jmavsim")
-				            add_dependencies(${_targ_name} px4 git_jmavsim)                    
-			            endif()
-				    else()
-					    if (viewer STREQUAL "gazebo")
-						    if (debugger STREQUAL "none")
-							    if (model STREQUAL "none")
-								    set(_targ_name "${viewer}___${world}")
-							    else()
-								    set(_targ_name "${viewer}_${model}__${world}")
-							    endif()
-						    else()
-							    if (model STREQUAL "none")
-								    set(_targ_name "${viewer}__${debugger}_${world}")
-							    else()
-								    set(_targ_name "${viewer}_${model}_${debugger}_${world}")
-							    endif()
-						    endif()
-
-						    add_custom_target(${_targ_name}
-						    COMMAND ${PX4_SOURCE_DIR}/Tools/sitl_run.sh
-							    $<TARGET_FILE:px4>
-							    ${debugger}
-							    ${viewer}
-							    ${model}
-							    ${world}
-							    ${PX4_SOURCE_DIR}
-							    ${PX4_BINARY_DIR}
-						    WORKING_DIRECTORY ${SITL_WORKING_DIR}
-						    USES_TERMINAL
-						    DEPENDS
-							    logs_symlink
-						    )
-						    list(APPEND all_posix_vmd_make_targets ${_targ_name})
-						    add_dependencies(${_targ_name} px4 sitl_gazebo)
-					    endif()
+					    list(APPEND all_posix_vmd_make_targets ${_targ_name})
+					    add_dependencies(${_targ_name} px4 sitl_gazebo)
 				    endif()
-			    endforeach()
+			    endif()
 		    endforeach()
 	    endforeach()
     endforeach()
-else()
-    set(viewers none flightgear)
-    set(debuggers none ide gdb lldb ddd valgrind callgrind)
-    set(models none shell
+endforeach()
+
+#add flighgear targets
+if( ENABLE_LOCKSTEP_SCHEDULER STREQUAL "no")
+    set(models
 	    plane
         )
-    set(worlds none empty)
     set(all_posix_vmd_make_targets)
-    foreach(viewer ${viewers})
-	    foreach(debugger ${debuggers})
-		    foreach(model ${models})
-			    foreach(world ${worlds})
-				    if (world STREQUAL "none")
-					    if (debugger STREQUAL "none")
-						    if (model STREQUAL "none")
-							    set(_targ_name "${viewer}")
-						    else()
-							    set(_targ_name "${viewer}_${model}")
-						    endif()
-					    else()
-						    if (model STREQUAL "none")
-							    set(_targ_name "${viewer}___${debugger}")
-						    else()
-							    set(_targ_name "${viewer}_${model}_${debugger}")
-						    endif()
-					    endif()
 
-					    add_custom_target(${_targ_name}
-					    COMMAND ${PX4_SOURCE_DIR}/Tools/sitl_run.sh
-						    $<TARGET_FILE:px4>
-						    ${debugger}
-						    ${viewer}
-						    ${model}
-						    ${world}
-						    ${PX4_SOURCE_DIR}
-						    ${PX4_BINARY_DIR}
-					    WORKING_DIRECTORY ${SITL_WORKING_DIR}
-					    USES_TERMINAL
-					    DEPENDS
-						    logs_symlink
-					    )
-			            list(APPEND all_posix_vmd_make_targets ${_targ_name})
-			            if(viewer STREQUAL "flightgear")
-				            add_dependencies(${_targ_name} px4 flightgear_bridge)                        
-			            endif()
-				    endif()
-			    endforeach()
-		    endforeach()
-	    endforeach()
+    foreach(model ${models})
+	    set(_targ_name "flightgear_${model}")
+        add_custom_target(${_targ_name}
+	        COMMAND ${PX4_SOURCE_DIR}/Tools/sitl_run.sh
+		        $<TARGET_FILE:px4>
+		        none
+		        flightgear
+		        ${model}
+		        none
+		        ${PX4_SOURCE_DIR}
+		        ${PX4_BINARY_DIR}
+	        WORKING_DIRECTORY ${SITL_WORKING_DIR}
+	        USES_TERMINAL
+	        DEPENDS
+		        logs_symlink
+
+        add_dependencies(${_targ_name} px4 flightgear_bridge)
+        list(APPEND all_posix_vmd_make_targets ${_targ_name})                                     	
     endforeach()
 endif()
 
