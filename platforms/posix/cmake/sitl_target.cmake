@@ -164,7 +164,8 @@ endforeach()
 #add flighgear targets
 if( ENABLE_LOCKSTEP_SCHEDULER STREQUAL "no")
     set(models
-	    plane
+        plane
+        tf-g1
         )
     set(all_posix_vmd_make_targets)
 
