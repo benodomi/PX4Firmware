@@ -121,7 +121,7 @@ elif [ "$program" == "gazebo" ] && [ ! -n "$no_sim" ]; then
 		echo "You need to have gazebo simulator installed!"
 		exit 1
 	fi
-elif [ "$program" == "flightgear" ] && [ ! -n "$no_sim" ]; then
+elif [ "$program" == "flightgear" ] && [ -z "$no_sim" ]; then
 	echo "FG setup"
     cd "${src_path}/Tools/flightgear_bridge/"
     "${src_path}/Tools/flightgear_bridge/FG_run.py" ${model}.json    
