@@ -16,6 +16,7 @@ px4_add_board(
 		#imu # all available imu drivers
 		#magnetometer # all available magnetometer drivers
 		pwm_out_sim
+		rpm/rpm_simulator
 		#telemetry # all available telemetry drivers
 		tone_alarm
 		#uavcan
@@ -84,6 +85,7 @@ px4_add_board(
 		px4_simple_app # Tutorial code from http://dev.px4.io/en/apps/hello_sky.html
 		rover_steering_control # Rover example app
 		uuv_example_app
+		work_item
 	)
 
 set(config_sitl_viewer jmavsim CACHE STRING "viewer for sitl")
