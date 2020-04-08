@@ -53,6 +53,7 @@ px4_add_board(
 		rc_input
 		roboclaw
 		rpm
+		rpm/rpm_simulator
 		safety_button
 		tap_esc
 		telemetry # all available telemetry drivers
@@ -83,6 +84,7 @@ px4_add_board(
 		mc_rate_control
 		#micrortps_bridge
 		navigator
+		prerotator
 		rc_update
 		rover_pos_control
 		sensors
