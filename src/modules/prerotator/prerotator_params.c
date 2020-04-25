@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2013-2020 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2020 ThunderFly s.r.o. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -33,24 +33,59 @@
 
 /**
  * @file prerotator_params.c
- * Parameters prerotation utility.
+ * Parameters of rotor prerotator controller.
  *
- * @author Roman Dvorak <dvorakroman@thunderfly.cz>
- * 2020
+ * @author Roman Dvorak, ThunderFly s.r.o. <dvorakroman@thunderfly.cz>
+ * @url https://www.thunderfly.cz/
  */
 
 /**
- * Minimal rotor speed for eneable prerotation.
+ * Minimal rotor speed for start prerotation.
  *
- * Set to 0 (or smaller) if it can spin-up itself from zero RPM.
- * If you are helping to spin the rotor manually set minimal RPM
+ * Set to 0 (or smaller) if rotor can spin-up itself from zero RPM.
+ * It will start prerotation immediately after arm.
+ * If you must to pre-spin the rotor manually set minimal RPM
  * when autopilot should increase prerotator power.
  *
  * @min 0
  * @max 1000
  * @group Prerotator
  */
-PARAM_DEFINE_FLOAT(PREROTAT_MIN_RPM, 20.0f);
+PARAM_DEFINE_FLOAT(PREROT_WAIT_RPM, 20.0f);
+
+/**
+ * Time to reach full maximal PWM output
+ *
+ * This value should ensure that you dont overloading prerotator motor/esc.
+ *
+ * @min 0
+ * @max 1000
+ * @group Prerotator
+ */
+PARAM_DEFINE_FLOAT(PREROT_RAMP_T, 10.0f);
+
+/**
+ * Minimal PWM output for prerotation start
+ *
+ *
+ * @min 1000
+ * @max 2000
+ * @group Prerotator
+ */
+PARAM_DEFINE_FLOAT(PREROT_PWM_MIN, 1100.0f);
+
+/**
+ * Maximal PWM output of
+ *
+ * Set to 0 (or smaller) if it can spin-up itself from zero RPM.
+ * If you are helping to spin the rotor manually set minimal RPM
+ * when autopilot should increase prerotator power.
+ *
+ * @min 1000
+ * @max 2000
+ * @group Prerotator
+ */
+PARAM_DEFINE_FLOAT(PREROT_PWM_MAX, 1800.0f);
 
 /**
  * Prerotation speed
@@ -59,11 +94,11 @@ PARAM_DEFINE_FLOAT(PREROTAT_MIN_RPM, 20.0f);
  * If you are helping to spin the rotor manually set minimal RPM
  * when autopilot should increase prerotator power.
  *
- * @min 0
- * @max 1000
+ * @min 1500
+ * @max 2000
  * @group Prerotator
  */
-PARAM_DEFINE_FLOAT(PREROTAT_RAMP_UP, 5.0f);
+PARAM_DEFINE_FLOAT(PREROT_PWM_IDLE, 1600.0f);
 
 /**
  * Prerotator target speed
@@ -74,14 +109,15 @@ PARAM_DEFINE_FLOAT(PREROTAT_RAMP_UP, 5.0f);
  * @max 1000
  * @group Prerotator
  */
-PARAM_DEFINE_FLOAT(PREROTAT_TRG_RPM, 100.0f);
+PARAM_DEFINE_FLOAT(PREROT_TRG_RPM, 950.0f);
+
 /**
  * Prerotator target speed
  *
  * Prerotator target RPM
  *
- * @min 1000
- * @max 2000
+ * @min 5
+ * @max 50
  * @group Prerotator
  */
-PARAM_DEFINE_FLOAT(PREROTAT_IDLE, 1400.0f);
+PARAM_DEFINE_FLOAT(PREROT_END_ASPD, 5.0f);

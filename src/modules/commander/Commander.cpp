@@ -3796,13 +3796,12 @@ void Commander::battery_status_check()
 	battery_status_s batteries[ORB_MULTI_MAX_INSTANCES];
 	size_t num_connected_batteries = 0;
 
-
 	for (size_t i = 0; i < sizeof(_battery_subs) / sizeof(_battery_subs[0]); i++) {
-		if (_battery_subs[i].updated() && _battery_subs[i].copy(&batteries[num_connected_batteries])) {
-			// We need to update the status flag if ANY battery is updated, because the system source might have
-			// changed, or might be nothing (if there is no battery connected)
-			battery_sub_updated = true;
+		// We need to update the status flag if ANY battery is updated, because the system source might have
+		// changed, or might be nothing (if there is no battery connected)
+		battery_sub_updated |= _battery_subs[i].updated();
 
+		if (_battery_subs[i].copy(&batteries[num_connected_batteries])) {
 			if (batteries[num_connected_batteries].connected) {
 				num_connected_batteries++;
 			}
@@ -3822,6 +3821,8 @@ void Commander::battery_status_check()
 	// oldest timestamp.
 	hrt_abstime oldest_update = hrt_absolute_time();
 
+	_battery_current = 0.0f;
+
 	// Only iterate over connected batteries. We don't care if a disconnected battery is not regularly publishing.
 	for (size_t i = 0; i < num_connected_batteries; i++) {
 		if (batteries[i].warning > worst_warning) {
@@ -3832,9 +3833,8 @@ void Commander::battery_status_check()
 			oldest_update = batteries[i].timestamp;
 		}
 
-		if (batteries[i].system_source) {
-			_battery_current = batteries[i].current_filtered_a;
-		}
+		// Sum up current from all batteries.
+		_battery_current += batteries[i].current_filtered_a;
 	}
 
 	bool battery_warning_level_increased_while_armed = false;

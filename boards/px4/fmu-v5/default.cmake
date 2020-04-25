@@ -33,7 +33,7 @@ px4_add_board(
 		imu/bmi055
 		imu/invensense/icm20602
 		imu/invensense/icm20689
-		imu/mpu6000
+		#imu/mpu6000 # legacy icm20602/icm20689 driver
 		irlock
 		lights/blinkm
 		lights/rgbled
@@ -48,11 +48,12 @@ px4_add_board(
 		#protocol_splitter
 		pwm_input
 		pwm_out_sim
-		px4fmu
+		pwm_out
 		px4io
 		rc_input
 		roboclaw
 		rpm
+		rpm/rpm_simulator
 		safety_button
 		tap_esc
 		telemetry # all available telemetry drivers
@@ -67,6 +68,7 @@ px4_add_board(
 		commander
 		dataman
 		ekf2
+		esc_battery
 		events
 		fw_att_control
 		fw_pos_control_l1
@@ -82,6 +84,7 @@ px4_add_board(
 		mc_rate_control
 		#micrortps_bridge
 		navigator
+		prerotator
 		rc_update
 		rover_pos_control
 		sensors
@@ -126,4 +129,5 @@ px4_add_board(
 		px4_simple_app # Tutorial code from http://dev.px4.io/en/apps/hello_sky.html
 		rover_steering_control # Rover example app
 		uuv_example_app
+		work_item
 	)

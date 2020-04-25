@@ -33,7 +33,7 @@ px4_add_board(
 		imu/bmi055
 		imu/invensense/icm20602
 		imu/invensense/icm20689
-		imu/mpu6000
+		#imu/mpu6000 # legacy icm20602/icm20689 driver
 		irlock
 		#lights/blinkm
 		lights/rgbled
@@ -43,7 +43,7 @@ px4_add_board(
 		optical_flow # all available optical flow drivers
 		#pwm_input
 		pwm_out_sim
-		px4fmu
+		pwm_out
 		px4io
 		rc_input
 		#roboclaw

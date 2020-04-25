@@ -42,17 +42,12 @@ static constexpr int16_t combine(uint8_t msb, uint8_t lsb)
 
 ICM42688P::ICM42688P(I2CSPIBusOption bus_option, int bus, uint32_t device, enum Rotation rotation, int bus_frequency,
 		     spi_mode_e spi_mode, spi_drdy_gpio_t drdy_gpio) :
-	SPI(MODULE_NAME, nullptr, bus, device, spi_mode, bus_frequency),
+	SPI(DRV_IMU_DEVTYPE_ICM42688P, MODULE_NAME, bus, device, spi_mode, bus_frequency),
 	I2CSPIDriver(MODULE_NAME, px4::device_bus_to_wq(get_device_id()), bus_option, bus),
 	_drdy_gpio(drdy_gpio),
 	_px4_accel(get_device_id(), ORB_PRIO_HIGH, rotation),
 	_px4_gyro(get_device_id(), ORB_PRIO_HIGH, rotation)
 {
-	set_device_type(DRV_IMU_DEVTYPE_ICM42688P);
-
-	_px4_accel.set_device_type(DRV_IMU_DEVTYPE_ICM42688P);
-	_px4_gyro.set_device_type(DRV_IMU_DEVTYPE_ICM42688P);
-
 	ConfigureSampleRate(_px4_gyro.get_max_rate_hz());
 }
 
@@ -625,8 +620,8 @@ void ICM42688P::UpdateTemperature()
 
 	const int16_t TEMP_DATA = combine(temperature_buf[1], temperature_buf[2]);
 
-	// Temperature in Degrees Centigrade = (TEMP_DATA / 132.48) + 25
-	const float TEMP_degC = (TEMP_DATA / TEMPERATURE_SENSITIVITY) + ROOM_TEMPERATURE_OFFSET;
+	// Temperature in Degrees Centigrade
+	const float TEMP_degC = (TEMP_DATA / TEMPERATURE_SENSITIVITY) + TEMPERATURE_OFFSET;
 
 	if (PX4_ISFINITE(TEMP_degC)) {
 		_px4_accel.set_temperature(TEMP_degC);

@@ -101,13 +101,6 @@ bool @(topic)_Publisher::init()
     if(mp_participant == nullptr)
         return false;
 
-@[if ros2_distro and (ros2_distro == "dashing" or ros2_distro == "eloquent")]@
-    // Type name should match the expected type name on ROS2
-    // Note: the change is being done here since the 'fastrtpsgen' example
-    // generator does not allow to change the type naming on the template
-    @(topic)DataType.setName("@(package)::msg::dds_::@(topic)_");
-@[end if]@
-
     // Register the type
     Domain::registerType(mp_participant, static_cast<TopicDataType*>(&@(topic)DataType));
 
@@ -123,7 +116,7 @@ bool @(topic)_Publisher::init()
     Wparam.topic.topicName = "rt/@(topic)_PubSubTopic";
 @[    end if]@
 @[else]@
-    Wparam.topic.topicName = "@(topic)_PubSubTopic";
+    Wparam.topic.topicName = "@(topic)PubSubTopic";
 @[end if]@
     mp_publisher = Domain::createPublisher(mp_participant, Wparam, static_cast<PublisherListener*>(&m_listener));
     if(mp_publisher == nullptr)

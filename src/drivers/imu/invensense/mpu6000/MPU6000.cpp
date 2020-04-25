@@ -42,17 +42,12 @@ static constexpr int16_t combine(uint8_t msb, uint8_t lsb)
 
 MPU6000::MPU6000(I2CSPIBusOption bus_option, int bus, uint32_t device, enum Rotation rotation, int bus_frequency,
 		 spi_mode_e spi_mode, spi_drdy_gpio_t drdy_gpio) :
-	SPI(MODULE_NAME, nullptr, bus, device, spi_mode, bus_frequency),
+	SPI(DRV_IMU_DEVTYPE_MPU6000, MODULE_NAME, bus, device, spi_mode, bus_frequency),
 	I2CSPIDriver(MODULE_NAME, px4::device_bus_to_wq(get_device_id()), bus_option, bus),
 	_drdy_gpio(drdy_gpio),
 	_px4_accel(get_device_id(), ORB_PRIO_HIGH, rotation),
 	_px4_gyro(get_device_id(), ORB_PRIO_HIGH, rotation)
 {
-	set_device_type(DRV_IMU_DEVTYPE_MPU6000);
-
-	_px4_accel.set_device_type(DRV_IMU_DEVTYPE_MPU6000);
-	_px4_gyro.set_device_type(DRV_IMU_DEVTYPE_MPU6000);
-
 	ConfigureSampleRate(_px4_gyro.get_max_rate_hz());
 }
 
@@ -193,10 +188,13 @@ void MPU6000::RunImpl()
 	case STATE::FIFO_READ: {
 			hrt_abstime timestamp_sample = 0;
 
-			if (_data_ready_interrupt_enabled && (hrt_elapsed_time(&timestamp_sample) < (_fifo_empty_interval_us / 2))) {
+			if (_data_ready_interrupt_enabled) {
 				// re-schedule as watchdog timeout
 				ScheduleDelayed(10_ms);
+			}
 
+			if (_data_ready_interrupt_enabled && (hrt_elapsed_time(&timestamp_sample) < (_fifo_empty_interval_us / 2))) {
+				// use timestamp from data ready interrupt if enabled and seems valid
 				timestamp_sample = _fifo_watermark_interrupt_timestamp;
 
 			} else {
@@ -572,7 +570,7 @@ void MPU6000::UpdateTemperature()
 	}
 
 	const int16_t TEMP_OUT = combine(temperature_buf[1], temperature_buf[2]);
-	const float TEMP_degC = ((TEMP_OUT - ROOM_TEMPERATURE_OFFSET) / TEMPERATURE_SENSITIVITY) + ROOM_TEMPERATURE_OFFSET;
+	const float TEMP_degC = (TEMP_OUT / TEMPERATURE_SENSITIVITY) + TEMPERATURE_OFFSET;
 
 	if (PX4_ISFINITE(TEMP_degC)) {
 		_px4_accel.set_temperature(TEMP_degC);

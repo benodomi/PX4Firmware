@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2020 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2020 ThunderFly s.r.o. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,6 +31,7 @@
  *
  ****************************************************************************/
 
+
 #pragma once
 
 #include <px4_platform_common/module.h>
@@ -39,6 +40,10 @@
 
 #include <uORB/Subscription.hpp>
 #include <uORB/topics/rpm.h>
+#include <uORB/topics/vehicle_status.h>
+#include <uORB/topics/sensor_combined.h>
+#include <uORB/topics/actuator_controls.h>
+#include <uORB/topics/airspeed.h>
 #include <uORB/topics/parameter_update.h>
 
 extern "C" __EXPORT int prerotator_main(int argc, char *argv[]);
@@ -63,6 +68,7 @@ public:
 	/** @see ModuleBase */
 	static int print_usage(const char *reason = nullptr);
 
+
 	/** @see ModuleBase::run() */
 	void run() override;
 
@@ -71,19 +77,30 @@ public:
 
 private:
 
-	/**
-	 * Check for parameter changes and update them if needed.
-	 * @param parameter_update_sub uorb subscription to parameter_update
-	 * @param force for a parameter update
-	 */
+
     void parameters_update(int parameter_update_sub, bool force = false);
 	int _current_state = 0;
 
+	int _rpm_sub{-1};
+	int _vehicle_status_sub{-1};
+	int _airspeed_sub{-1};
+
+	rpm_s _rpm{};
+	vehicle_status_s _vehicle_status{};
+	airspeed_s _airspeed{};
+
+	void rpm_poll();
+	void airspeed_poll();
+	void vehicle_status_poll();
+
 	DEFINE_PARAMETERS(
-		(ParamFloat<px4::params::PREROTAT_MIN_RPM>) _param_min_rpm,
-		(ParamFloat<px4::params::PREROTAT_RAMP_UP>) _param_ramp_up,
-		(ParamFloat<px4::params::PREROTAT_TRG_RPM>) _param_tgr_rpm,
-		(ParamFloat<px4::params::PREROTAT_IDLE>) _param_idle
+		(ParamFloat<px4::params::PREROT_WAIT_RPM>) _param_wait_rpm,
+		(ParamFloat<px4::params::PREROT_RAMP_T>) _param_ramp_time,
+		(ParamFloat<px4::params::PREROT_PWM_MIN>) _param_pwm_min,
+		(ParamFloat<px4::params::PREROT_PWM_MAX>) _param_pwm_max,
+		(ParamFloat<px4::params::PREROT_PWM_IDLE>) _param_pwm_idle,
+		(ParamFloat<px4::params::PREROT_TRG_RPM>) _param_target_rpm,
+		(ParamFloat<px4::params::PREROT_END_ASPD>) _param_end_airspeed
 	)
 
 	enum prerotation_states{

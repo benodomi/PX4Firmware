@@ -71,7 +71,11 @@ add_definitions(
 	-DUAVCAN_PLATFORM=${UAVCAN_PLATFORM}
 )
 
-add_compile_options(-Wno-cast-align) # TODO: fix and enable
+add_compile_options(
+	-Wno-cast-align # TODO: fix and enable
+	-Wno-deprecated-copy # TODO: fix
+	-Wno-address-of-packed-member
+)
 add_subdirectory(${LIBUAVCAN_DIR} libuavcan EXCLUDE_FROM_ALL)
 add_dependencies(uavcan prebuild_targets)
 
@@ -120,11 +124,12 @@ px4_add_module(
 
 		# Sensors
 		sensors/sensor_bridge.cpp
+		sensors/differential_pressure.cpp
+		sensors/baro.cpp
+		sensors/battery.cpp
+		sensors/flow.cpp
 		sensors/gnss.cpp
 		sensors/mag.cpp
-		sensors/baro.cpp
-		sensors/flow.cpp
-		sensors/battery.cpp
 
 	DEPENDS
 		px4_uavcan_dsdlc
