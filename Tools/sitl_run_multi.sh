@@ -135,9 +135,8 @@ SIM_PID=0
 if [ "$program" == "flightgear" ] && [ -z "$no_sim" ]; then
 	echo "FG setup"
     cd "${src_path}/Tools/flightgear_bridge/"
-    "${src_path}/Tools/flightgear_bridge/FG_run.py" ${model}.json $PX4_ID
-    sleep 20
-    "${build_path}/build_flightgear_bridge/flightgear_bridge" $PX4_ID `./get_FGbridge_params.py ${model}.json` &
+    "${src_path}/Tools/flightgear_bridge/FG_run.py" "models/"${model}".json" $PX4_ID
+    "${build_path}/build_flightgear_bridge/flightgear_bridge" $PX4_ID `./get_FGbridge_params.py "models/"${model}".json"` &
     FG_BRIDGE_PID=`echo $!`
 
 fi
