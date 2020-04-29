@@ -33,8 +33,10 @@ echo world: $world
 echo src_path: $src_path
 echo build_path: $build_path
 
-
-PX4_ID=`pidof px4|wc -w`
+if [ -z "$PX4_ID" ];
+then
+    PX4_ID=0
+fi
 echo "========================"
 echo $PX4_ID
 echo "========================"
