@@ -1,13 +1,13 @@
 #!/bin/sh
 #
-# @name ThunderFly TF-G1
-# ThunderFly TF-G1 autogyro airframe. Only for FlightGear simulator
+# @name ThunderFly TF-G2
+# ThunderFly TF-G2 autogyro airframe. Only for FlightGear simulator
 #
 # @type Autogyro
 # @class Autogyro
 #
-# @url https://github.com/ThunderFly-aerospace/TF-G1/
-#
+# @url https://github.com/ThunderFly-aerospace/TF-G2/
+# @author ThunderFly s.r.o. <info@thunderfly.cz>
 #
 
 sh /etc/init.d/rc.fw_defaults
