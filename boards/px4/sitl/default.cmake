@@ -50,7 +50,8 @@ px4_add_board(
 		temperature_compensation
 		vmount
 		vtol_att_control
-		uuv_att_control
+		uuv_att_control     
+        folow_me_sitl_client
 
 	SYSTEMCMDS
 		#dumpfile
