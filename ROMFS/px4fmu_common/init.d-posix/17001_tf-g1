@@ -62,3 +62,6 @@ fi
 
 set MIXER_FILE etc/mixers-sitl/autogyro_sitl.main.mix
 set MIXER custom
+
+#recieve mavlink messages from TF-R1 on port 15555 and create uOrb follow target message
+follow_me_sitl_client start
