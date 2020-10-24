@@ -57,7 +57,7 @@ public:
 	SPI(SPI &&) = delete;
 	SPI &operator=(SPI &&) = delete;
 
-protected:
+public:
 	/**
 	 * Constructor
 	 *
