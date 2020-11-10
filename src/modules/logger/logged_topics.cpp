@@ -84,6 +84,7 @@ void LoggedTopics::add_default_topics()
 	add_topic("tecs_status", 200);
 	add_topic("test_motor", 500);
 	add_topic("trajectory_setpoint", 200);
+	add_topic("tunnel", 10);
 	add_topic("vehicle_air_data", 200);
 	add_topic("vehicle_angular_velocity", 20);
 	add_topic("vehicle_attitude", 50);
@@ -144,6 +145,7 @@ void LoggedTopics::add_high_rate_topics()
 	add_topic("manual_control_setpoint");
 	add_topic("rate_ctrl_status", 20);
 	add_topic("sensor_combined");
+	add_topic("tunnel");
 	add_topic("vehicle_angular_acceleration");
 	add_topic("vehicle_angular_velocity");
 	add_topic("vehicle_attitude");

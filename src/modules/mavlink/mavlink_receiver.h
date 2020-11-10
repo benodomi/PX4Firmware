@@ -87,6 +87,7 @@
 #include <uORB/topics/telemetry_status.h>
 #include <uORB/topics/transponder_report.h>
 #include <uORB/topics/tune_control.h>
+#include <uORB/topics/tunnel.h>
 #include <uORB/topics/vehicle_attitude.h>
 #include <uORB/topics/vehicle_attitude_setpoint.h>
 #include <uORB/topics/vehicle_command.h>
@@ -160,6 +161,7 @@ private:
 	void handle_message_manual_control(mavlink_message_t *msg);
 	void handle_message_named_value_float(mavlink_message_t *msg);
 	void handle_message_obstacle_distance(mavlink_message_t *msg);
+	void handle_message_tunnel(mavlink_message_t *msg);
 	void handle_message_odometry(mavlink_message_t *msg);
 	void handle_message_optical_flow_rad(mavlink_message_t *msg);
 	void handle_message_ping(mavlink_message_t *msg);
@@ -243,6 +245,7 @@ private:
 	uORB::Publication<landing_target_pose_s>		_landing_target_pose_pub{ORB_ID(landing_target_pose)};
 	uORB::Publication<log_message_s>			_log_message_pub{ORB_ID(log_message)};
 	uORB::Publication<obstacle_distance_s>			_obstacle_distance_pub{ORB_ID(obstacle_distance)};
+	uORB::Publication<tunnel_s>			_tunnel_pub{ORB_ID(tunnel)};
 	uORB::Publication<offboard_control_mode_s>		_offboard_control_mode_pub{ORB_ID(offboard_control_mode)};
 	uORB::Publication<onboard_computer_status_s>		_onboard_computer_status_pub{ORB_ID(onboard_computer_status)};
 	uORB::Publication<optical_flow_s>			_flow_pub{ORB_ID(optical_flow)};

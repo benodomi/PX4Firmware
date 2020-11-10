@@ -133,6 +133,7 @@ set(msg_files
 	trajectory_waypoint.msg
 	transponder_report.msg
 	tune_control.msg
+	tunnel.msg
 	uavcan_parameter_request.msg
 	uavcan_parameter_value.msg
 	ulog_stream.msg
