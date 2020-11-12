@@ -55,6 +55,7 @@ void LoggedTopics::add_default_topics()
 	add_topic("cellular_status", 200);
 	add_topic("commander_state");
 	add_topic("cpuload");
+	addtopic("ekf_gps_drift");
 	add_topic("esc_status", 250);
 	add_topic("generator_status");
 	add_topic("home_position");
@@ -82,7 +83,8 @@ void LoggedTopics::add_default_topics()
 	add_topic("tecs_status", 200);
 	add_topic("test_motor", 500);
 	add_topic("trajectory_setpoint", 200);
-	add_topic("vehicle_acceleration", 50);
+        add_topic("vehicle_acceleration", 50);
+	add_topic("tunnel", 10);
 	add_topic("vehicle_air_data", 200);
 	add_topic("vehicle_angular_velocity", 20);
 	add_topic("vehicle_attitude", 50);
@@ -101,6 +103,7 @@ void LoggedTopics::add_default_topics()
 	add_topic("vehicle_status");
 	add_topic("vehicle_status_flags");
 	add_topic("vtol_vehicle_status", 200);
+
 
 	// multi topics
 	add_topic_multi("actuator_outputs", 100, 2);
@@ -182,6 +185,7 @@ void LoggedTopics::add_estimator_replay_topics()
 	// for estimator replay (need to be at full rate)
 	add_topic("ekf2_timestamps");
 
+
 	// current EKF2 subscriptions
 	add_topic("airspeed");
 	add_topic("optical_flow");
@@ -193,7 +197,9 @@ void LoggedTopics::add_estimator_replay_topics()
 	add_topic("vehicle_magnetometer");
 	add_topic("vehicle_status");
 	add_topic("vehicle_visual_odometry");
+
 	add_topic_multi("distance_sensor");
+
 }
 
 void LoggedTopics::add_thermal_calibration_topics()
