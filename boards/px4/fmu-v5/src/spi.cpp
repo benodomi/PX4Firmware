@@ -50,7 +50,7 @@ constexpr px4_spi_bus_t px4_spi_buses[SPI_BUS_MAX_BUS_ITEMS] = {
 	}),
 	initSPIBusExternal(SPI::Bus::SPI5, {
 		initSPIConfigExternal(SPI::CS{GPIO::PortI, GPIO::Pin4}, SPI::DRDY{GPIO::PortD, GPIO::Pin15}),
-		initSPIConfigExternal(SPI::CS{GPIO::PortI, GPIO::Pin10}),
+		initSPIConfigExternal(SPI::CS{GPIO::PortI, GPIO::Pin4}),
 		initSPIConfigExternal(SPI::CS{GPIO::PortI, GPIO::Pin11})
 	}),
 	initSPIBusExternal(SPI::Bus::SPI6, {
