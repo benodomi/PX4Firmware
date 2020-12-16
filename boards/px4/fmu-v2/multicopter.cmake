@@ -16,7 +16,7 @@ px4_add_board(
 		TEL2:/dev/ttyS2
 		TEL4:/dev/ttyS6
 	DRIVERS
-		adc
+		adc/board_adc
 		barometer/ms5611
 		#batt_smbus
 		camera_capture
@@ -65,6 +65,7 @@ px4_add_board(
 		hardfault_log
 		#i2cdetect
 		#led_control
+		mft
 		mixer
 		#motor_ramp
 		#motor_test

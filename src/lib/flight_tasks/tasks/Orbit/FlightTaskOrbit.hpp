@@ -41,19 +41,19 @@
 
 #pragma once
 
-#include "FlightTaskManualAltitudeSmooth.hpp"
+#include "FlightTaskManualAltitudeSmoothVel.hpp"
 #include <uORB/Publication.hpp>
 #include <uORB/topics/orbit_status.h>
 #include <StraightLine.hpp>
 
-class FlightTaskOrbit : public FlightTaskManualAltitudeSmooth
+class FlightTaskOrbit : public FlightTaskManualAltitudeSmoothVel
 {
 public:
 	FlightTaskOrbit();
 	virtual ~FlightTaskOrbit() = default;
 
 	bool applyCommandParameters(const vehicle_command_s &command) override;
-	bool activate(vehicle_local_position_setpoint_s last_setpoint) override;
+	bool activate(const vehicle_local_position_setpoint_s &last_setpoint) override;
 	bool update() override;
 
 	/**
