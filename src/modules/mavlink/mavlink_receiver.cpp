@@ -1876,6 +1876,7 @@ MavlinkReceiver::handle_message_tunnel(mavlink_message_t *msg)
 	tunnel.target_component = mavlink_tunnel.target_component;
 	tunnel.payload_length = mavlink_tunnel.payload_length;
 	memcpy(tunnel.payload, mavlink_tunnel.payload, sizeof(tunnel.payload));
+	static_assert(sizeof(tunnel.payload) == sizeof(mavlink_tunnel.payload), "tunnel.payload size mismatch");
 
 	_tunnel_pub.publish(tunnel);
 }
