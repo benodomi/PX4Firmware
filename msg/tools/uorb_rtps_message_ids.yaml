@@ -291,7 +291,7 @@ rtps:
     id: 139
   - msg: manual_control_switches
     id: 140
-  - msg: 	mavlink_tunnel
+  - msg: mavlink_tunnel
     id: 141
   ########## multi topics: begin ##########
   - msg: actuator_controls_0
