@@ -387,4 +387,6 @@ rtps:
   - msg: estimator_odometry
     id: 180
     alias: vehicle_odometry
+  - msg: 	mavlink_tunnel
+    id: 181
   ########## multi topics: end ##########

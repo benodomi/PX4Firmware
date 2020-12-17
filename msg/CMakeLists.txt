@@ -80,6 +80,7 @@ set(msg_files
 	manual_control_setpoint.msg
 	manual_control_switches.msg
 	mavlink_log.msg
+  mavlink_tunnel.msg
 	mission.msg
 	mission_result.msg
 	mount_orientation.msg
@@ -133,7 +134,6 @@ set(msg_files
 	trajectory_waypoint.msg
 	transponder_report.msg
 	tune_control.msg
-	tunnel.msg
 	uavcan_parameter_request.msg
 	uavcan_parameter_value.msg
 	ulog_stream.msg
