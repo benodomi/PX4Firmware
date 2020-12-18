@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2017 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2020 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -30,39 +30,52 @@
  * POSSIBILITY OF SUCH DAMAGE.
  *
  ****************************************************************************/
+#pragma once
+#include <stdint.h>
 
-/**
- * @file FlightManualPositionSmooth.cpp
+__BEGIN_DECLS
+
+// The data needed to interface with mtd device's
+
+typedef struct {
+	struct mtd_dev_s *mtd_dev;
+	int              *partition_block_counts;
+	int              *partition_types;
+	const char       **partition_names;
+	struct mtd_dev_s **part_dev;
+	uint32_t         devid;
+	unsigned         n_partitions_current;
+} mtd_instance_s;
+
+/*
+  mtd operations
  */
 
-#include "FlightTaskManualPositionSmooth.hpp"
+/*
+ * Get device an pinter to the array of mtd_instance_s of the system
+ *  count - receives the number of instances pointed to by the pointer
+ *  retunred.
+ *
+ *  returns: - A pointer to the mtd_instance_s of the system
+ *            This can be  Null if there are no mtd instances.
+ *
+ */
+__EXPORT mtd_instance_s *px4_mtd_get_instances(unsigned int *count);
 
-using namespace matrix;
+/*
+  Get device complete geometry or a device
+ */
 
-FlightTaskManualPositionSmooth::FlightTaskManualPositionSmooth() :
-	_smoothingXY(this, Vector2f(_velocity)),
-	_smoothingZ(this, _velocity(2), _sticks.getPosition()(2))
-{}
 
-void FlightTaskManualPositionSmooth::_updateSetpoints()
-{
-	/* Get yaw setpont, un-smoothed position setpoints.*/
-	FlightTaskManualPosition::_updateSetpoints();
+__EXPORT int  px4_mtd_get_geometry(const mtd_instance_s *instance, unsigned long *blocksize, unsigned long *erasesize,
+				   unsigned long *neraseblocks, unsigned *blkpererase, unsigned *nblocks,
+				   unsigned *partsize);
+/*
+  Get size of a parttion on an instance.
+ */
+__EXPORT ssize_t px4_mtd_get_partition_size(const mtd_instance_s *instance, const char *partname);
 
-	/* Smooth velocity setpoint in xy.*/
-	Vector2f vel(_velocity);
-	Vector2f vel_sp_xy(_velocity_setpoint);
-	_smoothingXY.updateMaxVelocity(_constraints.speed_xy);
-	_smoothingXY.smoothVelocity(vel_sp_xy, vel, _yaw, _yawspeed_setpoint, _deltatime);
-	_velocity_setpoint(0) = vel_sp_xy(0);
-	_velocity_setpoint(1) = vel_sp_xy(1);
+FAR struct mtd_dev_s *px4_at24c_initialize(FAR struct i2c_master_s *dev,
+		uint8_t address);
 
-	/* Check for xy position lock.*/
-	_updateXYlock();
-
-	/* Smooth velocity in z.*/
-	_smoothingZ.smoothVelFromSticks(_velocity_setpoint(2), _deltatime);
-
-	/* Check for altitude lock*/
-	_updateAltitudeLock();
-}
+__END_DECLS

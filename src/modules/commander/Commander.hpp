@@ -31,12 +31,12 @@
  *
  ****************************************************************************/
 
-#ifndef COMMANDER_HPP_
-#define COMMANDER_HPP_
+#pragma once
 
 #include "Arming/PreFlightCheck/PreFlightCheck.hpp"
 #include "failure_detector/FailureDetector.hpp"
 #include "state_machine_helper.h"
+#include "worker_thread.hpp"
 
 #include <lib/controllib/blocks.hpp>
 #include <lib/hysteresis/hysteresis.h>
@@ -108,14 +108,17 @@ public:
 	/** @see ModuleBase::run() */
 	void run() override;
 
+	/** @see ModuleBase::print_status() */
+	int print_status() override;
+
 	void enable_hil();
 
 	void get_circuit_breaker_params();
 
 private:
+	void answer_command(const vehicle_command_s &cmd, uint8_t result);
 
-	transition_result_t arm_disarm(bool arm, bool run_preflight_checks, orb_advert_t *mavlink_log_pub,
-				       arm_disarm_reason_t calling_reason);
+	transition_result_t arm_disarm(bool arm, bool run_preflight_checks, arm_disarm_reason_t calling_reason);
 
 	void battery_status_check();
 
@@ -126,8 +129,7 @@ private:
 				   const hrt_abstime &data_timestamp_us, hrt_abstime *last_fail_time_us, hrt_abstime *probation_time_us, bool *valid_state,
 				   bool *validity_changed);
 
-	void control_status_leds(vehicle_status_s *status_local, const actuator_armed_s *actuator_armed, bool changed,
-				 const uint8_t battery_warning);
+	void control_status_leds(bool changed, const uint8_t battery_warning);
 
 	/**
 	 * Checks the status of all available data links and handles switching between different system telemetry states.
@@ -138,10 +140,9 @@ private:
 
 	void esc_status_check(const esc_status_s &esc_status);
 
-	void estimator_check(const vehicle_status_flags_s &status_flags);
+	void estimator_check();
 
-	bool handle_command(vehicle_status_s *status, const vehicle_command_s &cmd, actuator_armed_s *armed,
-			    uORB::Publication<vehicle_command_ack_s> &command_ack_pub);
+	bool handle_command(const vehicle_command_s &cmd);
 
 	unsigned handle_command_motor_test(const vehicle_command_s &cmd);
 
@@ -161,13 +162,13 @@ private:
 	void update_control_mode();
 
 	// Set the main system state based on RC and override device inputs
-	transition_result_t set_main_state(const vehicle_status_s &status, bool *changed);
+	transition_result_t set_main_state(bool *changed);
 
 	// Enable override (manual reversion mode) on the system
-	transition_result_t set_main_state_override_on(const vehicle_status_s &status, bool *changed);
+	transition_result_t set_main_state_override_on(bool *changed);
 
 	// Set the system main state based on the current RC inputs
-	transition_result_t set_main_state_rc(const vehicle_status_s &status, bool *changed);
+	transition_result_t set_main_state_rc(bool *changed);
 
 	bool shutdown_if_allowed();
 
@@ -373,12 +374,17 @@ private:
 
 	main_state_t	_main_state_pre_offboard{commander_state_s::MAIN_STATE_MANUAL};
 
+	actuator_armed_s	_armed{};
 	commander_state_s	_internal_state{};
 	cpuload_s		_cpuload{};
 	geofence_result_s	_geofence_result{};
 	vehicle_land_detected_s	_land_detector{};
 	safety_s		_safety{};
+	vehicle_status_s	_status{};
+	vehicle_status_flags_s	_status_flags{};
 	vtol_vehicle_status_s	_vtol_status{};
+
+	WorkerThread _worker_thread;
 
 	// Subscriptions
 	uORB::Subscription					_actuator_controls_sub{ORB_ID_VEHICLE_ATTITUDE_CONTROLS};
@@ -424,6 +430,5 @@ private:
 
 	uORB::Publication<vehicle_command_ack_s>		_command_ack_pub{ORB_ID(vehicle_command_ack)};
 
+	orb_advert_t _mavlink_log_pub{nullptr};
 };
-
-#endif /* COMMANDER_HPP_ */

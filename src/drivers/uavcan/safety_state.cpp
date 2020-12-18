@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2017 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2020 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,29 +32,46 @@
  ****************************************************************************/
 
 /**
- * @file FlightManualPositionSmooth.hpp
+ * @file safety_state.cpp
  *
- * Flight task for smooth manual controlled position.
+ * @author CUAVcaijie <caijie@cuav.net>
  */
 
-#pragma once
+#include "safety_state.hpp"
 
-#include "FlightTaskManualPosition.hpp"
-#include "ManualSmoothingXY.hpp"
-#include "ManualSmoothingZ.hpp"
-
-class FlightTaskManualPositionSmooth : public FlightTaskManualPosition
+UavcanSafetyState::UavcanSafetyState(uavcan::INode &node) :
+	_safety_state_pub(node),
+	_timer(node)
 {
-public:
-	FlightTaskManualPositionSmooth();
+}
 
-	virtual ~FlightTaskManualPositionSmooth() = default;
+int UavcanSafetyState::init()
+{
+	/*
+	 * Setup timer and call back function for periodic updates
+	 */
+	if (!_timer.isRunning()) {
+		_timer.setCallback(TimerCbBinder(this, &UavcanSafetyState::periodic_update));
+		_timer.startPeriodic(uavcan::MonotonicDuration::fromMSec(1000 / MAX_RATE_HZ));
+	}
 
-protected:
+	return 0;
+}
 
-	virtual void _updateSetpoints() override;
+void UavcanSafetyState::periodic_update(const uavcan::TimerEvent &)
+{
+	actuator_armed_s actuator_armed;
 
-private:
-	ManualSmoothingXY _smoothingXY; /**< smoothing for velocity setpoints in xy */
-	ManualSmoothingZ _smoothingZ; /**< smoothing for velocity in z */
-};
+	if (_actuator_armed_sub.update(&actuator_armed)) {
+		ardupilot::indication::SafetyState cmd;
+
+		if (actuator_armed.armed || actuator_armed.prearmed) {
+			cmd.status = cmd.STATUS_SAFETY_OFF;
+
+		} else {
+			cmd.status = cmd.STATUS_SAFETY_ON;
+		}
+
+		(void)_safety_state_pub.broadcast(cmd);
+	}
+}

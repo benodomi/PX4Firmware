@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2017 PX4 Development Team. All rights reserved.
+ *   Copyright (C) 2020 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,26 +31,51 @@
  *
  ****************************************************************************/
 
-/**
- * @file FlightManualAltitude.cpp
- */
+#include <nuttx/spi/spi.h>
+#include <px4_platform_common/px4_manifest.h>
+//                                                                      KiB BS    nB
+static const px4_mft_device_t i2c1 = {             // 24AA64FT on Base  8K 32 X 256
+	.bus_type = px4_mft_device_t::I2C,
+	.devid    = PX4_MK_I2C_DEVID(1, 0x50)
+};
 
-#include "FlightTaskManualAltitudeSmooth.hpp"
 
-using namespace matrix;
+static const px4_mtd_entry_t fmu_eeprom = {
+	.device = &i2c1,
+	.npart = 2,
+	.partd = {
+		{
+			.type = MTD_PARAMETERS,
+			.path = "/fs/mtd_params",
+			.nblocks = 128
+		},
+		{
+			.type = MTD_WAYPOINTS,
+			.path = "/fs/mtd_waypoints",
+			.nblocks = 128
 
-FlightTaskManualAltitudeSmooth::FlightTaskManualAltitudeSmooth() :
-	_smoothing(this, _velocity(2), _sticks.getPosition()(2))
-{}
+		}
+	},
+};
 
-void FlightTaskManualAltitudeSmooth::_updateSetpoints()
+static const px4_mtd_manifest_t board_mtd_config = {
+	.nconfigs   = 1,
+	.entries = {
+		&fmu_eeprom,
+	}
+};
+
+static const px4_mft_entry_s mtd_mft = {
+	.type = MTD,
+	.pmft = (void *) &board_mtd_config,
+};
+
+static const px4_mft_s mft = {
+	.nmft = 1,
+	.mfts = &mtd_mft
+};
+
+const px4_mft_s *board_get_manifest(void)
 {
-	/* Get yaw, thrust */
-	FlightTaskManualAltitude::_updateSetpoints();
-
-	/* Smooth velocity in z*/
-	_smoothing.smoothVelFromSticks(_velocity_setpoint(2), _deltatime);
-
-	/* Check for altitude lock*/
-	_updateAltitudeLock();
+	return &mft;
 }

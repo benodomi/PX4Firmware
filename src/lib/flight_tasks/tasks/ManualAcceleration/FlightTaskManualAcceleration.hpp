@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2017 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2020 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -32,25 +32,33 @@
  ****************************************************************************/
 
 /**
- * @file FlightManualAltitude.hpp
+ * @file FlightTaskManualPosition.hpp
  *
- * Flight task for manual controlled altitude.
+ * Flight task for manual position controlled mode.
+ *
  */
 
 #pragma once
 
-#include "FlightTaskManualAltitude.hpp"
-#include "ManualSmoothingZ.hpp"
+#include "FlightTaskManualAltitudeSmoothVel.hpp"
+#include "StickAccelerationXY.hpp"
+#include "StickYaw.hpp"
 
-class FlightTaskManualAltitudeSmooth : public FlightTaskManualAltitude
+class FlightTaskManualAcceleration : public FlightTaskManualAltitudeSmoothVel
 {
 public:
-	FlightTaskManualAltitudeSmooth();
-	virtual ~FlightTaskManualAltitudeSmooth() = default;
-
-protected:
-	virtual void _updateSetpoints() override;
+	FlightTaskManualAcceleration();
+	virtual ~FlightTaskManualAcceleration() = default;
+	bool activate(const vehicle_local_position_setpoint_s &last_setpoint) override;
+	bool update() override;
 
 private:
-	ManualSmoothingZ _smoothing; /**< smoothing for velocity setpoints */
+	StickAccelerationXY _stick_acceleration_xy;
+	StickYaw _stick_yaw;
+
+	void _ekfResetHandlerPositionXY() override;
+	void _ekfResetHandlerVelocityXY() override;
+	void _ekfResetHandlerPositionZ() override;
+	void _ekfResetHandlerVelocityZ() override;
+	void _ekfResetHandlerHeading(float delta_psi) override;
 };
