@@ -1740,6 +1740,11 @@ Mavlink::configure_streams_to_default(const char *configure_single_stream)
 		/* HEARTBEAT is constant rate stream, rate never adjusted */
 		configure_stream_local("HEARTBEAT", 1.0f);
 		configure_stream_local("GPS_RAW_INT", 0.5f);
+		configure_stream_local("ALTITUDE", 0.5f);
+		configure_stream_local("ATTITUDE", 0.5f);
+		configure_stream_local("GLOBAL_POSITION_INT", 0.5f);
+		configure_stream_local("SYS_STATUS", 0.1f);
+		configure_stream_local("VFR_HUD", 0.5f);
 		break;
 
 	case MAVLINK_MODE_CONFIG: // USB

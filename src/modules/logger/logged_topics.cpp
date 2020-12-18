@@ -56,7 +56,7 @@ void LoggedTopics::add_default_topics()
 	add_topic("cellular_status", 200);
 	add_topic("commander_state");
 	add_topic("cpuload");
-	addtopic("ekf_gps_drift");
+	add_topic("ekf_gps_drift");
 	add_topic("esc_status", 250);
 	add_topic("generator_status");
 	add_topic("home_position");
@@ -84,7 +84,7 @@ void LoggedTopics::add_default_topics()
 	add_topic("tecs_status", 200);
 	add_topic("test_motor", 500);
 	add_topic("trajectory_setpoint", 200);
-        add_topic("vehicle_acceleration", 50);
+    add_topic("vehicle_acceleration", 50);
 	add_topic("tunnel", 10);
 	add_topic("vehicle_air_data", 200);
 	add_topic("vehicle_angular_velocity", 20);
