@@ -73,6 +73,7 @@
 #include <uORB/topics/landing_target_pose.h>
 #include <uORB/topics/log_message.h>
 #include <uORB/topics/manual_control_setpoint.h>
+#include <uORB/topics/mavlink_tunnel.h>
 #include <uORB/topics/obstacle_distance.h>
 #include <uORB/topics/offboard_control_mode.h>
 #include <uORB/topics/onboard_computer_status.h>
@@ -85,7 +86,6 @@
 #include <uORB/topics/telemetry_status.h>
 #include <uORB/topics/transponder_report.h>
 #include <uORB/topics/tune_control.h>
-#include <uORB/topics/tunnel.h>
 #include <uORB/topics/vehicle_attitude.h>
 #include <uORB/topics/vehicle_attitude_setpoint.h>
 #include <uORB/topics/vehicle_command.h>
@@ -122,6 +122,24 @@ public:
 	static void receive_start(pthread_t *thread, Mavlink *parent);
 
 	static void *start_helper(void *context);
+
+	/**
+	 * Get the cruising speed in offboard control
+	 *
+	 * @return the desired cruising speed for the current flight mode
+	 */
+	float get_offb_cruising_speed();
+
+	/**
+	 * Set the cruising speed in offboard control
+	 *
+	 * Passing a negative value or leaving the parameter away will reset the cruising speed
+	 * to its default value.
+	 *
+	 * Sets cruising speed for current flight mode only (resets on mode changes).
+	 *
+	 */
+	void set_offb_cruising_speed(float speed = -1.0f);
 
 private:
 
@@ -162,7 +180,7 @@ private:
 	void handle_message_logging_ack(mavlink_message_t *msg);
 	void handle_message_manual_control(mavlink_message_t *msg);
 	void handle_message_obstacle_distance(mavlink_message_t *msg);
-	void handle_message_tunnel(mavlink_message_t *msg);
+	void handle_message_mavlink_tunnel(mavlink_message_t *msg);
 	void handle_message_odometry(mavlink_message_t *msg);
 	void handle_message_onboard_computer_status(mavlink_message_t *msg);
 	void handle_message_optical_flow_rad(mavlink_message_t *msg);
@@ -245,7 +263,7 @@ private:
 	uORB::Publication<landing_target_pose_s>		_landing_target_pose_pub{ORB_ID(landing_target_pose)};
 	uORB::Publication<log_message_s>			_log_message_pub{ORB_ID(log_message)};
 	uORB::Publication<obstacle_distance_s>			_obstacle_distance_pub{ORB_ID(obstacle_distance)};
-	uORB::Publication<tunnel_s>			_tunnel_pub{ORB_ID(tunnel)};
+	uORB::Publication<mavlink_tunnel_s>			_mavlink_tunnel_pub{ORB_ID(mavlink_tunnel)};
 	uORB::Publication<offboard_control_mode_s>		_offboard_control_mode_pub{ORB_ID(offboard_control_mode)};
 	uORB::Publication<onboard_computer_status_s>		_onboard_computer_status_pub{ORB_ID(onboard_computer_status)};
 	uORB::Publication<generator_status_s>			_generator_status_pub{ORB_ID(generator_status)};
@@ -319,6 +337,9 @@ private:
 
 	hrt_abstime			_last_utm_global_pos_com{0};
 
+	float 				_offb_cruising_speed_mc{-1.0f};
+	float 				_offb_cruising_speed_fw{-1.0f};
+
 	// Allocated if needed.
 	TunePublisher *_tune_publisher{nullptr};
 
@@ -344,7 +365,6 @@ private:
 		(ParamFloat<px4::params::BAT_CRIT_THR>)     _param_bat_crit_thr,
 		(ParamFloat<px4::params::BAT_EMERGEN_THR>)  _param_bat_emergen_thr,
 		(ParamFloat<px4::params::BAT_LOW_THR>)      _param_bat_low_thr,
-		(ParamInt<px4::params::COM_FLIGHT_UUID>)    _param_com_flight_uuid,
 		(ParamFloat<px4::params::SENS_FLOW_MAXHGT>) _param_sens_flow_maxhgt,
 		(ParamFloat<px4::params::SENS_FLOW_MAXR>)   _param_sens_flow_maxr,
 		(ParamFloat<px4::params::SENS_FLOW_MINHGT>) _param_sens_flow_minhgt,

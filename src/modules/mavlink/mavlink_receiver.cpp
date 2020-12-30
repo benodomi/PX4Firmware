@@ -239,7 +239,7 @@ MavlinkReceiver::handle_message(mavlink_message_t *msg)
 		break;
 
 	case MAVLINK_MSG_ID_TUNNEL:
-		handle_message_tunnel(msg);
+		handle_message_mavlink_tunnel(msg);
 		break;
 
 
@@ -521,6 +521,15 @@ void MavlinkReceiver::handle_message_command_both(mavlink_message_t *msg, const 
 
 		} else if (cmd_mavlink.command == MAV_CMD_LOGGING_STOP) {
 			_mavlink->request_stop_ulog_streaming();
+
+		} else if (cmd_mavlink.command == MAV_CMD_DO_CHANGE_SPEED) {
+			vehicle_control_mode_s control_mode{};
+			_control_mode_sub.copy(&control_mode);
+
+			if (control_mode.flag_control_offboard_enabled) {
+				// Not differentiating between airspeed and groundspeed yet
+				set_offb_cruising_speed(cmd_mavlink.param2);
+			}
 		}
 
 		if (!send_ack) {
@@ -816,26 +825,41 @@ MavlinkReceiver::handle_message_set_position_target_local_ned(mavlink_message_t 
 		offboard_control_mode_s offboard_control_mode{};
 
 		/* convert mavlink type (local, NED) to uORB offboard control struct */
-		offboard_control_mode.ignore_position = (bool)(set_position_target_local_ned.type_mask & 0x7);
-		offboard_control_mode.ignore_alt_hold = (bool)(set_position_target_local_ned.type_mask & 0x4);
-		offboard_control_mode.ignore_velocity = (bool)(set_position_target_local_ned.type_mask & 0x38);
-		offboard_control_mode.ignore_acceleration_force = (bool)(set_position_target_local_ned.type_mask & 0x1C0);
-		offboard_control_mode.ignore_attitude = (bool)(set_position_target_local_ned.type_mask & 0x400);
-		offboard_control_mode.ignore_bodyrate_x = (bool)(set_position_target_local_ned.type_mask & 0x800);
-		offboard_control_mode.ignore_bodyrate_y = (bool)(set_position_target_local_ned.type_mask & 0x800);
-		offboard_control_mode.ignore_bodyrate_z = (bool)(set_position_target_local_ned.type_mask & 0x800);
+		offboard_control_mode.ignore_position = (bool)(set_position_target_local_ned.type_mask &
+							(POSITION_TARGET_TYPEMASK_X_IGNORE
+									| POSITION_TARGET_TYPEMASK_Y_IGNORE
+									| POSITION_TARGET_TYPEMASK_Z_IGNORE));
+		offboard_control_mode.ignore_alt_hold = (bool)(set_position_target_local_ned.type_mask &
+							POSITION_TARGET_TYPEMASK_Z_IGNORE);
+		offboard_control_mode.ignore_velocity = (bool)(set_position_target_local_ned.type_mask &
+							(POSITION_TARGET_TYPEMASK_VX_IGNORE
+									| POSITION_TARGET_TYPEMASK_VY_IGNORE
+									| POSITION_TARGET_TYPEMASK_VZ_IGNORE));
+		offboard_control_mode.ignore_acceleration_force = (bool)(set_position_target_local_ned.type_mask &
+				(POSITION_TARGET_TYPEMASK_AX_IGNORE
+				 | POSITION_TARGET_TYPEMASK_AY_IGNORE
+				 | POSITION_TARGET_TYPEMASK_AZ_IGNORE));
+		/* yaw ignore flag mapps to ignore_attitude */
+		offboard_control_mode.ignore_attitude = (bool)(set_position_target_local_ned.type_mask &
+							POSITION_TARGET_TYPEMASK_YAW_IGNORE);
+		offboard_control_mode.ignore_bodyrate_x = (bool)(set_position_target_local_ned.type_mask &
+				POSITION_TARGET_TYPEMASK_YAW_RATE_IGNORE);
+		offboard_control_mode.ignore_bodyrate_y = (bool)(set_position_target_local_ned.type_mask &
+				POSITION_TARGET_TYPEMASK_YAW_RATE_IGNORE);
+		offboard_control_mode.ignore_bodyrate_z = (bool)(set_position_target_local_ned.type_mask &
+				POSITION_TARGET_TYPEMASK_YAW_RATE_IGNORE);
 
 		/* yaw ignore flag mapps to ignore_attitude */
-		bool is_force_sp = (bool)(set_position_target_local_ned.type_mask & (1 << 9));
+		bool is_force_sp = (bool)(set_position_target_local_ned.type_mask & POSITION_TARGET_TYPEMASK_FORCE_SET);
 
 		bool is_takeoff_sp = (bool)(set_position_target_local_ned.type_mask & 0x1000);
 		bool is_land_sp = (bool)(set_position_target_local_ned.type_mask & 0x2000);
 		bool is_loiter_sp = (bool)(set_position_target_local_ned.type_mask & 0x3000);
 		bool is_idle_sp = (bool)(set_position_target_local_ned.type_mask & 0x4000);
 		bool is_gliding_sp = (bool)(set_position_target_local_ned.type_mask &
-					    (POSITION_TARGET_TYPEMASK::POSITION_TARGET_TYPEMASK_Z_IGNORE
-					     | POSITION_TARGET_TYPEMASK::POSITION_TARGET_TYPEMASK_VZ_IGNORE
-					     | POSITION_TARGET_TYPEMASK::POSITION_TARGET_TYPEMASK_AZ_IGNORE));
+					    (POSITION_TARGET_TYPEMASK_Z_IGNORE
+					     | POSITION_TARGET_TYPEMASK_VZ_IGNORE
+					     | POSITION_TARGET_TYPEMASK_AZ_IGNORE));
 
 		offboard_control_mode.timestamp = hrt_absolute_time();
 		_offboard_control_mode_pub.publish(offboard_control_mode);
@@ -890,6 +914,7 @@ MavlinkReceiver::handle_message_set_position_target_local_ned(mavlink_message_t 
 						pos_sp_triplet.current.x = set_position_target_local_ned.x;
 						pos_sp_triplet.current.y = set_position_target_local_ned.y;
 						pos_sp_triplet.current.z = set_position_target_local_ned.z;
+						pos_sp_triplet.current.cruising_speed = get_offb_cruising_speed();
 
 					} else {
 						pos_sp_triplet.current.position_valid = false;
@@ -987,29 +1012,30 @@ MavlinkReceiver::handle_message_set_position_target_global_int(mavlink_message_t
 
 		/* convert mavlink type (local, NED) to uORB offboard control struct */
 		offboard_control_mode.ignore_position = (bool)(set_position_target_global_int.type_mask &
-							(POSITION_TARGET_TYPEMASK::POSITION_TARGET_TYPEMASK_X_IGNORE
-									| POSITION_TARGET_TYPEMASK::POSITION_TARGET_TYPEMASK_Y_IGNORE
-									| POSITION_TARGET_TYPEMASK::POSITION_TARGET_TYPEMASK_Z_IGNORE));
-		offboard_control_mode.ignore_alt_hold = (bool)(set_position_target_global_int.type_mask & 0x4);
+							(POSITION_TARGET_TYPEMASK_X_IGNORE
+									| POSITION_TARGET_TYPEMASK_Y_IGNORE
+									| POSITION_TARGET_TYPEMASK_Z_IGNORE));
+		offboard_control_mode.ignore_alt_hold = (bool)(set_position_target_global_int.type_mask &
+							POSITION_TARGET_TYPEMASK_Z_IGNORE);
 		offboard_control_mode.ignore_velocity = (bool)(set_position_target_global_int.type_mask &
-							(POSITION_TARGET_TYPEMASK::POSITION_TARGET_TYPEMASK_VX_IGNORE
-									| POSITION_TARGET_TYPEMASK::POSITION_TARGET_TYPEMASK_VY_IGNORE
-									| POSITION_TARGET_TYPEMASK::POSITION_TARGET_TYPEMASK_VZ_IGNORE));
+							(POSITION_TARGET_TYPEMASK_VX_IGNORE
+									| POSITION_TARGET_TYPEMASK_VY_IGNORE
+									| POSITION_TARGET_TYPEMASK_VZ_IGNORE));
 		offboard_control_mode.ignore_acceleration_force = (bool)(set_position_target_global_int.type_mask &
-				(POSITION_TARGET_TYPEMASK::POSITION_TARGET_TYPEMASK_AX_IGNORE
-				 | POSITION_TARGET_TYPEMASK::POSITION_TARGET_TYPEMASK_AY_IGNORE
-				 | POSITION_TARGET_TYPEMASK::POSITION_TARGET_TYPEMASK_AZ_IGNORE));
+				(POSITION_TARGET_TYPEMASK_AX_IGNORE
+				 | POSITION_TARGET_TYPEMASK_AY_IGNORE
+				 | POSITION_TARGET_TYPEMASK_AZ_IGNORE));
 		/* yaw ignore flag mapps to ignore_attitude */
 		offboard_control_mode.ignore_attitude = (bool)(set_position_target_global_int.type_mask &
-							POSITION_TARGET_TYPEMASK::POSITION_TARGET_TYPEMASK_YAW_IGNORE);
+							POSITION_TARGET_TYPEMASK_YAW_IGNORE);
 		offboard_control_mode.ignore_bodyrate_x = (bool)(set_position_target_global_int.type_mask &
-				POSITION_TARGET_TYPEMASK::POSITION_TARGET_TYPEMASK_YAW_RATE_IGNORE);
+				POSITION_TARGET_TYPEMASK_YAW_RATE_IGNORE);
 		offboard_control_mode.ignore_bodyrate_y = (bool)(set_position_target_global_int.type_mask &
-				POSITION_TARGET_TYPEMASK::POSITION_TARGET_TYPEMASK_YAW_RATE_IGNORE);
+				POSITION_TARGET_TYPEMASK_YAW_RATE_IGNORE);
 		offboard_control_mode.ignore_bodyrate_z = (bool)(set_position_target_global_int.type_mask &
-				POSITION_TARGET_TYPEMASK::POSITION_TARGET_TYPEMASK_YAW_RATE_IGNORE);
+				POSITION_TARGET_TYPEMASK_YAW_RATE_IGNORE);
 
-		bool is_force_sp = (bool)(set_position_target_global_int.type_mask & (1 << 9));
+		bool is_force_sp = (bool)(set_position_target_global_int.type_mask & POSITION_TARGET_TYPEMASK_FORCE_SET);
 
 		offboard_control_mode.timestamp = hrt_absolute_time();
 		_offboard_control_mode_pub.publish(offboard_control_mode);
@@ -1067,6 +1093,7 @@ MavlinkReceiver::handle_message_set_position_target_global_int(mavlink_message_t
 							globallocalconverter_tolocal(set_position_target_global_int.lat_int / 1e7,
 										     set_position_target_global_int.lon_int / 1e7, set_position_target_global_int.alt,
 										     &pos_sp_triplet.current.x, &pos_sp_triplet.current.y, &pos_sp_triplet.current.z);
+							pos_sp_triplet.current.cruising_speed = get_offb_cruising_speed();
 							pos_sp_triplet.current.position_valid = true;
 						}
 
@@ -1453,7 +1480,7 @@ MavlinkReceiver::handle_message_set_attitude_target(mavlink_message_t *msg)
 		offboard_control_mode_s offboard_control_mode{};
 
 		/* set correct ignore flags for thrust field: copy from mavlink message */
-		offboard_control_mode.ignore_thrust = (bool)(set_attitude_target.type_mask & (1 << 6));
+		offboard_control_mode.ignore_thrust = (bool)(set_attitude_target.type_mask & ATTITUDE_TARGET_TYPEMASK_THROTTLE_IGNORE);
 
 		/*
 		 * The tricky part in parsing this message is that the offboard sender *can* set attitude and thrust
@@ -1467,11 +1494,10 @@ MavlinkReceiver::handle_message_set_attitude_target(mavlink_message_t *msg)
 		 * throttle and has the ignore bits set for attitude and rates don't change the flags for attitude and
 		 * body rates to keep the controllers running
 		 */
-		bool ignore_bodyrate_msg_x = (bool)(set_attitude_target.type_mask & 0x1);
-		bool ignore_bodyrate_msg_y = (bool)(set_attitude_target.type_mask & 0x2);
-		bool ignore_bodyrate_msg_z = (bool)(set_attitude_target.type_mask & 0x4);
-		bool ignore_attitude_msg = (bool)(set_attitude_target.type_mask & (1 << 7));
-
+		bool ignore_bodyrate_msg_x = (bool)(set_attitude_target.type_mask & ATTITUDE_TARGET_TYPEMASK_BODY_ROLL_RATE_IGNORE);
+		bool ignore_bodyrate_msg_y = (bool)(set_attitude_target.type_mask & ATTITUDE_TARGET_TYPEMASK_BODY_PITCH_RATE_IGNORE);
+		bool ignore_bodyrate_msg_z = (bool)(set_attitude_target.type_mask & ATTITUDE_TARGET_TYPEMASK_BODY_YAW_RATE_IGNORE);
+		bool ignore_attitude_msg = (bool)(set_attitude_target.type_mask & ATTITUDE_TARGET_TYPEMASK_ATTITUDE_IGNORE);
 
 		if ((ignore_bodyrate_msg_x || ignore_bodyrate_msg_y ||
 		     ignore_bodyrate_msg_z) &&
@@ -1837,12 +1863,12 @@ MavlinkReceiver::handle_message_obstacle_distance(mavlink_message_t *msg)
 }
 
 void
-MavlinkReceiver::handle_message_tunnel(mavlink_message_t *msg)
+MavlinkReceiver::handle_message_mavlink_tunnel(mavlink_message_t *msg)
 {
 	mavlink_tunnel_t mavlink_tunnel;
 	mavlink_msg_tunnel_decode(msg, &mavlink_tunnel);
 
-	tunnel_s tunnel{};
+	mavlink_tunnel_s tunnel{};
 
 	tunnel.timestamp = hrt_absolute_time();
 	tunnel.payload_type = mavlink_tunnel.payload_type;
@@ -1850,8 +1876,9 @@ MavlinkReceiver::handle_message_tunnel(mavlink_message_t *msg)
 	tunnel.target_component = mavlink_tunnel.target_component;
 	tunnel.payload_length = mavlink_tunnel.payload_length;
 	memcpy(tunnel.payload, mavlink_tunnel.payload, sizeof(tunnel.payload));
+	static_assert(sizeof(tunnel.payload) == sizeof(mavlink_tunnel.payload), "mavlink_tunnel.payload size mismatch");
 
-	_tunnel_pub.publish(tunnel);
+	_mavlink_tunnel_pub.publish(tunnel);
 }
 
 void
@@ -3123,4 +3150,35 @@ MavlinkReceiver::receive_start(pthread_t *thread, Mavlink *parent)
 	pthread_create(thread, &receiveloop_attr, MavlinkReceiver::start_helper, (void *)parent);
 
 	pthread_attr_destroy(&receiveloop_attr);
+}
+
+float
+MavlinkReceiver::get_offb_cruising_speed()
+{
+	vehicle_status_s vehicle_status{};
+	_vehicle_status_sub.copy(&vehicle_status);
+
+	if (vehicle_status.vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING && _offb_cruising_speed_mc > 0.0f) {
+		return _offb_cruising_speed_mc;
+
+	} else if (vehicle_status.vehicle_type == vehicle_status_s::VEHICLE_TYPE_FIXED_WING && _offb_cruising_speed_fw > 0.0f) {
+		return _offb_cruising_speed_fw;
+
+	} else {
+		return -1.0f;
+	}
+}
+
+void
+MavlinkReceiver::set_offb_cruising_speed(float speed)
+{
+	vehicle_status_s vehicle_status{};
+	_vehicle_status_sub.copy(&vehicle_status);
+
+	if (vehicle_status.vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING) {
+		_offb_cruising_speed_mc = speed;
+
+	} else {
+		_offb_cruising_speed_fw = speed;
+	}
 }
