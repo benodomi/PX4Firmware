@@ -2390,6 +2390,8 @@ Commander::run()
 		    && (_mission_result_sub.get().timestamp >= _internal_state.timestamp)
 		    && _mission_result_sub.get().finished) {
 
+            PX4_ERR("TF: TAKEOFF DONE IN COMMANDER");
+
 			const bool mission_available = (_mission_result_sub.get().timestamp > _boot_timestamp)
 						       && (_mission_result_sub.get().instance_count > 0) && _mission_result_sub.get().valid;
 
