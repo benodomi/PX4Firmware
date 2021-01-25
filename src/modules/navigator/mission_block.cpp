@@ -73,6 +73,7 @@ bool
 MissionBlock::is_mission_item_reached()
 {
 	/* handle non-navigation or indefinite waypoints */
+    PX4_INFO("Is mission item reached?");
 
 	switch (_mission_item.nav_cmd) {
 	case NAV_CMD_DO_SET_SERVO:
@@ -184,6 +185,7 @@ MissionBlock::is_mission_item_reached()
 
 		} else if (_mission_item.nav_cmd == NAV_CMD_TAKEOFF) {
 			/* for takeoff mission items use the parameter for the takeoff acceptance radius */
+            PX4_INFO("mission: %d, %d, %d", dist >= 0.0f, dist <= _navigator->get_acceptance_radius(), dist_z <= _navigator->get_altitude_acceptance_radius());
 			if (dist >= 0.0f && dist <= _navigator->get_acceptance_radius()
 			    && dist_z <= _navigator->get_altitude_acceptance_radius()) {
 				_waypoint_position_reached = true;
@@ -331,6 +333,7 @@ MissionBlock::is_mission_item_reached()
 
 		if (_waypoint_position_reached && !_waypoint_position_reached_previously) {
 			// reached just now
+            PX4_INFO("TF: reached now");
 			_time_wp_reached = now;
 		}
 	}
@@ -423,6 +426,7 @@ MissionBlock::is_mission_item_reached()
 	_waypoint_position_reached = false;
 	_waypoint_yaw_reached = false;
 	return false;
+    PX4_INFO("TF: Nebylo toho dosazeno");
 }
 
 void

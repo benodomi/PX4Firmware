@@ -31,13 +31,12 @@ then
 	param set FW_RR_P 0.08
 
 	param set MIS_LTRMIN_ALT 50
-	param set MIS_TAKEOFF_ALT 3
+	param set MIS_TAKEOFF_ALT 10
 
 	param set NAV_ACC_RAD 20
 	param set NAV_DLL_ACT 2
 	param set NAV_LOITER_RAD 100
 
-	param set RWTO_TKOFF 1
 	param set MAV_BROADCAST 1
 
 	param set FW_ARSP_SCALE_EN 0
@@ -57,6 +56,23 @@ then
 	param set FW_THR_IDLE 0
 	param set COM_DISARM_PRFLT 0
 
+    param set SDLOG_PROFILE 1019
+
+    # Autogyro takeoff related parameters
+	param set RWTO_TKOFF 0
+    param set AG_TKOFF 1
+    param set AG_PROT_MIN_RPM 10
+    param set AG_PROT_TRG_RPM 200
+    param set AG_ROTOR_RPM 200
+    param set AG_PROT_TYPE 0
+
+    param set RWTO_MAX_ROLL 10
+    param set RWTO_NAV_ALT 10
+    param set FW_CLMBOUT_DIFF 20
+
+    # Fix FG bug "BigBang"
+    param set EKF2_MULTI_IMU 0
+    param set EKF2_MULTI_MAG 0
 fi
 
 

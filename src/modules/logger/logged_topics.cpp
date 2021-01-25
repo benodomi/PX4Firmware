@@ -177,6 +177,8 @@ void LoggedTopics::add_default_topics()
 	if (gps_dump_comm == 1) {
 		add_topic("gps_dump");
 	}
+
+    add_topic("autogyro_takeoff_status");
 }
 
 void LoggedTopics::add_high_rate_topics()
@@ -192,6 +194,7 @@ void LoggedTopics::add_high_rate_topics()
 	add_topic("vehicle_attitude");
 	add_topic("vehicle_attitude_setpoint");
 	add_topic("vehicle_rates_setpoint");
+    add_topic("autogyro_takeoff_status");
 }
 
 void LoggedTopics::add_debug_topics()

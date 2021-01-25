@@ -1700,6 +1700,7 @@ Commander::run()
 
 			// Only take actions if armed
 			if (_armed.armed) {
+                // PX4_INFO("comm: %d %d", was_landed, _land_detector.landed);
 				if (!was_landed && _land_detector.landed) {
 					mavlink_log_info(&_mavlink_log_pub, "Landing detected");
 					_status.takeoff_time = 0;
