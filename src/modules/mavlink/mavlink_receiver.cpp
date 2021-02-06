@@ -3064,6 +3064,11 @@ MavlinkReceiver::Run()
 							_mavlink->set_proto_version(2);
 						}
 
+                        if(msg.msgid==MAVLINK_MSG_ID_TUNNEL)
+                        {
+                            PX4_WARN("Tunnel recieved\n");
+                        }
+
 						/* handle generic messages and commands */
 						handle_message(&msg);
 
@@ -3087,7 +3092,6 @@ MavlinkReceiver::Run()
 
 						/* handle packet with parent object */
 						_mavlink->handle_message(&msg);
-
 
 						// calculate lost messages for this system id
 						bool px4_sysid_index_found = false;

@@ -482,7 +482,7 @@ Mavlink::forward_message(const mavlink_message_t *msg, Mavlink *self)
 			const bool heartbeat_check_ok =
 				(msg->msgid != MAVLINK_MSG_ID_HEARTBEAT || self->forward_heartbeats_enabled());
 
-			if (!targeted_only_at_us && heartbeat_check_ok) {
+			if (!targeted_only_at_us && heartbeat_check_ok) {               
 				inst->pass_message(msg);
 			}
 		}
@@ -1123,6 +1123,7 @@ Mavlink::handle_message(const mavlink_message_t *msg)
 
 	if (get_forwarding_on()) {
 		/* forward any messages to other mavlink instances */
+
 		Mavlink::forward_message(msg, this);
 	}
 }
@@ -1422,6 +1423,10 @@ void
 Mavlink::pass_message(const mavlink_message_t *msg)
 {
 	if (_forwarding_on) {
+        if(msg->msgid==MAVLINK_MSG_ID_TUNNEL)
+        {
+            PX4_WARN("Forward 3\n");
+        }
 		/* size is 8 bytes plus variable payload */
 		int size = MAVLINK_NUM_NON_PAYLOAD_BYTES + msg->len;
 		pthread_mutex_lock(&_message_buffer_mutex);
