@@ -820,7 +820,12 @@ void Mavlink::send_finish()
 
 		if (_src_addr_initialized) {
 # endif // CONFIG_NET
-			ret = sendto(_socket_fd, _buf, _buf_fill, 0, (struct sockaddr *)&_src_addr, sizeof(_src_addr));
+			//ret = sendto(_socket_fd, _buf, _buf_fill, 0, (struct sockaddr *)&_src_addr, sizeof(_src_addr));
+			if (!_broadcast_address_found) {
+				find_broadcast_address();
+			}
+            ret = sendto(_socket_fd, _buf, _buf_fill, 0, (struct sockaddr *)&_bcast_addr, sizeof(_bcast_addr));
+            //PX4_WARN("send to _src_addr");
 # if defined(CONFIG_NET)
 		}
 
@@ -836,6 +841,7 @@ void Mavlink::send_finish()
 			if (_broadcast_address_found && _buf_fill > 0) {
 
 				int bret = sendto(_socket_fd, _buf, _buf_fill, 0, (struct sockaddr *)&_bcast_addr, sizeof(_bcast_addr));
+                //PX4_WARN("send to _bcast_addr");
 
 				if (bret <= 0) {
 					if (!_broadcast_failed_warned) {
