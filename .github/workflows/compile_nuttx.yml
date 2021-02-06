@@ -29,6 +29,8 @@ jobs:
           cubepilot_cubeorange_default,
           cubepilot_cubeyellow_console,
           cubepilot_cubeyellow_default,
+          holybro_can-gps-v1_canbootloader,
+          holybro_can-gps-v1_default,
           holybro_durandal-v1_default,
           holybro_kakutef7_default,
           holybro_pix32v5_default,
@@ -69,6 +71,7 @@ jobs:
           px4_fmu-v5x_base_phy_DP83848C,
           px4_fmu-v5x_default,
           px4_fmu-v6x_default,
+          px4_fmu-v6u_default,
           px4_io-v2_default,
           spracing_h7extreme_default,
           uvify_core_default

@@ -81,7 +81,8 @@
 #include <uORB/topics/safety.h>
 #include <uORB/topics/system_power.h>
 #include <uORB/topics/telemetry_status.h>
-#include <uORB/topics/vehicle_acceleration.h>
+#include <uORB/topics/vehicle_angular_velocity.h>
+#include <uORB/topics/vehicle_attitude.h>
 #include <uORB/topics/vehicle_command.h>
 #include <uORB/topics/vehicle_global_position.h>
 #include <uORB/topics/vehicle_land_detected.h>
@@ -195,6 +196,7 @@ private:
 
 		(ParamInt<px4::params::NAV_RCL_ACT>) _param_nav_rcl_act,
 		(ParamFloat<px4::params::COM_RC_LOSS_T>) _param_com_rc_loss_t,
+		(ParamFloat<px4::params::COM_RCL_ACT_T>) _param_com_rcl_act_t,
 
 		(ParamFloat<px4::params::COM_HOME_H_T>) _param_com_home_h_t,
 		(ParamFloat<px4::params::COM_HOME_V_T>) _param_com_home_v_t,
@@ -413,7 +415,8 @@ private:
 	uORB::Subscription					_manual_control_setpoint_sub{ORB_ID(manual_control_setpoint)};
 	uORB::Subscription					_manual_control_switches_sub{ORB_ID(manual_control_switches)};
 	uORB::Subscription					_system_power_sub{ORB_ID(system_power)};
-	uORB::Subscription					_vehicle_acceleration_sub{ORB_ID(vehicle_acceleration)};
+	uORB::Subscription					_vehicle_angular_velocity_sub{ORB_ID(vehicle_angular_velocity)};
+	uORB::Subscription					_vehicle_attitude_sub{ORB_ID(vehicle_attitude)};
 	uORB::Subscription					_vtol_vehicle_status_sub{ORB_ID(vtol_vehicle_status)};
 
 	uORB::SubscriptionInterval				_parameter_update_sub{ORB_ID(parameter_update), 1_s};
