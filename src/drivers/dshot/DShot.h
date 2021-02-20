@@ -89,6 +89,7 @@ public:
 		PORT_MODE_UNSET = 0,
 		PORT_FULL_GPIO,
 		PORT_FULL_PWM,
+		PORT_PWM14,
 		PORT_PWM8,
 		PORT_PWM6,
 		PORT_PWM5,
@@ -223,7 +224,7 @@ private:
 
 	Mode _mode{MODE_NONE};
 
-	uORB::Subscription _param_sub{ORB_ID(parameter_update)};
+	uORB::SubscriptionInterval _parameter_update_sub{ORB_ID(parameter_update), 1_s};
 
 	DEFINE_PARAMETERS(
 		(ParamInt<px4::params::DSHOT_CONFIG>)   _param_dshot_config,

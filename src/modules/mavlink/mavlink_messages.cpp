@@ -97,6 +97,7 @@
 using matrix::Vector3f;
 using matrix::wrap_2pi;
 
+#include "streams/ACTUATOR_OUTPUT_STATUS.hpp"
 #include "streams/ALTITUDE.hpp"
 #include "streams/ATTITUDE.hpp"
 #include "streams/ATTITUDE_QUATERNION.hpp"
@@ -125,6 +126,7 @@ using matrix::wrap_2pi;
 #include "streams/PROTOCOL_VERSION.hpp"
 #include "streams/RAW_RPM.hpp"
 #include "streams/RC_CHANNELS.hpp"
+#include "streams/SCALED_IMU.hpp"
 #include "streams/STATUSTEXT.hpp"
 #include "streams/STORAGE_INFORMATION.hpp"
 #include "streams/TRAJECTORY_REPRESENTATION_WAYPOINTS.hpp"
@@ -135,6 +137,7 @@ using matrix::wrap_2pi;
 # include "streams/DEBUG_FLOAT_ARRAY.hpp"
 # include "streams/DEBUG_VECT.hpp"
 # include "streams/NAMED_VALUE_FLOAT.hpp"
+# include "streams/LINK_NODE_STATUS.hpp"
 #endif // !CONSTRAINED_FLASH
 
 // ensure PX4 rotation enum and MAV_SENSOR_ROTATION align
@@ -504,7 +507,7 @@ public:
 	}
 
 private:
-	uORB::Subscription _cmd_sub{ORB_ID(vehicle_command)};
+	uORB::Subscription _vehicle_command_sub{ORB_ID(vehicle_command)};
 
 	/* do not allow top copying this class */
 	MavlinkStreamCommandLong(MavlinkStreamCommandLong &) = delete;
@@ -516,19 +519,28 @@ protected:
 
 	bool send() override
 	{
-		struct vehicle_command_s cmd;
 		bool sent = false;
 
-		if (_cmd_sub.update(&cmd)) {
+		while ((_mavlink->get_free_tx_buf() >= get_size()) && _vehicle_command_sub.updated()) {
 
-			if (!cmd.from_external) {
-				PX4_DEBUG("sending command %d to %d/%d", cmd.command, cmd.target_system, cmd.target_component);
+			const unsigned last_generation = _vehicle_command_sub.get_last_generation();
+			vehicle_command_s cmd;
 
-				MavlinkCommandSender::instance().handle_vehicle_command(cmd, _mavlink->get_channel());
-				sent = true;
+			if (_vehicle_command_sub.update(&cmd)) {
+				if (_vehicle_command_sub.get_last_generation() != last_generation + 1) {
+					PX4_ERR("COMMAND_LONG vehicle_command lost, generation %d -> %d", last_generation,
+						_vehicle_command_sub.get_last_generation());
+				}
 
-			} else {
-				PX4_DEBUG("not forwarding command %d to %d/%d", cmd.command, cmd.target_system, cmd.target_component);
+				if (!cmd.from_external) {
+					PX4_DEBUG("sending command %d to %d/%d", cmd.command, cmd.target_system, cmd.target_component);
+
+					MavlinkCommandSender::instance().handle_vehicle_command(cmd, _mavlink->get_channel());
+					sent = true;
+
+				} else {
+					PX4_DEBUG("not forwarding command %d to %d/%d", cmd.command, cmd.target_system, cmd.target_component);
+				}
 			}
 		}
 
@@ -602,8 +614,13 @@ protected:
 
 			int lowest_battery_index = 0;
 
+			// No battery is connected, select the first group
+			// Low battery judgment is performed only when the current battery is connected
+			// When the last cached battery is not connected or the current battery level is lower than the cached battery level,
+			// the current battery status is replaced with the cached value
 			for (int i = 0; i < _battery_status_subs.size(); i++) {
-				if (battery_status[i].connected && (battery_status[i].remaining < battery_status[lowest_battery_index].remaining)) {
+				if (battery_status[i].connected && ((!battery_status[lowest_battery_index].connected)
+								    || (battery_status[i].remaining < battery_status[lowest_battery_index].remaining))) {
 					lowest_battery_index = i;
 				}
 			}
@@ -1190,263 +1207,6 @@ public:
 	unsigned get_size() override
 	{
 		return MAVLINK_MSG_ID_SCALED_PRESSURE3_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES;
-	}
-};
-
-class MavlinkStreamScaledIMU : public MavlinkStream
-{
-public:
-	const char *get_name() const override
-	{
-		return MavlinkStreamScaledIMU::get_name_static();
-	}
-
-	static const char *get_name_static()
-	{
-		return "SCALED_IMU";
-	}
-
-	static uint16_t get_id_static()
-	{
-		return MAVLINK_MSG_ID_SCALED_IMU;
-	}
-
-	uint16_t get_id() override
-	{
-		return get_id_static();
-	}
-
-	static MavlinkStream *new_instance(Mavlink *mavlink)
-	{
-		return new MavlinkStreamScaledIMU(mavlink);
-	}
-
-	unsigned get_size() override
-	{
-		return _raw_imu_sub.advertised() ? (MAVLINK_MSG_ID_SCALED_IMU_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES) : 0;
-	}
-
-private:
-	uORB::Subscription _raw_imu_sub{ORB_ID(vehicle_imu), 0};
-	uORB::Subscription _raw_mag_sub{ORB_ID(sensor_mag), 0};
-
-	// do not allow top copy this class
-	MavlinkStreamScaledIMU(MavlinkStreamScaledIMU &) = delete;
-	MavlinkStreamScaledIMU &operator = (const MavlinkStreamScaledIMU &) = delete;
-
-protected:
-	explicit MavlinkStreamScaledIMU(Mavlink *mavlink) : MavlinkStream(mavlink)
-	{}
-
-	bool send() override
-	{
-		if (_raw_imu_sub.updated() || _raw_mag_sub.updated()) {
-
-			vehicle_imu_s imu{};
-			_raw_imu_sub.copy(&imu);
-
-			sensor_mag_s sensor_mag{};
-			_raw_mag_sub.copy(&sensor_mag);
-
-			mavlink_scaled_imu_t msg{};
-
-			msg.time_boot_ms = imu.timestamp / 1000;
-
-			// Accelerometer in mG
-			const float accel_dt_inv = 1.e6f / (float)imu.delta_velocity_dt;
-			const Vector3f accel = Vector3f{imu.delta_velocity} * accel_dt_inv * 1000.0f / CONSTANTS_ONE_G;
-
-			// Gyroscope in mrad/s
-			const float gyro_dt_inv = 1.e6f / (float)imu.delta_angle_dt;
-			const Vector3f gyro = Vector3f{imu.delta_angle} * gyro_dt_inv * 1000.0f;
-
-			msg.xacc = (int16_t)accel(0);
-			msg.yacc = (int16_t)accel(1);
-			msg.zacc = (int16_t)accel(2);
-			msg.xgyro = gyro(0);
-			msg.ygyro = gyro(1);
-			msg.zgyro = gyro(2);
-			msg.xmag = sensor_mag.x * 1000.0f; // Gauss -> MilliGauss
-			msg.ymag = sensor_mag.y * 1000.0f; // Gauss -> MilliGauss
-			msg.zmag = sensor_mag.z * 1000.0f; // Gauss -> MilliGauss
-
-			mavlink_msg_scaled_imu_send_struct(_mavlink->get_channel(), &msg);
-
-			return true;
-		}
-
-		return false;
-	}
-};
-
-class MavlinkStreamScaledIMU2 : public MavlinkStream
-{
-public:
-	const char *get_name() const override
-	{
-		return MavlinkStreamScaledIMU2::get_name_static();
-	}
-
-	static constexpr const char *get_name_static()
-	{
-		return "SCALED_IMU2";
-	}
-
-	static constexpr uint16_t get_id_static()
-	{
-		return MAVLINK_MSG_ID_SCALED_IMU2;
-	}
-
-	uint16_t get_id() override
-	{
-		return get_id_static();
-	}
-
-	static MavlinkStream *new_instance(Mavlink *mavlink)
-	{
-		return new MavlinkStreamScaledIMU2(mavlink);
-	}
-
-	unsigned get_size() override
-	{
-		return _raw_imu_sub.advertised() ? (MAVLINK_MSG_ID_SCALED_IMU2_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES) : 0;
-	}
-
-private:
-	uORB::Subscription _raw_imu_sub{ORB_ID(vehicle_imu), 1};
-	uORB::Subscription _raw_mag_sub{ORB_ID(sensor_mag), 1};
-
-	// do not allow top copy this class
-	MavlinkStreamScaledIMU2(MavlinkStreamScaledIMU2 &) = delete;
-	MavlinkStreamScaledIMU2 &operator = (const MavlinkStreamScaledIMU2 &) = delete;
-
-protected:
-	explicit MavlinkStreamScaledIMU2(Mavlink *mavlink) : MavlinkStream(mavlink)
-	{}
-
-	bool send() override
-	{
-		if (_raw_imu_sub.updated() || _raw_mag_sub.updated()) {
-
-			vehicle_imu_s imu{};
-			_raw_imu_sub.copy(&imu);
-
-			sensor_mag_s sensor_mag{};
-			_raw_mag_sub.copy(&sensor_mag);
-
-			mavlink_scaled_imu2_t msg{};
-
-			msg.time_boot_ms = imu.timestamp / 1000;
-
-			// Accelerometer in mG
-			const float accel_dt_inv = 1.e6f / (float)imu.delta_velocity_dt;
-			const Vector3f accel = Vector3f{imu.delta_velocity} * accel_dt_inv * 1000.0f / CONSTANTS_ONE_G;
-
-			// Gyroscope in mrad/s
-			const float gyro_dt_inv = 1.e6f / (float)imu.delta_angle_dt;
-			const Vector3f gyro = Vector3f{imu.delta_angle} * gyro_dt_inv * 1000.0f;
-
-			msg.xacc = (int16_t)accel(0);
-			msg.yacc = (int16_t)accel(1);
-			msg.zacc = (int16_t)accel(2);
-			msg.xgyro = gyro(0);
-			msg.ygyro = gyro(1);
-			msg.zgyro = gyro(2);
-			msg.xmag = sensor_mag.x * 1000.0f; // Gauss -> MilliGauss
-			msg.ymag = sensor_mag.y * 1000.0f; // Gauss -> MilliGauss
-			msg.zmag = sensor_mag.z * 1000.0f; // Gauss -> MilliGauss
-
-			mavlink_msg_scaled_imu2_send_struct(_mavlink->get_channel(), &msg);
-
-			return true;
-		}
-
-		return false;
-	}
-};
-
-class MavlinkStreamScaledIMU3 : public MavlinkStream
-{
-public:
-	const char *get_name() const override
-	{
-		return MavlinkStreamScaledIMU3::get_name_static();
-	}
-	static constexpr const char *get_name_static()
-	{
-		return "SCALED_IMU3";
-	}
-
-	static constexpr uint16_t get_id_static()
-	{
-		return MAVLINK_MSG_ID_SCALED_IMU3;
-	}
-
-	uint16_t get_id() override
-	{
-		return get_id_static();
-	}
-
-	static MavlinkStream *new_instance(Mavlink *mavlink)
-	{
-		return new MavlinkStreamScaledIMU3(mavlink);
-	}
-
-	unsigned get_size() override
-	{
-		return _raw_imu_sub.advertised() ? (MAVLINK_MSG_ID_SCALED_IMU3_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES) : 0;
-	}
-
-private:
-	uORB::Subscription _raw_imu_sub{ORB_ID(vehicle_imu), 2};
-	uORB::Subscription _raw_mag_sub{ORB_ID(sensor_mag), 2};
-
-	// do not allow top copy this class
-	MavlinkStreamScaledIMU3(MavlinkStreamScaledIMU3 &) = delete;
-	MavlinkStreamScaledIMU3 &operator = (const MavlinkStreamScaledIMU3 &) = delete;
-
-protected:
-	explicit MavlinkStreamScaledIMU3(Mavlink *mavlink) : MavlinkStream(mavlink)
-	{}
-
-	bool send() override
-	{
-		if (_raw_imu_sub.updated() || _raw_mag_sub.updated()) {
-
-			vehicle_imu_s imu{};
-			_raw_imu_sub.copy(&imu);
-
-			sensor_mag_s sensor_mag{};
-			_raw_mag_sub.copy(&sensor_mag);
-
-			mavlink_scaled_imu3_t msg{};
-
-			msg.time_boot_ms = imu.timestamp / 1000;
-
-			// Accelerometer in mG
-			const float accel_dt_inv = 1.e6f / (float)imu.delta_velocity_dt;
-			const Vector3f accel = Vector3f{imu.delta_velocity} * accel_dt_inv * 1000.0f / CONSTANTS_ONE_G;
-
-			// Gyroscope in mrad/s
-			const float gyro_dt_inv = 1.e6f / (float)imu.delta_angle_dt;
-			const Vector3f gyro = Vector3f{imu.delta_angle} * gyro_dt_inv * 1000.0f;
-
-			msg.xacc = (int16_t)accel(0);
-			msg.yacc = (int16_t)accel(1);
-			msg.zacc = (int16_t)accel(2);
-			msg.xgyro = gyro(0);
-			msg.ygyro = gyro(1);
-			msg.zgyro = gyro(2);
-			msg.xmag = sensor_mag.x * 1000.0f; // Gauss -> MilliGauss
-			msg.ymag = sensor_mag.y * 1000.0f; // Gauss -> MilliGauss
-			msg.zmag = sensor_mag.z * 1000.0f; // Gauss -> MilliGauss
-
-			mavlink_msg_scaled_imu3_send_struct(_mavlink->get_channel(), &msg);
-
-			return true;
-		}
-
-		return false;
 	}
 };
 
@@ -3254,12 +3014,17 @@ static const StreamListItem streams_list[] = {
 	create_stream_list_item<MavlinkStreamBatteryStatus>(),
 	create_stream_list_item<MavlinkStreamSmartBatteryInfo>(),
 	create_stream_list_item<MavlinkStreamHighresIMU>(),
-	create_stream_list_item<MavlinkStreamScaledIMU>(),
-	create_stream_list_item<MavlinkStreamScaledIMU2>(),
-	create_stream_list_item<MavlinkStreamScaledIMU3>(),
+#if defined(SCALED_IMU_HPP)
+	create_stream_list_item<MavlinkStreamScaledIMU<0> >(),
+	create_stream_list_item<MavlinkStreamScaledIMU<1> >(),
+	create_stream_list_item<MavlinkStreamScaledIMU<2> >(),
+#endif // SCALED_IMU_HPP
 	create_stream_list_item<MavlinkStreamScaledPressure<0> >(),
 	// create_stream_list_item<MavlinkStreamScaledPressure<1> >(),
 	// create_stream_list_item<MavlinkStreamScaledPressure<2> >(),
+#if defined(ACTUATOR_OUTPUT_STATUS_HPP)
+	create_stream_list_item<MavlinkStreamActuatorOutputStatus>(),
+#endif // ACTUATOR_OUTPUT_STATUS_HPP
 #if defined(ATTITUDE_HPP)
 	create_stream_list_item<MavlinkStreamAttitude>(),
 #endif // ATTITUDE_HPP
@@ -3380,6 +3145,9 @@ static const StreamListItem streams_list[] = {
 #if defined(GPS_STATUS_HPP)
 	create_stream_list_item<MavlinkStreamGPSStatus>(),
 #endif // GPS_STATUS_HPP
+#if defined(LINK_NODE_STATUS_HPP)
+	create_stream_list_item<MavlinkStreamLinkNodeStatus>(),
+#endif // LINK_NODE_STATUS_HPP
 #if defined(STORAGE_INFORMATION_HPP)
 	create_stream_list_item<MavlinkStreamStorageInformation>(),
 #endif // STORAGE_INFORMATION_HPP

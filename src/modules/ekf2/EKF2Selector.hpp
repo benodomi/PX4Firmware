@@ -53,8 +53,13 @@
 #include <uORB/topics/vehicle_global_position.h>
 #include <uORB/topics/vehicle_odometry.h>
 
-static constexpr uint8_t EKF2_MAX_INSTANCES{9};
-static_assert(EKF2_MAX_INSTANCES <= ORB_MULTI_MAX_INSTANCES, "EKF2_MAX_INSTANCES must be <= ORB_MULTI_MAX_INSTANCES");
+#if CONSTRAINED_MEMORY
+# define EKF2_MAX_INSTANCES 2
+#else
+# define EKF2_MAX_INSTANCES 9
+#endif
+
+using namespace time_literals;
 
 class EKF2Selector : public ModuleParams, public px4::ScheduledWorkItem
 {
@@ -68,7 +73,9 @@ public:
 	void PrintStatus();
 
 private:
-	static constexpr uint8_t INVALID_INSTANCE = UINT8_MAX;
+	static constexpr uint8_t INVALID_INSTANCE{UINT8_MAX};
+	static constexpr uint64_t FILTER_UPDATE_PERIOD{10_ms};
+
 	void Run() override;
 	void PublishVehicleAttitude(bool reset = false);
 	void PublishVehicleLocalPosition(bool reset = false);
@@ -80,6 +87,7 @@ private:
 
 	// Subscriptions (per estimator instance)
 	struct EstimatorInstance {
+
 		EstimatorInstance(EKF2Selector *selector, uint8_t i) :
 			estimator_attitude_sub{selector, ORB_ID(estimator_attitude), i},
 			estimator_status_sub{selector, ORB_ID(estimator_status), i},
@@ -96,7 +104,7 @@ private:
 		uORB::Subscription estimator_global_position_sub;
 		uORB::Subscription estimator_odometry_sub;
 
-		estimator_status_s estimator_status{};
+		estimator_status_s status{};
 
 		hrt_abstime time_last_selected{0};
 
@@ -104,6 +112,7 @@ private:
 		float relative_test_ratio{NAN};
 
 		bool healthy{false};
+		bool filter_fault{false};
 
 		const uint8_t instance;
 	};
@@ -114,13 +123,17 @@ private:
 	EstimatorInstance _instance[EKF2_MAX_INSTANCES] {
 		{this, 0},
 		{this, 1},
+#if EKF2_MAX_INSTANCES > 2
 		{this, 2},
 		{this, 3},
+#if EKF2_MAX_INSTANCES > 4
 		{this, 4},
 		{this, 5},
 		{this, 6},
 		{this, 7},
 		{this, 8},
+#endif
+#endif
 	};
 
 	static constexpr uint8_t IMU_STATUS_SIZE = (sizeof(sensors_status_imu_s::gyro_inconsistency_rad_s) / sizeof(
@@ -131,7 +144,7 @@ private:
 	static_assert(IMU_STATUS_SIZE == sizeof(estimator_selector_status_s::accumulated_accel_error) / sizeof(
 			      estimator_selector_status_s::accumulated_accel_error[0]),
 		      "increase estimator_selector_status_s::accumulated_accel_error size");
-	static_assert(EKF2_MAX_INSTANCES == sizeof(estimator_selector_status_s::combined_test_ratio) / sizeof(
+	static_assert(EKF2_MAX_INSTANCES <= sizeof(estimator_selector_status_s::combined_test_ratio) / sizeof(
 			      estimator_selector_status_s::combined_test_ratio[0]),
 		      "increase estimator_selector_status_s::combined_test_ratio size");
 
@@ -146,6 +159,9 @@ private:
 
 	uint32_t _instance_changed_count{0};
 	hrt_abstime _last_instance_change{0};
+
+	hrt_abstime _last_status_publish{0};
+	bool _selector_status_publish{false};
 
 	// vehicle_attitude: reset counters
 	vehicle_attitude_s _attitude_last{};
@@ -173,7 +189,7 @@ private:
 	uint8_t _lat_lon_reset_counter{0};
 	uint8_t _alt_reset_counter{0};
 
-	uORB::Subscription _parameter_update_sub{ORB_ID(parameter_update)};
+	uORB::SubscriptionInterval _parameter_update_sub{ORB_ID(parameter_update), 1_s};
 	uORB::Subscription _sensors_status_imu{ORB_ID(sensors_status_imu)};
 
 	// Publications

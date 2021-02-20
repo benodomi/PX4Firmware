@@ -6,6 +6,7 @@ px4_add_board(
 	LABEL default
 	TOOLCHAIN arm-none-eabi
 	ARCHITECTURE cortex-m4
+	CONSTRAINED_MEMORY
 	ROMFSROOT px4fmu_common
 	TESTING
 	UAVCAN_INTERFACES 1
@@ -13,6 +14,8 @@ px4_add_board(
 		GPS1:/dev/ttyS3
 		TEL1:/dev/ttyS1
 		TEL2:/dev/ttyS2
+		WIFI:/dev/ttyS0
+
 	DRIVERS
 		adc/board_adc
 		adc/ads1115

@@ -153,7 +153,7 @@ PARAM_DEFINE_FLOAT(EKF2_AVEL_DELAY, 5);
  *
  * Set bits to 1 to enable checks. Checks enabled by the following bit positions
  * 0 : Minimum required sat count set by EKF2_REQ_NSATS
- * 1 : Minimum required PDOP set by EKF2_REQ_PDOP
+ * 1 : Maximum allowed PDOP set by EKF2_REQ_PDOP
  * 2 : Maximum allowed horizontal position error set by EKF2_REQ_EPH
  * 3 : Maximum allowed vertical position error set by EKF2_REQ_EPV
  * 4 : Maximum allowed speed error set by EKF2_REQ_SACC
@@ -166,7 +166,7 @@ PARAM_DEFINE_FLOAT(EKF2_AVEL_DELAY, 5);
  * @min 0
  * @max 511
  * @bit 0 Min sat count (EKF2_REQ_NSATS)
- * @bit 1 Min PDOP (EKF2_REQ_PDOP)
+ * @bit 1 Max PDOP (EKF2_REQ_PDOP)
  * @bit 2 Max horizontal position error (EKF2_REQ_EPH)
  * @bit 3 Max vertical position error (EKF2_REQ_EPV)
  * @bit 4 Max speed error (EKF2_REQ_SACC)
@@ -220,7 +220,7 @@ PARAM_DEFINE_FLOAT(EKF2_REQ_SACC, 0.5f);
 PARAM_DEFINE_INT32(EKF2_REQ_NSATS, 6);
 
 /**
- * Required PDOP to use GPS.
+ * Maximum PDOP to use GPS.
  *
  * @group EKF2
  * @min 1.5
@@ -1098,6 +1098,17 @@ PARAM_DEFINE_FLOAT(EKF2_RNG_A_HMAX, 5.0f);
 PARAM_DEFINE_FLOAT(EKF2_RNG_A_IGATE, 1.0f);
 
 /**
+ * Minimum duration during which the reported range finder signal quality needs to be non-zero in order to be declared valid (s)
+ *
+ *
+ * @group EKF2
+ * @unit s
+ * @min 0.1
+ * @max 5
+*/
+PARAM_DEFINE_FLOAT(EKF2_RNG_QLTY_T, 1.0f);
+
+/**
  * Gate size for vision velocity estimate fusion
  *
  * Sets the number of standard deviations used by the innovation consistency test.
@@ -1314,6 +1325,20 @@ PARAM_DEFINE_FLOAT(EKF2_REQ_GPS_H, 10.0f);
  * @boolean
  */
 PARAM_DEFINE_INT32(EKF2_MAG_CHECK, 0);
+
+/**
+ * Enable synthetic magnetometer Z component measurement.
+ *
+ * Use for vehicles where the measured body Z magnetic field is subject to strong magnetic interference.
+ * For magnetic heading fusion the magnetometer Z measurement will be replaced by a synthetic value calculated
+ * using the knowledge of the 3D magnetic field vector at the location of the drone. Therefore, this parameter
+ * will only have an effect if the global position of the drone is known.
+ * For 3D mag fusion the magnetometer Z measurement will simply be ingored instead of fusing the synthetic value.
+ *
+ * @group EKF2
+ * @boolean
+*/
+PARAM_DEFINE_INT32(EKF2_SYNT_MAG_Z, 0);
 
 /**
  * Default value of true airspeed used in EKF-GSF AHRS calculation.

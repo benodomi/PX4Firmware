@@ -230,7 +230,7 @@ int Commander::custom_command(int argc, char *argv[])
 		vehicle_status_flags_sub.copy(&vehicle_status_flags);
 
 		bool preflight_check_res = PreFlightCheck::preflightCheck(nullptr, vehicle_status, vehicle_status_flags, true, true,
-					   true, 30_s);
+					   30_s);
 		PX4_INFO("Preflight check: %s", preflight_check_res ? "OK" : "FAILED");
 
 		bool prearm_check_res = PreFlightCheck::preArmCheck(nullptr, vehicle_status_flags, safety_s{},
@@ -1522,7 +1522,7 @@ Commander::run()
 	arm_auth_init(&_mavlink_log_pub, &_status.system_id);
 
 	// run preflight immediately to find all relevant parameters, but don't report
-	PreFlightCheck::preflightCheck(&_mavlink_log_pub, _status, _status_flags, _arm_requirements.global_position, false,
+	PreFlightCheck::preflightCheck(&_mavlink_log_pub, _status, _status_flags, false,
 				       true,
 				       hrt_elapsed_time(&_boot_timestamp));
 
@@ -2415,7 +2415,7 @@ Commander::run()
 		}
 
 		/* handle commands last, as the system needs to be updated to handle them */
-		if (_cmd_sub.updated()) {
+		while (_cmd_sub.updated()) {
 			/* got command */
 			const unsigned last_generation = _cmd_sub.get_last_generation();
 			vehicle_command_s cmd;
@@ -2545,7 +2545,8 @@ Commander::run()
 						       (link_loss_actions_t)_param_nav_rcl_act.get(),
 						       (offboard_loss_actions_t)_param_com_obl_act.get(),
 						       (offboard_loss_rc_actions_t)_param_com_obl_rc_act.get(),
-						       (position_nav_loss_actions_t)_param_com_posctl_navl.get());
+						       (position_nav_loss_actions_t)_param_com_posctl_navl.get(),
+						       _param_com_rcl_act_t.get());
 
 		if (nav_state_changed) {
 			_status.nav_state_timestamp = hrt_absolute_time();
@@ -2615,7 +2616,7 @@ Commander::run()
 
 			// Evaluate current prearm status
 			if (!_armed.armed && !_status_flags.condition_calibration_enabled) {
-				bool preflight_check_res = PreFlightCheck::preflightCheck(nullptr, _status, _status_flags, true, false, true, 30_s);
+				bool preflight_check_res = PreFlightCheck::preflightCheck(nullptr, _status, _status_flags, false, true, 30_s);
 
 				// skip arm authorization check until actual arming attempt
 				PreFlightCheck::arm_requirements_t arm_req = _arm_requirements;
@@ -3711,8 +3712,8 @@ void Commander::data_link_check()
 
 					if (!_armed.armed && !_status_flags.condition_calibration_enabled) {
 						// make sure to report preflight check failures to a connecting GCS
-						PreFlightCheck::preflightCheck(&_mavlink_log_pub, _status, _status_flags,
-									       _arm_requirements.global_position, true, true, hrt_elapsed_time(&_boot_timestamp));
+						PreFlightCheck::preflightCheck(&_mavlink_log_pub, _status, _status_flags, true, true,
+									       hrt_elapsed_time(&_boot_timestamp));
 					}
 				}
 
@@ -3858,6 +3859,8 @@ void Commander::battery_status_check()
 	hrt_abstime oldest_update = hrt_absolute_time();
 
 	_battery_current = 0.0f;
+	float battery_level = 0.0f;
+
 
 	// Only iterate over connected batteries. We don't care if a disconnected battery is not regularly publishing.
 	for (size_t i = 0; i < num_connected_batteries; i++) {
@@ -3871,6 +3874,35 @@ void Commander::battery_status_check()
 
 		// Sum up current from all batteries.
 		_battery_current += batteries[i].current_filtered_a;
+
+		// average levels from all batteries
+		battery_level += batteries[i].remaining;
+	}
+
+	battery_level /= num_connected_batteries;
+
+	_rtl_flight_time_sub.update();
+	float battery_usage_to_home = 0;
+
+	if (hrt_absolute_time() - _rtl_flight_time_sub.get().timestamp < 2_s) {
+		battery_usage_to_home = _rtl_flight_time_sub.get().rtl_limit_fraction;
+	}
+
+	uint8_t battery_range_warning = battery_status_s::BATTERY_WARNING_NONE;
+
+	if (PX4_ISFINITE(battery_usage_to_home)) {
+		float battery_at_home = battery_level - battery_usage_to_home;
+
+		if (battery_at_home < _param_bat_crit_thr.get()) {
+			battery_range_warning =  battery_status_s::BATTERY_WARNING_CRITICAL;
+
+		} else if (battery_at_home < _param_bat_low_thr.get()) {
+			battery_range_warning = battery_status_s::BATTERY_WARNING_LOW;
+		}
+	}
+
+	if (battery_range_warning > worst_warning) {
+		worst_warning = battery_range_warning;
 	}
 
 	bool battery_warning_level_increased_while_armed = false;
@@ -3891,6 +3923,7 @@ void Commander::battery_status_check()
 	if (update_internal_battery_state) {
 		_battery_warning = worst_warning;
 	}
+
 
 	_status_flags.condition_battery_healthy =
 		// All connected batteries are regularly being published
