@@ -56,15 +56,17 @@ int ICM20948i2c::init()
 	PX4_DEBUG("addr: %d", get_device_address());
 
 
-    //setup?
+    //wake up and auto select time source
     setRegister((uint8_t)REG_BANK_SEL_BIT::USER_BANK_0,
                 (uint8_t)Register::BANK_0::PWR_MGMT_1,
                 0x01);
 
+    //disable I2C master, (and other stuff)
     setRegister((uint8_t)REG_BANK_SEL_BIT::USER_BANK_0,
                 (uint8_t)Register::BANK_0::USER_CTRL,
                 0x00);
 
+    //enable I2C bridge
     setRegister((uint8_t)REG_BANK_SEL_BIT::USER_BANK_0,
                 (uint8_t)Register::BANK_0::INT_PIN_CFG,
                 0x02);

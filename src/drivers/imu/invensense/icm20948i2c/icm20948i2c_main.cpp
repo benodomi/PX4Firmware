@@ -70,7 +70,7 @@ extern "C" int icm20948i2c_main(int argc, char *argv[])
 	//int ch;
 	using ThisDriver = ICM20948i2c;
 	BusCLIArguments cli{true, false};
-    cli.default_i2c_frequency = 400000;
+    cli.default_i2c_frequency = 100000;
     //cli.default_spi_frequency = SPI_SPEED;
 
 	/*while ((ch = cli.getopt(argc, argv, "MR:")) != EOF) {
