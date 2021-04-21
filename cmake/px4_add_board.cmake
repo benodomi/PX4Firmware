@@ -48,8 +48,8 @@
 #			[ ROMFSROOT <string> ]
 #			[ BUILD_BOOTLOADER ]
 #			[ IO <string> ]
-#			[ BOOTLOADER <string> ]
 #			[ UAVCAN_INTERFACES <string> ]
+#			[ UAVCAN_PERIPHERALS <list> ]
 #			[ DRIVERS <list> ]
 #			[ MODULES <list> ]
 #			[ SYSTEMCMDS <list> ]
@@ -57,9 +57,10 @@
 #			[ SERIAL_PORTS <list> ]
 #			[ CONSTRAINED_FLASH ]
 #			[ CONSTRAINED_MEMORY ]
+#			[ EXTERNAL_METADATA ]
 #			[ TESTING ]
 #			[ LINKER_PREFIX <string> ]
-#			[ EMBEDDED_METADATA <string> ]
+#			[ ETHERNET ]
 #			)
 #
 #	Input:
@@ -72,18 +73,19 @@
 #		ROMFSROOT		: relative path to the ROMFS root directory
 #		BUILD_BOOTLOADER	: flag to enable building and including the bootloader config
 #		IO			: name of IO board to be built and included in the ROMFS (requires a valid ROMFSROOT)
-#		BOOTLOADER		: bootloader file to include for flashing via bl_update (currently NuttX only)
 #		UAVCAN_INTERFACES	: number of interfaces for UAVCAN
+#		UAVCAN_PERIPHERALS      : list of UAVCAN peripheral firmware to build and embed
 #		DRIVERS			: list of drivers to build for this board (relative to src/drivers)
 #		MODULES			: list of modules to build for this board (relative to src/modules)
 #		SYSTEMCMDS		: list of system commands to build for this board (relative to src/systemcmds)
 #		EXAMPLES		: list of example modules to build for this board (relative to src/examples)
 #		SERIAL_PORTS		: mapping of user configurable serial ports and param facing name
-#		EMBEDDED_METADATA	: list of metadata to embed to ROMFS
 #		CONSTRAINED_FLASH	: flag to enable constrained flash options (eg limit init script status text)
 #		CONSTRAINED_MEMORY	: flag to enable constrained memory options (eg limit maximum number of uORB publications)
+#		EXTERNAL_METADATA	: flag to exclude metadata to reduce flash
 #		TESTING			: flag to enable automatic inclusion of PX4 testing modules
 #		LINKER_PREFIX	: optional to prefix on the Linker script.
+#		ETHERNET		: flag to indicate that ethernet is enabled
 #
 #
 #	Example:
@@ -103,8 +105,8 @@
 #			DRIVERS
 #				barometer/ms5611
 #				gps
-#				imu/bmi055
-#				imu/mpu6000
+#				imu/bosch/bmi055
+#				imu/invensense/mpu6000
 #				magnetometer/isentek/ist8310
 #				pwm_out
 #				px4io
@@ -144,7 +146,6 @@ function(px4_add_board)
 			ARCHITECTURE
 			ROMFSROOT
 			IO
-			BOOTLOADER
 			UAVCAN_INTERFACES
 			UAVCAN_TIMER_OVERRIDE
 			LINKER_PREFIX
@@ -154,12 +155,14 @@ function(px4_add_board)
 			SYSTEMCMDS
 			EXAMPLES
 			SERIAL_PORTS
-			EMBEDDED_METADATA
+			UAVCAN_PERIPHERALS
 		OPTIONS
 			BUILD_BOOTLOADER
 			CONSTRAINED_FLASH
 			CONSTRAINED_MEMORY
+			EXTERNAL_METADATA
 			TESTING
+			ETHERNET
 		REQUIRED
 			PLATFORM
 			VENDOR
@@ -204,17 +207,13 @@ function(px4_add_board)
 
 	set(romfs_extra_files)
 	set(config_romfs_extra_dependencies)
-	if(BOOTLOADER)
-		list(APPEND romfs_extra_files ${BOOTLOADER})
+	# additional embedded metadata
+	if (NOT CONSTRAINED_FLASH AND NOT EXTERNAL_METADATA AND NOT ${PX4_BOARD_LABEL} STREQUAL "test")
+		list(APPEND romfs_extra_files ${PX4_BINARY_DIR}/parameters.json.xz)
+		list(APPEND romfs_extra_dependencies parameters_xml)
 	endif()
-	foreach(metadata ${EMBEDDED_METADATA})
-		if(${metadata} STREQUAL "parameters")
-			list(APPEND romfs_extra_files ${PX4_BINARY_DIR}/parameters.json.gz)
-			list(APPEND romfs_extra_dependencies parameters_xml)
-		else()
-			message(FATAL_ERROR "invalid value for EMBEDDED_METADATA: ${metadata}")
-		endif()
-	endforeach()
+	list(APPEND romfs_extra_files ${PX4_BINARY_DIR}/component_general.json.xz)
+	list(APPEND romfs_extra_dependencies component_general_json)
 	set(config_romfs_extra_files ${romfs_extra_files} CACHE INTERNAL "extra ROMFS files" FORCE)
 	set(config_romfs_extra_dependencies ${romfs_extra_dependencies} CACHE INTERNAL "extra ROMFS deps" FORCE)
 
@@ -233,6 +232,10 @@ function(px4_add_board)
 		# IO board (placed in ROMFS)
 		if(IO)
 			set(config_io_board ${IO} CACHE INTERNAL "IO" FORCE)
+		endif()
+
+		if(UAVCAN_PERIPHERALS)
+			set(config_uavcan_peripheral_firmware ${UAVCAN_PERIPHERALS} CACHE INTERNAL "UAVCAN peripheral firmware" FORCE)
 		endif()
 	endif()
 
@@ -258,6 +261,10 @@ function(px4_add_board)
 
 	if(TESTING)
 		set(PX4_TESTING "1" CACHE INTERNAL "testing enabled" FORCE)
+	endif()
+
+	if(ETHERNET)
+		set(PX4_ETHERNET "1" CACHE INTERNAL "ethernet enabled" FORCE)
 	endif()
 
 	if(LINKER_PREFIX)
