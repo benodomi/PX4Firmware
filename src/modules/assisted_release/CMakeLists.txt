@@ -37,5 +37,4 @@ px4_add_module(
 	SRCS
 		assisted_release.cpp
 	DEPENDS
-		modules__uORB
 	)
