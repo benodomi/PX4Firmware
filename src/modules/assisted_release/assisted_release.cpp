@@ -51,8 +51,17 @@
 
 int AssistedRelease::print_status()
 {
+
+	if (!is_running()) {
+		print_usage("not running");
+		return 1;
+	}
+
 	PX4_INFO("Running");
-    PX4_INFO("State: frequency=%d, airspeed=%d, throttle=%d, switch=%d, pitch_sp=%d", _rpm.indicated_frequency_rpm > (float)_param_min_rpm.get(), _airspeed.indicated_airspeed_m_s > (float)_param_min_aspd.get(), _throttle >= 0.5f, _rc_channel >= 0.5f, _pitch_setpoint > 0);
+	PX4_INFO("State: frequency=%d, airspeed=%d, throttle=%d, switch=%d, pitch_sp=%d",
+		 _rpm.indicated_frequency_rpm > (float)_param_min_rpm.get(),
+		 _airspeed.indicated_airspeed_m_s > (float)_param_min_aspd.get(), _throttle >= 0.5f, _rc_channel >= 0.5f,
+		 _pitch_setpoint > 0);
 
 	return 0;
 }
@@ -113,30 +122,30 @@ AssistedRelease::AssistedRelease(int example_param, bool example_flag)
 }
 void AssistedRelease::play_happy_tone()
 {
-  		tune_control_s tune_control{};
-  		tune_control.tune_id = tune_control_s::TUNE_ID_NOTIFY_NEUTRAL;
-  		tune_control.volume = tune_control_s::VOLUME_LEVEL_DEFAULT;
-  		tune_control.timestamp = hrt_absolute_time();
-  		_tune_control.publish(tune_control);
+	tune_control_s tune_control{};
+	tune_control.tune_id = tune_control_s::TUNE_ID_NOTIFY_NEUTRAL;
+	tune_control.volume = tune_control_s::VOLUME_LEVEL_DEFAULT;
+	tune_control.timestamp = hrt_absolute_time();
+	_tune_control.publish(tune_control);
 }
 
 void AssistedRelease::play_sad_tone()
 {
-  		tune_control_s tune_control{};
-  		tune_control.tune_id = tune_control_s::TUNE_ID_NOTIFY_NEGATIVE;
-  		tune_control.volume = tune_control_s::VOLUME_LEVEL_DEFAULT;
-  		tune_control.timestamp = hrt_absolute_time();
-  		_tune_control.publish(tune_control);
+	tune_control_s tune_control{};
+	tune_control.tune_id = tune_control_s::TUNE_ID_NOTIFY_NEGATIVE;
+	tune_control.volume = tune_control_s::VOLUME_LEVEL_DEFAULT;
+	tune_control.timestamp = hrt_absolute_time();
+	_tune_control.publish(tune_control);
 
 }
 
 void AssistedRelease::play_final_tone()
 {
-  		tune_control_s tune_control{};
-  		tune_control.tune_id = tune_control_s::TUNE_ID_NOTIFY_POSITIVE;
-  		tune_control.volume = tune_control_s::VOLUME_LEVEL_DEFAULT;
-  		tune_control.timestamp = hrt_absolute_time();
-  		_tune_control.publish(tune_control);
+	tune_control_s tune_control{};
+	tune_control.tune_id = tune_control_s::TUNE_ID_NOTIFY_POSITIVE;
+	tune_control.volume = tune_control_s::VOLUME_LEVEL_DEFAULT;
+	tune_control.timestamp = hrt_absolute_time();
+	_tune_control.publish(tune_control);
 
 }
 
@@ -158,40 +167,41 @@ void AssistedRelease::run()
 	orb_set_interval(_airspeed_sub, 100);
 	orb_set_interval(_actuator_controls_0_sub, 100);
 	orb_set_interval(_input_rc_sub, 100);
-    orb_set_interval(_manual_control_setpoint_sub, 100);
+	orb_set_interval(_manual_control_setpoint_sub, 100);
 
 	rpm_poll();
 	airspeed_poll();
 	vehicle_status_poll();
 	actuator_controls_poll();
 	input_rc_poll();
-    manual_control_setpoint_poll();
+	manual_control_setpoint_poll();
 
 	actuator_controls_s control{};
 	uORB::Publication<actuator_controls_s> control_pub{ORB_ID(actuator_controls_1)};
 
 
 	px4_pollfd_struct_t fds[] = {
-	    { .fd = _rpm_sub,   .events = POLLIN },
-	    { .fd = _vehicle_status_sub,   .events = POLLIN },
-	    { .fd = _airspeed_sub,   .events = POLLIN },
+		{ .fd = _rpm_sub,   .events = POLLIN },
+		{ .fd = _vehicle_status_sub,   .events = POLLIN },
+		{ .fd = _airspeed_sub,   .events = POLLIN },
 	};
 
-  // hrt_abstime _state_changed{0};
+	// hrt_abstime _state_changed{0};
 
 	parameters_update();
 
 
-    uint64_t set_time = 0;
-    uint64_t timestamp_us = hrt_absolute_time();
-    int input_port = _param_rc_chan.get();
-    int output_port = _param_out_chan.get();
+	uint64_t set_time = 0;
+	uint64_t timestamp_us = hrt_absolute_time();
+	int input_port = _param_rc_chan.get();
+	int output_port = _param_out_chan.get();
 
 	control.control[4] = -1.0f;
 
 	while (!should_exit()) {
 
 		int pret = px4_poll(fds, 1, 300);
+
 		if (pret < 0) {
 			warn("poll error %d, %d", pret, errno);
 			continue;
@@ -200,60 +210,66 @@ void AssistedRelease::run()
 		rpm_poll();
 		airspeed_poll();
 		vehicle_status_poll();
-    	actuator_controls_poll();
-    	input_rc_poll();
-        manual_control_setpoint_poll();
+		actuator_controls_poll();
+		input_rc_poll();
+		manual_control_setpoint_poll();
 
-        _rc_channel = (1500-_input_rc.values[input_port])/500.0f;
-        _throttle = _actuator_controls.control[actuator_controls_s::INDEX_THROTTLE];
-        _pitch_setpoint = _manual_control_setpoint.x;
+		_rc_channel = (1500 - _input_rc.values[input_port]) / 500.0f;
+		_throttle = _actuator_controls.control[actuator_controls_s::INDEX_THROTTLE];
+		_pitch_setpoint = _manual_control_setpoint.x;
 
-        timestamp_us = hrt_absolute_time();
+		timestamp_us = hrt_absolute_time();
 
-        bool rpm_flag = (state_flags >> state_types::RPM_OK) & 1U;
+		bool rpm_flag = (state_flags >> state_types::RPM_OK) & 1U;
 
-        if(_rpm.indicated_frequency_rpm > _param_min_rpm.get()){
-          if(!rpm_flag){
-              state_flags |= 1UL << state_types::RPM_OK;
-              play_happy_tone();
-          }
-        } else {
-          if(rpm_flag){
-              state_flags &= ~(1UL << state_types::RPM_OK);
-              play_sad_tone();
-          }
-        }
+		if (_rpm.indicated_frequency_rpm > _param_min_rpm.get()) {
+			if (!rpm_flag) {
+				state_flags |= 1UL << state_types::RPM_OK;
+				play_happy_tone();
+			}
 
-        bool rc_flag = (state_flags >> state_types::RC_OK) & 1U;
-        if(_rc_channel > 0.5f){
-          if(!rc_flag){
-              state_flags |= 1UL << state_types::RC_OK;
-              play_happy_tone();
-          }
-        } else {
-          if(rc_flag){
-              state_flags &= ~(1UL << state_types::RC_OK);
-              play_sad_tone();
-          }
-        }
+		} else {
+			if (rpm_flag) {
+				state_flags &= ~(1UL << state_types::RPM_OK);
+				play_sad_tone();
+			}
+		}
+
+		bool rc_flag = (state_flags >> state_types::RC_OK) & 1U;
+
+		if (_rc_channel > 0.5f) {
+			if (!rc_flag) {
+				state_flags |= 1UL << state_types::RC_OK;
+				play_happy_tone();
+			}
+
+		} else {
+			if (rc_flag) {
+				state_flags &= ~(1UL << state_types::RC_OK);
+				play_sad_tone();
+			}
+		}
 
 
-        if (_vehicle_status.arming_state == vehicle_status_s::ARMING_STATE_ARMED){
-    		if (_rpm.indicated_frequency_rpm > _param_min_rpm.get() && _airspeed.indicated_airspeed_m_s > _param_min_aspd.get() && _throttle >= 0.5f && _rc_channel >= 0.5f && _pitch_setpoint > 0){
-                if(control.control[output_port] < 0.0f){
-                    set_time = timestamp_us;
-        			control.control[output_port] = 1.0f;
-                }
-    		} else {
-                if ( (set_time + _param_latch_time.get()*1000) <  timestamp_us){
-                    control.control[output_port] = -1.0f;
-                    set_time = timestamp_us;
-                }
-    		}
-        } else { // Pokud neni naarmovano
-            set_time = timestamp_us;
-            control.control[output_port] = _rc_channel;
-        }
+		if (_vehicle_status.arming_state == vehicle_status_s::ARMING_STATE_ARMED) {
+			if (_rpm.indicated_frequency_rpm > _param_min_rpm.get() && _airspeed.indicated_airspeed_m_s > _param_min_aspd.get()
+			    && _throttle >= 0.5f && _rc_channel >= 0.5f && _pitch_setpoint > 0) {
+				if (control.control[output_port] < 0.0f) {
+					set_time = timestamp_us;
+					control.control[output_port] = 1.0f;
+				}
+
+			} else {
+				if ((set_time + _param_latch_time.get() * 1000) <  timestamp_us) {
+					control.control[output_port] = -1.0f;
+					set_time = timestamp_us;
+				}
+			}
+
+		} else { // Pokud neni naarmovano
+			set_time = timestamp_us;
+			control.control[output_port] = _rc_channel;
+		}
 
 		control.timestamp = timestamp_us;
 		control.timestamp_sample = timestamp_us;

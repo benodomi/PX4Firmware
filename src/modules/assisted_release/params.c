@@ -31,11 +31,12 @@
  *
  ****************************************************************************/
 
- /**
-  * @file param.c
-  *
-  * Parameters defined by the assisted_release module.
-  */
+
+/**
+ * @file param.c
+ *
+ * Parameters defined by the assisted_release module.
+ */
 
 /**
 * Latch time
