@@ -2406,7 +2406,6 @@ Commander::run()
 			}
 		}
 
-		<<< <<< < HEAD
 
 		/* Reset main state to loiter or auto-mission after takeoff is completed.
 		 * Sometimes, the mission result topic is outdated and the mission is still signaled
@@ -2422,17 +2421,14 @@ Commander::run()
 						       && (_mission_result_sub.get().instance_count > 0) && _mission_result_sub.get().valid;
 
 			if ((_param_takeoff_finished_action.get() == 1) && mission_available) {
-				main_state_transition(_status, commander_state_s::MAIN_STATE_AUTO_MISSION, _status_flags, &_internal_state);
+				main_state_transition(_status, commander_state_s::MAIN_STATE_AUTO_MISSION, _status_flags, _internal_state);
 
 			} else {
-				main_state_transition(_status, commander_state_s::MAIN_STATE_AUTO_LOITER, _status_flags, &_internal_state);
+				main_state_transition(_status, commander_state_s::MAIN_STATE_AUTO_LOITER, _status_flags, _internal_state);
 			}
 		}
 
-		== == == =
-			>>> >>> > upstream / master
-
-			/* check if we are disarmed and there is a better mode to wait in */
+		/* check if we are disarmed and there is a better mode to wait in */
 		if (!_armed.armed) {
 			/* if there is no radio control but GPS lock the user might want to fly using
 			 * just a tablet. Since the RC will force its mode switch setting on connecting
