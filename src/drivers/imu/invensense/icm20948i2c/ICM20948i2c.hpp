@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (C) 2020 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2020 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,9 +31,52 @@
  *
  ****************************************************************************/
 
-#include <px4_arch/i2c_hw_description.h>
+/**
+ * @file ICM20948i2c.hpp
+ *
+ * Driver for the Invensense ICM20948i2c connected via I2C.
+ *
+ */
 
-constexpr px4_i2c_bus_t px4_i2c_buses[I2C_BUS_MAX_BUS_ITEMS] = {
-    initI2CBusInternal(9)
+#pragma once
+
+#include "InvenSense_ICM20948i2c_registers.hpp"
+
+#include <drivers/drv_hrt.h>
+#include <lib/drivers/accelerometer/PX4Accelerometer.hpp>
+#include <lib/drivers/device/i2c.h>
+#include <lib/drivers/gyroscope/PX4Gyroscope.hpp>
+#include <lib/ecl/geo/geo.h>
+#include <lib/perf/perf_counter.h>
+#include <px4_platform_common/atomic.h>
+#include <px4_platform_common/i2c_spi_buses.h>
+
+//#include "ICM20948_AK09916.hpp"
+
+class ICM20948i2c : public device::I2C, public I2CSPIDriver<ICM20948i2c>
+{
+public:
+	ICM20948i2c(I2CSPIBusOption bus_option, const int bus, int bus_frequency);
+	~ICM20948i2c() override = default;
+
+	static I2CSPIDriverBase *instantiate(const BusCLIArguments &cli, const BusInstanceIterator &iterator,
+					     int runtime_instance);
+	static void print_usage();
+
+	void RunImpl();
+
+	int init() override;
+	void print_status() override;
+
+private:
+	void exit_and_cleanup() override;
+    int probe() override;
+
+	uint8_t        readRegister(uint8_t reg);
+	void           setRegister(uint8_t reg, uint8_t value);
+
+    void           setBank(uint8_t bank);
+    void           setRegister(uint8_t bank, uint8_t reg, uint8_t value);
+    uint8_t        readRegister(uint8_t bank, uint8_t reg);
+	
 };
-

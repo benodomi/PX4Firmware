@@ -1,3 +1,6 @@
+add_definitions(
+	-D__PX4_LINUX
+)
 
 px4_add_board(
 	PLATFORM posix
@@ -20,6 +23,9 @@ px4_add_board(
 		#protocol_splitter
 		pwm_out_sim
 		rpm/rpm_simulator
+		rpm/pcf8583
+		imu/invensense/icm20948i2c
+		differential_pressure/sdp3x
 		#telemetry # all available telemetry drivers
 		tone_alarm
 		#uavcan
