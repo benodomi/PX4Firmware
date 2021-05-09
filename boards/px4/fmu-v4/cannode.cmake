@@ -42,11 +42,12 @@ px4_add_board(
 		#dshot
 		gps
 		#imu # all available imu drivers
-		#imu/adis16448
+		#imu/analog_devices/adis16448
 		#imu/adis16477
 		#imu/adis16497
 		imu/invensense/icm20602
 		imu/invensense/icm20608g
+		imu/invensense/icm20948 # required for ak09916 mag
 		imu/invensense/mpu9250
 		#lights/rgbled
 		#lights/rgbled_ncp5623c
