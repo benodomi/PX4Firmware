@@ -70,13 +70,13 @@ public:
 
 private:
 	void exit_and_cleanup() override;
-    int probe() override;
+	int probe() override;
 
 	uint8_t        readRegister(uint8_t reg);
 	void           setRegister(uint8_t reg, uint8_t value);
 
-    void           setBank(uint8_t bank);
-    void           setRegister(uint8_t bank, uint8_t reg, uint8_t value);
-    uint8_t        readRegister(uint8_t bank, uint8_t reg);
-	
+	void           setBank(uint8_t bank);
+	void           setRegister(uint8_t bank, uint8_t reg, uint8_t value);
+	uint8_t        readRegister(uint8_t bank, uint8_t reg);
+
 };

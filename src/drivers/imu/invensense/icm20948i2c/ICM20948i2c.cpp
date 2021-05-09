@@ -39,7 +39,7 @@ using namespace InvenSense_ICM20948;
 #define ICM20948I2C_BASEADDR_DEFAULT 0x68
 
 ICM20948i2c::ICM20948i2c(I2CSPIBusOption bus_option, const int bus, int bus_frequency) :
-    I2C(DRV_IMU_DEVTYPE_ICM20948I2C, MODULE_NAME, bus, ICM20948I2C_BASEADDR_DEFAULT, bus_frequency),
+	I2C(DRV_IMU_DEVTYPE_ICM20948I2C, MODULE_NAME, bus, ICM20948I2C_BASEADDR_DEFAULT, bus_frequency),
 	I2CSPIDriver(MODULE_NAME, px4::device_bus_to_wq(get_device_id()), bus_option, bus)
 {
 
@@ -56,20 +56,20 @@ int ICM20948i2c::init()
 	PX4_DEBUG("addr: %d", get_device_address());
 
 
-    //wake up and auto select time source
-    setRegister((uint8_t)REG_BANK_SEL_BIT::USER_BANK_0,
-                (uint8_t)Register::BANK_0::PWR_MGMT_1,
-                0x01);
+	//wake up and auto select time source
+	setRegister((uint8_t)REG_BANK_SEL_BIT::USER_BANK_0,
+		    (uint8_t)Register::BANK_0::PWR_MGMT_1,
+		    0x01);
 
-    //disable I2C master, (and other stuff)
-    setRegister((uint8_t)REG_BANK_SEL_BIT::USER_BANK_0,
-                (uint8_t)Register::BANK_0::USER_CTRL,
-                0x00);
+	//disable I2C master, (and other stuff)
+	setRegister((uint8_t)REG_BANK_SEL_BIT::USER_BANK_0,
+		    (uint8_t)Register::BANK_0::USER_CTRL,
+		    0x00);
 
-    //enable I2C bridge
-    setRegister((uint8_t)REG_BANK_SEL_BIT::USER_BANK_0,
-                (uint8_t)Register::BANK_0::INT_PIN_CFG,
-                0x02);
+	//enable I2C bridge
+	setRegister((uint8_t)REG_BANK_SEL_BIT::USER_BANK_0,
+		    (uint8_t)Register::BANK_0::INT_PIN_CFG,
+		    0x02);
 
 
 	ScheduleOnInterval(10000000);
@@ -92,14 +92,14 @@ void ICM20948i2c::print_status()
 
 int ICM20948i2c::probe()
 {
-	const uint8_t whoami = readRegister((uint8_t)REG_BANK_SEL_BIT::USER_BANK_0,(uint8_t)Register::BANK_0::WHO_AM_I);
+	const uint8_t whoami = readRegister((uint8_t)REG_BANK_SEL_BIT::USER_BANK_0, (uint8_t)Register::BANK_0::WHO_AM_I);
 
 	if (whoami != WHOAMI) {
 		DEVICE_DEBUG("unexpected WHO_AM_I 0x%02x", whoami);
 		return PX4_ERROR;
 	}
 
-    PX4_INFO("Who am I OK!");
+	PX4_INFO("Who am I OK!");
 
 	return PX4_OK;
 }
@@ -137,19 +137,19 @@ uint8_t ICM20948i2c::readRegister(uint8_t reg)
 
 void ICM20948i2c::setBank(uint8_t bank)
 {
-    setRegister((uint8_t) (Register::BANK_0::REG_BANK_SEL),bank);
+	setRegister((uint8_t)(Register::BANK_0::REG_BANK_SEL), bank);
 }
 
 void ICM20948i2c::setRegister(uint8_t bank, uint8_t reg, uint8_t value)
 {
-    setBank(bank);
-    setRegister(reg,value);
+	setBank(bank);
+	setRegister(reg, value);
 }
 
 uint8_t ICM20948i2c::readRegister(uint8_t bank, uint8_t reg)
 {
-    setBank(bank);
-    return readRegister(reg);
+	setBank(bank);
+	return readRegister(reg);
 }
 
 
