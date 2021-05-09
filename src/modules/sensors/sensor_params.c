@@ -49,7 +49,11 @@
  * @value 0 Model with Pitot
  * @value 1 Model without Pitot (1.5 mm tubes)
  * @value 2 Tube Pressure Drop
+<<<<<<< refs/remotes/upstream/master
  * @value 3 Venturi effect airspeed sensor
+=======
+ * @value 3 TFSLOT - NACAxxxx (Venturi based airspeed sensor)
+>>>>>>> add calculation of airspeed profile for TFSLOT, selectable by parameter
  *
  * @group Sensors
  */
