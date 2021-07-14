@@ -43,7 +43,7 @@
 	url = https://github.com/ATLFlight/dspal.git
 [submodule "Tools/flightgear_bridge"]
 	path = Tools/flightgear_bridge
-	url = https://github.com/PX4/PX4-FlightGear-Bridge.git
+	url = https://github.com/ThunderFly-aerospace/PX4-FlightGear-Bridge.git
 [submodule "Tools/jsbsim_bridge"]
 	path = Tools/jsbsim_bridge
 	url = https://github.com/PX4/px4-jsbsim-bridge.git
