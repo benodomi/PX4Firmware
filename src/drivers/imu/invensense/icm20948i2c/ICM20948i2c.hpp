@@ -31,52 +31,52 @@
  *
  ****************************************************************************/
 
-#include "PCF8583.hpp"
+/**
+ * @file ICM20948i2c.hpp
+ *
+ * Driver for the Invensense ICM20948i2c connected via I2C.
+ *
+ */
 
-#include <px4_platform_common/getopt.h>
-#include <px4_platform_common/module.h>
+#pragma once
 
-void
-PCF8583::print_usage()
+#include "InvenSense_ICM20948i2c_registers.hpp"
+
+#include <drivers/drv_hrt.h>
+#include <lib/drivers/accelerometer/PX4Accelerometer.hpp>
+#include <lib/drivers/device/i2c.h>
+#include <lib/drivers/gyroscope/PX4Gyroscope.hpp>
+#include <lib/ecl/geo/geo.h>
+#include <lib/perf/perf_counter.h>
+#include <px4_platform_common/atomic.h>
+#include <px4_platform_common/i2c_spi_buses.h>
+
+//#include "ICM20948_AK09916.hpp"
+
+class ICM20948i2c : public device::I2C, public I2CSPIDriver<ICM20948i2c>
 {
-	PRINT_MODULE_USAGE_NAME("pcf8583", "driver");
-	PRINT_MODULE_USAGE_COMMAND("start");
-	PRINT_MODULE_USAGE_PARAMS_I2C_SPI_DRIVER(true, false);
-	PRINT_MODULE_USAGE_PARAMS_I2C_ADDRESS(80);
-	PRINT_MODULE_USAGE_DEFAULT_COMMANDS();
-}
+public:
+	ICM20948i2c(I2CSPIBusOption bus_option, const int bus, int bus_frequency);
+	~ICM20948i2c() override = default;
 
-extern "C" __EXPORT int pcf8583_main(int argc, char *argv[])
-{
-	using ThisDriver = PCF8583;
-	BusCLIArguments cli{true, false};
-	cli.default_i2c_frequency = 100000;
+	static I2CSPIDriverBase *instantiate(const BusCLIArguments &cli, const BusInstanceIterator &iterator,
+					     int runtime_instance);
+	static void print_usage();
 
-	int32_t addr{80};
-	param_get(param_find("PCF8583_ADDR"), &addr);
-	cli.i2c_address = addr;
+	void RunImpl();
 
-	const char *verb = cli.parseDefaultArguments(argc, argv);
+	int init() override;
+	void print_status() override;
 
-	if (!verb) {
-		ThisDriver::print_usage();
-		return -1;
-	}
+private:
+	void exit_and_cleanup() override;
+	int probe() override;
 
-	BusInstanceIterator iterator(MODULE_NAME, cli, DRV_SENS_DEVTYPE_PCF8583);
+	uint8_t        readRegister(uint8_t reg);
+	void           setRegister(uint8_t reg, uint8_t value);
 
-	if (!strcmp(verb, "start")) {
-		return ThisDriver::module_start(cli, iterator);
-	}
+	void           setBank(uint8_t bank);
+	void           setRegister(uint8_t bank, uint8_t reg, uint8_t value);
+	uint8_t        readRegister(uint8_t bank, uint8_t reg);
 
-	if (!strcmp(verb, "stop")) {
-		return ThisDriver::module_stop(iterator);
-	}
-
-	if (!strcmp(verb, "status")) {
-		return ThisDriver::module_status(iterator);
-	}
-
-	ThisDriver::print_usage();
-	return -1;
-}
+};

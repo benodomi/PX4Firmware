@@ -31,30 +31,59 @@
  *
  ****************************************************************************/
 
-#include "PCF8583.hpp"
+#include "ICM20948i2c.hpp"
 
 #include <px4_platform_common/getopt.h>
 #include <px4_platform_common/module.h>
 
-void
-PCF8583::print_usage()
+void ICM20948i2c::print_usage()
 {
-	PRINT_MODULE_USAGE_NAME("pcf8583", "driver");
+	PRINT_MODULE_USAGE_NAME("icm20948i2c", "driver");
+	PRINT_MODULE_USAGE_SUBCATEGORY("imu");
 	PRINT_MODULE_USAGE_COMMAND("start");
 	PRINT_MODULE_USAGE_PARAMS_I2C_SPI_DRIVER(true, false);
-	PRINT_MODULE_USAGE_PARAMS_I2C_ADDRESS(80);
+	//PRINT_MODULE_USAGE_PARAM_FLAG('M', "Enable Magnetometer (AK8963)", true);
+	//PRINT_MODULE_USAGE_PARAM_INT('R', 0, 0, 35, "Rotation", true);
 	PRINT_MODULE_USAGE_DEFAULT_COMMANDS();
 }
 
-extern "C" __EXPORT int pcf8583_main(int argc, char *argv[])
+I2CSPIDriverBase *ICM20948i2c::instantiate(const BusCLIArguments &cli, const BusInstanceIterator &iterator,
+		int runtime_instance)
 {
-	using ThisDriver = PCF8583;
+	ICM20948i2c *instance = new ICM20948i2c(iterator.configuredBusOption(), iterator.bus(), cli.bus_frequency);
+
+	if (!instance) {
+		PX4_ERR("alloc failed");
+		return nullptr;
+	}
+
+	if (OK != instance->init()) {
+		delete instance;
+		return nullptr;
+	}
+
+	return instance;
+}
+
+extern "C" int icm20948i2c_main(int argc, char *argv[])
+{
+	//int ch;
+	using ThisDriver = ICM20948i2c;
 	BusCLIArguments cli{true, false};
 	cli.default_i2c_frequency = 100000;
+	//cli.default_spi_frequency = SPI_SPEED;
 
-	int32_t addr{80};
-	param_get(param_find("PCF8583_ADDR"), &addr);
-	cli.i2c_address = addr;
+	/*while ((ch = cli.getopt(argc, argv, "MR:")) != EOF) {
+		switch (ch) {
+		case 'M':
+			cli.custom1 = 1;
+			break;
+
+		case 'R':
+			cli.rotation = (enum Rotation)atoi(cli.optarg());
+			break;
+		}
+	}*/
 
 	const char *verb = cli.parseDefaultArguments(argc, argv);
 
@@ -63,7 +92,7 @@ extern "C" __EXPORT int pcf8583_main(int argc, char *argv[])
 		return -1;
 	}
 
-	BusInstanceIterator iterator(MODULE_NAME, cli, DRV_SENS_DEVTYPE_PCF8583);
+	BusInstanceIterator iterator(MODULE_NAME, cli, DRV_IMU_DEVTYPE_ICM20948I2C);
 
 	if (!strcmp(verb, "start")) {
 		return ThisDriver::module_start(cli, iterator);
