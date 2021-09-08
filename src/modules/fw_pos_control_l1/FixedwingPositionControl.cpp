@@ -1,6 +1,7 @@
 /****************************************************************************
  *
  *   Copyright (c) 2013-2019 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2020-2021 ThunderFly s.r.o., All rights reserved,
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -55,7 +56,8 @@ FixedwingPositionControl::FixedwingPositionControl(bool vtol) :
 	_attitude_sp_pub(vtol ? ORB_ID(fw_virtual_attitude_setpoint) : ORB_ID(vehicle_attitude_setpoint)),
 	_loop_perf(perf_alloc(PC_ELAPSED, MODULE_NAME": cycle")),
 	_launchDetector(this),
-	_runway_takeoff(this)
+	_runway_takeoff(this),
+	_autogyro_takeoff(this)
 {
 	if (vtol) {
 		_param_handle_airspeed_trans = param_find("VT_ARSP_TRANS");
@@ -293,6 +295,17 @@ FixedwingPositionControl::manual_control_setpoint_poll()
 	}
 }
 
+
+void
+FixedwingPositionControl::rpm_poll()
+{
+	if (_rpm_sub.updated()) {
+		_rpm_sub.copy(&_rpm);
+		_rpm_frequency = _rpm.indicated_frequency_rpm;
+	}
+
+	//PX4_INFO("RPM: %g", (double) _rpm_frequency);
+}
 
 void
 FixedwingPositionControl::vehicle_attitude_poll()
@@ -657,8 +670,15 @@ FixedwingPositionControl::in_takeoff_situation()
 	}
 
 	// in air for < 10s
-	return (hrt_elapsed_time(&_time_went_in_air) < 10_s)
-	       && (_current_altitude <= _takeoff_ground_alt + _param_fw_clmbout_diff.get());
+
+	PX4_INFO("in_tkf: %d %d", (bool)(_current_altitude <= _takeoff_ground_alt + _param_fw_clmbout_diff.get()),
+		 (bool) _autogyro_takeoff.climbout());
+	return (_current_altitude <= _takeoff_ground_alt + _param_fw_clmbout_diff.get())
+	       && (_autogyro_takeoff.climbout());
+	//&& (!_autogyro_takeoff.isInitialized() || _autogyro_takeoff.climbout());
+	//return (hrt_elapsed_time(&_time_went_in_air) < 10_s)
+	//   && (_current_altitude <= _takeoff_ground_alt + _param_fw_clmbout_diff.get())
+	//   //&& (!_autogyro_takeoff.isInitialized() || _autogyro_takeoff.climbout());
 }
 
 void
@@ -831,14 +851,17 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 		uint8_t position_sp_type = pos_sp_curr.type;
 
 		if (pos_sp_curr.type == position_setpoint_s::SETPOINT_TYPE_TAKEOFF) {
+			PX4_INFO("Stale to je takeoff");
 			// TAKEOFF: handle like a regular POSITION setpoint if already flying
-			if (!in_takeoff_situation() && (_airspeed >= _param_fw_airspd_min.get() || !_airspeed_valid)) {
-				// SETPOINT_TYPE_TAKEOFF -> SETPOINT_TYPE_POSITION
-				position_sp_type = position_setpoint_s::SETPOINT_TYPE_POSITION;
-			}
+			// if (!in_takeoff_situation() && (_airspeed >= _param_fw_airspd_min.get() || !_airspeed_valid)) {
+			// 	// SETPOINT_TYPE_TAKEOFF -> SETPOINT_TYPE_POSITION
+			//     PX4_INFO("PREPINAM DO POSITION...");
+			//     position_sp_type = position_setpoint_s::SETPOINT_TYPE_POSITION;
+			// }
 
 		} else if (pos_sp_curr.type == position_setpoint_s::SETPOINT_TYPE_POSITION
 			   || pos_sp_curr.type == position_setpoint_s::SETPOINT_TYPE_LOITER) {
+			PX4_INFO("POS nebo LOITER");
 
 			float dist_xy = -1.f;
 			float dist_z = -1.f;
@@ -928,8 +951,8 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 						   false,
 						   radians(_param_fw_p_lim_min.get()));
 
-
 		} else if (position_sp_type == position_setpoint_s::SETPOINT_TYPE_LOITER) {
+			PX4_INFO("SP: loiter");
 			/* waypoint is a loiter waypoint */
 			float loiter_radius = pos_sp_curr.loiter_radius;
 			uint8_t loiter_direction = pos_sp_curr.loiter_direction;
@@ -1043,6 +1066,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 
 		if (_landed && (fabsf(_manual_control_setpoint_airspeed) < THROTTLE_THRESH)) {
 			throttle_max = 0.0f;
+			PX4_INFO("MIN MOTOR");
 		}
 
 		tecs_update_pitch_throttle(now, _hold_alt,
@@ -1193,7 +1217,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 	if (_control_mode_current == FW_POSCTRL_MODE_AUTO && // launchdetector only available in auto
 	    pos_sp_curr.type == position_setpoint_s::SETPOINT_TYPE_TAKEOFF &&
 	    _launch_detection_state != LAUNCHDETECTION_RES_DETECTED_ENABLEMOTORS &&
-	    !_runway_takeoff.runwayTakeoffEnabled()) {
+	    !_runway_takeoff.runwayTakeoffEnabled() && !_autogyro_takeoff.autogyroTakeoffEnabled()) {
 
 		/* making sure again that the correct thrust is used,
 		 * without depending on library calls for safety reasons.
@@ -1203,8 +1227,13 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 	} else if (_control_mode_current == FW_POSCTRL_MODE_AUTO &&
 		   pos_sp_curr.type == position_setpoint_s::SETPOINT_TYPE_TAKEOFF &&
 		   _runway_takeoff.runwayTakeoffEnabled()) {
-
 		_att_sp.thrust_body[0] = _runway_takeoff.getThrottle(now, min(get_tecs_thrust(), throttle_max));
+
+	} else if (_control_mode_current == FW_POSCTRL_MODE_AUTO &&
+		   pos_sp_curr.type == position_setpoint_s::SETPOINT_TYPE_TAKEOFF &&
+		   _autogyro_takeoff.autogyroTakeoffEnabled()) {
+		PX4_INFO("TESC .... %f, %d", (double) get_tecs_thrust(), (int) _is_tecs_running);
+		_att_sp.thrust_body[0] = _autogyro_takeoff.getThrottle(now, min(get_tecs_thrust(), throttle_max));
 
 	} else if (_control_mode_current == FW_POSCTRL_MODE_AUTO &&
 		   pos_sp_curr.type == position_setpoint_s::SETPOINT_TYPE_IDLE) {
@@ -1221,6 +1250,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 			_att_sp.thrust_body[0] = min(_param_fw_thr_idle.get(), throttle_max);
 
 		} else {
+			PX4_INFO("TESC .... %f", (double) get_tecs_thrust());
 			_att_sp.thrust_body[0] = min(get_tecs_thrust(), throttle_max);
 		}
 	}
@@ -1232,7 +1262,8 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 	// auto runway takeoff
 	use_tecs_pitch &= !(_control_mode_current == FW_POSCTRL_MODE_AUTO &&
 			    pos_sp_curr.type == position_setpoint_s::SETPOINT_TYPE_TAKEOFF &&
-			    (_launch_detection_state == LAUNCHDETECTION_RES_NONE || _runway_takeoff.runwayTakeoffEnabled()));
+			    (_launch_detection_state == LAUNCHDETECTION_RES_NONE || _runway_takeoff.runwayTakeoffEnabled()
+			     || _autogyro_takeoff.autogyroTakeoffEnabled()));
 
 	// flaring during landing
 	use_tecs_pitch &= !(pos_sp_curr.type == position_setpoint_s::SETPOINT_TYPE_LAND && _land_noreturn_vertical);
@@ -1258,6 +1289,7 @@ void
 FixedwingPositionControl::control_takeoff(const hrt_abstime &now, const float dt, const Vector2d &curr_pos,
 		const Vector2f &ground_speed, const position_setpoint_s &pos_sp_prev, const position_setpoint_s &pos_sp_curr)
 {
+	PX4_INFO("Control tf");
 	/* current waypoint (the one currently heading for) */
 	Vector2d curr_wp(pos_sp_curr.lat, pos_sp_curr.lon);
 	Vector2d prev_wp{0, 0}; /* previous waypoint */
@@ -1286,7 +1318,54 @@ FixedwingPositionControl::control_takeoff(const hrt_abstime &now, const float dt
 		_launch_detection_notify = 0;
 	}
 
-	if (_runway_takeoff.runwayTakeoffEnabled()) {
+	if (_autogyro_takeoff.autogyroTakeoffEnabled()) {
+		if (!_autogyro_takeoff.isInitialized()) {
+			_autogyro_takeoff.init(now, _yaw, _current_latitude, _current_longitude);
+
+			/* need this already before takeoff is detected
+			 * doesn't matter if it gets reset when takeoff is detected eventually */
+			_takeoff_ground_alt = _current_altitude;
+			mavlink_log_info(&_mavlink_log_pub, "Autogyro takeoff started");
+		}
+
+		//float terrain_alt = get_terrain_altitude_takeoff(_takeoff_ground_alt);
+
+		// update autogyro takeoff helper
+		_autogyro_takeoff.update(now, _airspeed, _rpm_frequency, _current_altitude - _takeoff_ground_alt,
+					 _current_latitude, _current_longitude, &_mavlink_log_pub);
+		PX4_INFO("AG_TF - state %d", _autogyro_takeoff.getState());
+
+		/*
+		 * Update navigation: _autogyro_takeoff returns the start WP according to mode and phase.
+		 * If we use the navigator heading or not is decided later.
+		 */
+		_l1_control.navigate_waypoints(_autogyro_takeoff.getStartWP(), curr_wp, curr_pos, ground_speed);
+
+		// update tecs
+		const float takeoff_pitch_max_deg = _autogyro_takeoff.getMaxPitch(_param_fw_p_lim_max.get());
+
+		tecs_update_pitch_throttle(now, pos_sp_curr.alt,
+					   calculate_target_airspeed(_autogyro_takeoff.getMinAirspeedScaling() * _param_fw_airspd_min.get(), ground_speed),
+					   radians(_param_fw_p_lim_min.get()),
+					   radians(takeoff_pitch_max_deg),
+					   _param_fw_thr_min.get(),
+					   _param_fw_thr_max.get(), // XXX should we also set autogyro_takeoff_throttle here?
+					   _param_fw_thr_cruise.get(),
+					   _autogyro_takeoff.climbout(),
+					   radians(_autogyro_takeoff.getMinPitch(_takeoff_pitch_min.get(), _param_fw_p_lim_min.get())),
+					   tecs_status_s::TECS_MODE_TAKEOFF);
+
+		// assign values
+		_att_sp.roll_body = _autogyro_takeoff.getRoll(_l1_control.get_roll_setpoint());
+		_att_sp.yaw_body = _autogyro_takeoff.getYaw(_l1_control.nav_bearing());
+		_att_sp.fw_control_yaw = _autogyro_takeoff.controlYaw();
+		_att_sp.pitch_body = _autogyro_takeoff.getPitch(get_tecs_pitch());
+
+		// reset integrals except yaw (which also counts for the wheel controller)
+		_att_sp.roll_reset_integral = _autogyro_takeoff.resetIntegrators();
+		_att_sp.pitch_reset_integral = _autogyro_takeoff.resetIntegrators();
+
+	} else if (_runway_takeoff.runwayTakeoffEnabled()) {
 		if (!_runway_takeoff.isInitialized()) {
 			_runway_takeoff.init(now, _yaw, _current_latitude, _current_longitude);
 
@@ -1824,6 +1903,7 @@ FixedwingPositionControl::Run()
 		}
 
 		airspeed_poll();
+		rpm_poll();
 		manual_control_setpoint_poll();
 		vehicle_attitude_poll();
 		vehicle_command_poll();
@@ -1889,7 +1969,7 @@ FixedwingPositionControl::reset_takeoff_state(bool force)
 	if (!_control_mode.flag_armed || (_was_in_air && _landed) || force) {
 
 		_runway_takeoff.reset();
-
+		// _autogyro_takeoff.reset();
 		_launchDetector.reset();
 		_launch_detection_state = LAUNCHDETECTION_RES_NONE;
 		_launch_detection_notify = 0;
@@ -1931,7 +2011,8 @@ FixedwingPositionControl::tecs_update_pitch_throttle(const hrt_abstime &now, flo
 	_last_tecs_update = now;
 
 	// do not run TECS if we are not in air
-	bool run_tecs = !_landed;
+	//bool run_tecs = !_landed;
+	bool run_tecs = true;
 
 	// do not run TECS if vehicle is a VTOL and we are in rotary wing mode or in transition
 	// (it should also not run during VTOL blending because airspeed is too low still)
