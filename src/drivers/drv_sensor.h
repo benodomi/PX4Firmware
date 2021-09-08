@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2012-2020 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2012-2021 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -141,7 +141,8 @@
 #define DRV_DIST_DEVTYPE_TERARANGER   0x75
 #define DRV_DIST_DEVTYPE_VL53L0X      0x76
 #define DRV_POWER_DEVTYPE_INA226      0x77
-#define DRV_POWER_DEVTYPE_VOXLPM      0x78
+#define DRV_POWER_DEVTYPE_INA228      0x78
+#define DRV_POWER_DEVTYPE_VOXLPM      0x79
 
 #define DRV_LED_DEVTYPE_RGBLED        0x7a
 #define DRV_LED_DEVTYPE_RGBLED_NCP5623C 0x7b
@@ -162,21 +163,23 @@
 #define DRV_MAG_DEVTYPE_UAVCAN	0x88
 #define DRV_DIST_DEVTYPE_UAVCAN	0x89
 
-#define DRV_ADC_DEVTYPE_ADS1115	0x90
-#define DRV_DIST_DEVTYPE_VL53L1X 0x91
-#define DRV_DIST_DEVTYPE_CM8JL65 0x92
-#define DRV_DIST_DEVTYPE_LEDDARONE 0x93
-#define DRV_DIST_DEVTYPE_MAVLINK 0x94
-#define DRV_DIST_DEVTYPE_PGA460 0x95
-#define DRV_DIST_DEVTYPE_PX4FLOW 0x96
-#define DRV_DIST_DEVTYPE_TFMINI 0x97
-#define DRV_DIST_DEVTYPE_ULANDING 0x98
+#define DRV_ADC_DEVTYPE_ADS1115        0x90
 
-#define DRV_GPIO_DEVTYPE_MCP23009	0x99
+#define DRV_DIST_DEVTYPE_VL53L1X       0x91
+#define DRV_DIST_DEVTYPE_CM8JL65       0x92
+#define DRV_DIST_DEVTYPE_LEDDARONE     0x93
+#define DRV_DIST_DEVTYPE_MAVLINK       0x94
+#define DRV_DIST_DEVTYPE_PGA460        0x95
+#define DRV_DIST_DEVTYPE_PX4FLOW       0x96
+#define DRV_DIST_DEVTYPE_TFMINI        0x97
+#define DRV_DIST_DEVTYPE_ULANDING      0x98
+#define DRV_DIST_DEVTYPE_AFBRS50       0x99
+#define DRV_DIST_DEVTYPE_SIM           0x9A
+#define DRV_DIST_DEVTYPE_SRF05         0x9B
+#define DRV_DIST_DEVTYPE_GY_US42       0x9C
 
-#define DRV_DIST_DEVTYPE_SIM 0x9a
-#define DRV_DIST_DEVTYPE_SRF05 0x9b
-#define DRV_DIST_DEVTYPE_GY_US42 0x9c
+#define DRV_BAT_DEVTYPE_BATMON_SMBUS   0x9d
+#define DRV_GPIO_DEVTYPE_MCP23009      0x9F
 
 #define DRV_GPS_DEVTYPE_ASHTECH 0xA0
 #define DRV_GPS_DEVTYPE_EMLID_REACH 0xA1
@@ -192,7 +195,6 @@
 
 #define DRV_GPS_DEVTYPE_SIM 0xAF
 
-#define DRV_IMU_DEVTYPE_ICM20948I2C 0x92
 
 #define DRV_DEVTYPE_UNUSED		0xff
 

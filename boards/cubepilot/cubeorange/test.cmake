@@ -1,9 +1,6 @@
 
 px4_add_board(
 	PLATFORM nuttx
-	VENDOR cubepilot
-	MODEL cubeorange
-	LABEL test
 	TOOLCHAIN arm-none-eabi
 	ARCHITECTURE cortex-m7
 	ROMFSROOT px4fmu_common
@@ -47,8 +44,9 @@ px4_add_board(
 		pwm_out_sim
 		pwm_out
 		px4io
-		roboclaw
+		#roboclaw
 		rpm
+		#smart_battery/batmon
 		telemetry # all available telemetry drivers
 		test_ppm
 		tone_alarm
@@ -99,6 +97,7 @@ px4_add_board(
 		i2cdetect
 		led_control
 		mft
+		microbench
 		mixer
 		motor_ramp
 		motor_test
@@ -108,7 +107,7 @@ px4_add_board(
 		perf
 		pwm
 		reboot
-		reflect
+		#reflect
 		sd_bench
 		#serial_test
 		system_time
@@ -122,7 +121,7 @@ px4_add_board(
 		work_queue
 	EXAMPLES
 		fake_gps
-		#fake_gyro
+		#fake_imu
 		#fake_magnetometer
 		#fixedwing_control # Tutorial code from https://px4.io/dev/example_fixedwing_control
 		#hello

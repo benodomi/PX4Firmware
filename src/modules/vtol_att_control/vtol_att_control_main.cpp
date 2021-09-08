@@ -160,7 +160,7 @@ void VtolAttitudeControl::vehicle_cmd_poll()
 
 			} else {
 				_transition_command = int(vehicle_command.param1 + 0.5f);
-				_immediate_transition = int(vehicle_command.param2 + 0.5f);
+				_immediate_transition = (PX4_ISFINITE(vehicle_command.param2)) ? int(vehicle_command.param2 + 0.5f) : false;
 			}
 
 			if (vehicle_command.from_external) {
@@ -203,7 +203,7 @@ void
 VtolAttitudeControl::quadchute(const char *reason)
 {
 	if (!_vtol_vehicle_status.vtol_transition_failsafe) {
-		mavlink_log_critical(&_mavlink_log_pub, "Abort: %s", reason);
+		mavlink_log_critical(&_mavlink_log_pub, "Quadchute: %s", reason);
 		_vtol_vehicle_status.vtol_transition_failsafe = true;
 	}
 }

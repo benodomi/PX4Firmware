@@ -1,9 +1,6 @@
 
 px4_add_board(
 	PLATFORM nuttx
-	VENDOR px4
-	MODEL fmu-v5
-	LABEL uavcanv0periph
 	TOOLCHAIN arm-none-eabi
 	ARCHITECTURE cortex-m7
 	ROMFSROOT px4fmu_common
@@ -54,6 +51,7 @@ px4_add_board(
 		#roboclaw
 		#rpm
 		safety_button
+		smart_battery/batmon
 		telemetry # all available telemetry drivers
 		tone_alarm
 		uavcan
@@ -124,7 +122,7 @@ px4_add_board(
 		work_queue
 	EXAMPLES
 		fake_gps
-		#fake_gyro
+		#fake_imu
 		#fake_magnetometer
 		#fixedwing_control # Tutorial code from https://px4.io/dev/example_fixedwing_control
 		#hello
