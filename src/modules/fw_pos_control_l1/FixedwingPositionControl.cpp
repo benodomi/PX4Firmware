@@ -676,8 +676,8 @@ FixedwingPositionControl::in_takeoff_situation()
 //		 (bool) _autogyro_takeoff.climbout());
 
 	return (hrt_elapsed_time(&_time_went_in_air) < 10_s)
-	   && (_current_altitude <= _takeoff_ground_alt + _param_fw_clmbout_diff.get())
-	   && (!_autogyro_takeoff.isInitialized() || _autogyro_takeoff.climbout());
+	       && (_current_altitude <= _takeoff_ground_alt + _param_fw_clmbout_diff.get())
+	       && (!_autogyro_takeoff.isInitialized() || _autogyro_takeoff.climbout());
 }
 
 void
@@ -856,7 +856,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 			if (!in_takeoff_situation() && (_airspeed >= _param_fw_airspd_min.get() || !_airspeed_valid)) {
 				// SETPOINT_TYPE_TAKEOFF -> SETPOINT_TYPE_POSITION
 //			    PX4_INFO("PREPINAM DO POSITION... v FW Pos ctrl .cpp");
-			    position_sp_type = position_setpoint_s::SETPOINT_TYPE_POSITION;
+				position_sp_type = position_setpoint_s::SETPOINT_TYPE_POSITION;
 			}
 
 		} else if (pos_sp_curr.type == position_setpoint_s::SETPOINT_TYPE_POSITION
