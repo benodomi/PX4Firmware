@@ -618,6 +618,7 @@ FixedwingPositionControl::update_desired_altitude(float dt)
 bool
 FixedwingPositionControl::in_takeoff_situation()
 {
+
 	// a VTOL does not need special takeoff handling
 	if (_vehicle_status.is_vtol) {
 		return false;
@@ -625,14 +626,12 @@ FixedwingPositionControl::in_takeoff_situation()
 
 	// in air for < 10s
 
-	PX4_INFO("in_tkf: %d %d", (bool)(_current_altitude <= _takeoff_ground_alt + _param_fw_clmbout_diff.get()),
-		 (bool) _autogyro_takeoff.climbout());
-	return (_current_altitude <= _takeoff_ground_alt + _param_fw_clmbout_diff.get())
-	       && (_autogyro_takeoff.climbout());
-	//&& (!_autogyro_takeoff.isInitialized() || _autogyro_takeoff.climbout());
-	//return (hrt_elapsed_time(&_time_went_in_air) < 10_s)
-	//   && (_current_altitude <= _takeoff_ground_alt + _param_fw_clmbout_diff.get())
-	//   //&& (!_autogyro_takeoff.isInitialized() || _autogyro_takeoff.climbout());
+//TF	PX4_INFO("in_tkf: %d %d", (bool)(_current_altitude <= _takeoff_ground_alt + _param_fw_clmbout_diff.get()),
+//		 (bool) _autogyro_takeoff.climbout());
+
+	return (hrt_elapsed_time(&_time_went_in_air) < 10_s)
+	   && (_current_altitude <= _takeoff_ground_alt + _param_fw_clmbout_diff.get())
+	   && (!_autogyro_takeoff.isInitialized() || _autogyro_takeoff.climbout());
 }
 
 void
@@ -802,20 +801,21 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 
 		const float acc_rad = _l1_control.switch_distance(500.0f);
 
+//TF        PX4_INFO("CURRENT TYPE: %d, PREV: %d", pos_sp_curr.type, pos_sp_prev.type);
 		uint8_t position_sp_type = pos_sp_curr.type;
 
 		if (pos_sp_curr.type == position_setpoint_s::SETPOINT_TYPE_TAKEOFF) {
-			PX4_INFO("Stale to je takeoff");
+//TF			PX4_INFO("Stale to je takeoff");
 			// TAKEOFF: handle like a regular POSITION setpoint if already flying
-			// if (!in_takeoff_situation() && (_airspeed >= _param_fw_airspd_min.get() || !_airspeed_valid)) {
-			// 	// SETPOINT_TYPE_TAKEOFF -> SETPOINT_TYPE_POSITION
-			//     PX4_INFO("PREPINAM DO POSITION...");
-			//     position_sp_type = position_setpoint_s::SETPOINT_TYPE_POSITION;
-			// }
+			if (!in_takeoff_situation() && (_airspeed >= _param_fw_airspd_min.get() || !_airspeed_valid)) {
+				// SETPOINT_TYPE_TAKEOFF -> SETPOINT_TYPE_POSITION
+//			    PX4_INFO("PREPINAM DO POSITION... v FW Pos ctrl .cpp");
+			    position_sp_type = position_setpoint_s::SETPOINT_TYPE_POSITION;
+			}
 
 		} else if (pos_sp_curr.type == position_setpoint_s::SETPOINT_TYPE_POSITION
 			   || pos_sp_curr.type == position_setpoint_s::SETPOINT_TYPE_LOITER) {
-			PX4_INFO("POS nebo LOITER");
+//TF			PX4_INFO("POS nebo LOITER");
 
 			float dist_xy = -1.f;
 			float dist_z = -1.f;
@@ -832,7 +832,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 				    && (dist_z > 2.f * _param_fw_clmbout_diff.get())
 				    && (dist_xy < 2.f * math::max(acc_rad, fabsf(pos_sp_curr.loiter_radius)))) {
 					// SETPOINT_TYPE_POSITION -> SETPOINT_TYPE_LOITER
-					position_sp_type = position_setpoint_s::SETPOINT_TYPE_LOITER;
+// TF					position_sp_type = position_setpoint_s::SETPOINT_TYPE_LOITER;
 				}
 
 			} else if (pos_sp_curr.type == position_setpoint_s::SETPOINT_TYPE_LOITER) {
@@ -841,7 +841,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 				    && (dist_z > 2.f * _param_fw_clmbout_diff.get())
 				    && (dist_xy > 2.f * math::max(acc_rad, fabsf(pos_sp_curr.loiter_radius)))) {
 					// SETPOINT_TYPE_LOITER -> SETPOINT_TYPE_POSITION
-					position_sp_type = position_setpoint_s::SETPOINT_TYPE_POSITION;
+//TF					position_sp_type = position_setpoint_s::SETPOINT_TYPE_POSITION;
 				}
 			}
 		}
@@ -855,6 +855,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 			_att_sp.pitch_body = radians(_param_fw_psp_off.get());
 
 		} else if (position_sp_type == position_setpoint_s::SETPOINT_TYPE_POSITION) {
+//TF			PX4_INFO("SP: POSIITION");
 			// waypoint is a plain navigation waypoint
 			float position_sp_alt = pos_sp_curr.alt;
 
@@ -906,7 +907,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 						   radians(_param_fw_p_lim_min.get()));
 
 		} else if (position_sp_type == position_setpoint_s::SETPOINT_TYPE_LOITER) {
-			PX4_INFO("SP: loiter");
+//TF			PX4_INFO("SP: loiter");
 			/* waypoint is a loiter waypoint */
 			float loiter_radius = pos_sp_curr.loiter_radius;
 			uint8_t loiter_direction = pos_sp_curr.loiter_direction;
@@ -966,7 +967,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 			control_landing(now, curr_pos, ground_speed, pos_sp_prev, pos_sp_curr);
 
 		} else if (position_sp_type == position_setpoint_s::SETPOINT_TYPE_TAKEOFF) {
-			PX4_INFO("SP: TAKEOFF");
+//TF			PX4_INFO("SP: TAKEOFF");
 			control_takeoff(now, curr_pos, ground_speed, pos_sp_prev, pos_sp_curr);
 		}
 
@@ -1021,7 +1022,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 
 		if (_landed && (fabsf(_manual_control_setpoint_airspeed) < THROTTLE_THRESH)) {
 			throttle_max = 0.0f;
-			PX4_INFO("MIN MOTOR");
+//TF			PX4_INFO("MIN MOTOR");
 		}
 
 		tecs_update_pitch_throttle(now, _hold_alt,
@@ -1177,7 +1178,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 	} else if (_control_mode_current == FW_POSCTRL_MODE_AUTO &&
 		   pos_sp_curr.type == position_setpoint_s::SETPOINT_TYPE_TAKEOFF &&
 		   _autogyro_takeoff.autogyroTakeoffEnabled()) {
-		PX4_INFO("TESC .... %f, %d", (double) get_tecs_thrust(), (int) _is_tecs_running);
+//TF		PX4_INFO("TESC .... %f, %d", (double) get_tecs_thrust(), (int) _is_tecs_running);
 		_att_sp.thrust_body[0] = _autogyro_takeoff.getThrottle(now, min(get_tecs_thrust(), throttle_max));
 
 	} else if (_control_mode_current == FW_POSCTRL_MODE_AUTO &&
@@ -1195,7 +1196,7 @@ FixedwingPositionControl::control_position(const hrt_abstime &now, const Vector2
 			_att_sp.thrust_body[0] = min(_param_fw_thr_idle.get(), throttle_max);
 
 		} else {
-			PX4_INFO("TESC .... %f", (double) get_tecs_thrust());
+//TF			PX4_INFO("TESC .... %f", (double) get_tecs_thrust());
 			_att_sp.thrust_body[0] = min(get_tecs_thrust(), throttle_max);
 		}
 	}
@@ -1234,7 +1235,7 @@ void
 FixedwingPositionControl::control_takeoff(const hrt_abstime &now, const Vector2d &curr_pos,
 		const Vector2f &ground_speed, const position_setpoint_s &pos_sp_prev, const position_setpoint_s &pos_sp_curr)
 {
-	PX4_INFO("Control tf");
+//TF	PX4_INFO("Control tf");
 	/* current waypoint (the one currently heading for) */
 	Vector2d curr_wp(pos_sp_curr.lat, pos_sp_curr.lon);
 	Vector2d prev_wp{0, 0}; /* previous waypoint */
@@ -1278,7 +1279,7 @@ FixedwingPositionControl::control_takeoff(const hrt_abstime &now, const Vector2d
 		// update autogyro takeoff helper
 		_autogyro_takeoff.update(now, _airspeed, _rpm_frequency, _current_altitude - _takeoff_ground_alt,
 					 _current_latitude, _current_longitude, &_mavlink_log_pub);
-		PX4_INFO("AG_TF - state %d", _autogyro_takeoff.getState());
+//TF		PX4_INFO("AG_TF - state %d", _autogyro_takeoff.getState());
 
 		/*
 		 * Update navigation: _autogyro_takeoff returns the start WP according to mode and phase.
