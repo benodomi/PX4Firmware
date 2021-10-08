@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2013-2014 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2013-2021 PX4 Development Team. All rights reserved.
  *   Author: Stefan Rado <px4@sradonia.net>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,6 +36,7 @@
  * @file sPort_data.c
  * @author Stefan Rado <px4@sradonia.net>
  * @author Mark Whitehorn <kd0aij@github.com>
+ * @author Roman Dvorak <dvorakroman@thunderfly.cz>
  *
  * FrSky SmartPort telemetry implementation.
  *
@@ -59,6 +60,7 @@
 #include <uORB/topics/vehicle_local_position.h>
 #include <uORB/topics/vehicle_status.h>
 #include <uORB/topics/vehicle_gps_position.h>
+#include <uORB/topics/rpm.h>
 
 #include <drivers/drv_hrt.h>
 
@@ -72,6 +74,7 @@ struct s_port_subscription_data_s {
 	uORB::SubscriptionData<vehicle_gps_position_s> vehicle_gps_position_sub{ORB_ID(vehicle_gps_position)};
 	uORB::SubscriptionData<vehicle_local_position_s> vehicle_local_position_sub{ORB_ID(vehicle_local_position)};
 	uORB::SubscriptionData<vehicle_status_s> vehicle_status_sub{ORB_ID(vehicle_status)};
+	uORB::SubscriptionData<rpm_s> rpm_sub{ORB_ID(rpm)};
 };
 
 static struct s_port_subscription_data_s *s_port_subscription_data = nullptr;
@@ -108,6 +111,7 @@ void sPort_update_topics()
 	s_port_subscription_data->vehicle_gps_position_sub.update();
 	s_port_subscription_data->vehicle_local_position_sub.update();
 	s_port_subscription_data->vehicle_status_sub.update();
+	s_port_subscription_data->rpm_sub.update();
 }
 
 static void update_crc(uint16_t *crc, unsigned char b)
@@ -174,7 +178,6 @@ void sPort_send_data(int uart, uint16_t id, uint32_t data)
 	sPort_send_byte(uart, 0xFF - crc);
 }
 
-
 // scaling correct with OpenTX 2.1.7
 void sPort_send_BATV(int uart)
 {
@@ -199,6 +202,14 @@ void sPort_send_ALT(int uart)
 	/* send data */
 	uint32_t alt = (int)(100 * s_port_subscription_data->vehicle_air_data_sub.get().baro_alt_meter);
 	sPort_send_data(uart, SMARTPORT_ID_ALT, alt);
+}
+
+// TODO: vertify scaling
+void sPort_send_RPM(int uart)
+{
+	/* send data */
+	uint16_t rpm = (int)(60 * s_port_subscription_data->rpm_sub.get().indicated_frequency_rpm);
+	sPort_send_data(uart, SMARTPORT_ID_RPM, rpm);
 }
 
 // verified scaling for "calculated" option

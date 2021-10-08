@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2013-2014 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2013-2021 PX4 Development Team. All rights reserved.
  *   Author: Stefan Rado <px4@sradonia.net>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -405,6 +405,7 @@ static int frsky_telemetry_thread_main(int argc, char *argv[])
 		uint32_t lastFUEL_ms = 0;
 		uint32_t lastVSPD_ms = 0;
 		uint32_t lastGPS_ms = 0;
+		uint32_t lastRPM_ms = 0;
 		uint32_t lastNAV_STATE_ms = 0;
 		uint32_t lastGPS_FIX_ms = 0;
 
@@ -599,6 +600,18 @@ static int frsky_telemetry_thread_main(int argc, char *argv[])
 					lastGPS_FIX_ms = now_ms;
 					/* send T2 */
 					sPort_send_GPS_FIX(uart);
+					sentPackets++;
+				}
+
+				break;
+
+			case SMARTPORT_POLL_9:
+
+				/* report RPM at 2Hz */
+				if (now_ms - lastRPM_ms > 500) {
+					lastRPM_ms = now_ms;
+					/* send speed */
+					sPort_send_RPM(uart);
 					sentPackets++;
 				}
 

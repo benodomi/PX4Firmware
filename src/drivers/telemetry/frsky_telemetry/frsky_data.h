@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2013-2014 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2013-2021 PX4 Development Team. All rights reserved.
  *   Author: Stefan Rado <px4@sradonia.net>
  *
  * Redistribution and use in source and binary forms, with or without

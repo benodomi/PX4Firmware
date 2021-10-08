@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2013-2014 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2013-2021 PX4 Development Team. All rights reserved.
  *   Author: Stefan Rado <px4@sradonia.net>
  *
  * Redistribution and use in source and binary forms, with or without
@@ -54,7 +54,10 @@
 #define SMARTPORT_POLL_6    0x00
 #define SMARTPORT_POLL_7    0x83
 #define SMARTPORT_POLL_8    0xBA
+#define SMARTPORT_POLL_9    0xE4	// For RPM value
 #define SMARTPORT_SENSOR_ID_SP2UR     0xC6 // Sensor ID  6
+/* List of physical IDs: https://github.com/jcheger/arduino-frskysp/blob/master/
+ examples/FrskySP_sensor_demo/FrskySP_sensor_demo.ino varries from captured IDs from X4R */
 
 /* FrSky SmartPort sensor IDs. See more here: https://github.com/opentx/opentx/blob/2.2/radio/src/telemetry/frsky.h */
 #define SMARTPORT_ID_RSSI          0xf101
@@ -92,6 +95,7 @@ void sPort_send_data(int uart, uint16_t id, uint32_t data);
 void sPort_send_BATV(int uart);
 void sPort_send_CUR(int uart);
 void sPort_send_ALT(int uart);
+void sPort_send_RPM(int uart);
 void sPort_send_SPD(int uart);
 void sPort_send_VSPD(int uart, float speed);
 void sPort_send_FUEL(int uart);
