@@ -33,10 +33,10 @@
  ****************************************************************************/
 
 /**
- * @file sPort_data.h
+ * @file sPort_passtrought_data.h
  * @author Mark Whitehorn <kd0aij@github.com>
  *
- * FrSky SmartPort telemetry implementation.
+ * FrSky SmartPort passtrought telemetry implementation.
  *
  */
 #ifndef _SPORT_DATA_H
@@ -45,55 +45,25 @@
 #include <sys/types.h>
 #include <stdbool.h>
 
-/* FrSky SmartPort polling IDs captured from X4R */
-#define SMARTPORT_POLL_1    0x1B
-#define SMARTPORT_POLL_2    0x34
-#define SMARTPORT_POLL_3    0x95
-#define SMARTPORT_POLL_4    0x16
-#define SMARTPORT_POLL_5    0xB7
-#define SMARTPORT_POLL_6    0x00
-#define SMARTPORT_POLL_7    0x83
-#define SMARTPORT_POLL_8    0xBA
-#define SMARTPORT_POLL_9    0xE4	// For RPM value
-#define SMARTPORT_SENSOR_ID_SP2UR     0xC6 // Sensor ID  6
-/* List of physical IDs: https://github.com/jcheger/arduino-frskysp/blob/master/
- examples/FrskySP_sensor_demo/FrskySP_sensor_demo.ino varries from captured IDs from X4R */
-
-/* FrSky SmartPort sensor IDs. See more here: https://github.com/opentx/opentx/blob/2.2/radio/src/telemetry/frsky.h */
-#define SMARTPORT_ID_RSSI          0xf101
-#define SMARTPORT_ID_RXA1          0xf102	// supplied by RX
-#define SMARTPORT_ID_RXA2          0xf103	// supplied by RX
-#define SMARTPORT_ID_BATV          0xf104
-#define SMARTPORT_ID_SWR           0xf105   // Standing Wave Ratio
-#define SMARTPORT_ID_T1            0x0400
-#define SMARTPORT_ID_T2            0x0410
-#define SMARTPORT_ID_RPM           0x0500
-#define SMARTPORT_ID_FUEL          0x0600
-#define SMARTPORT_ID_ALT           0x0100
-#define SMARTPORT_ID_VARIO         0x0110   //VSPEED
-#define SMARTPORT_ID_ACCX          0x0700
-#define SMARTPORT_ID_ACCY          0x0710
-#define SMARTPORT_ID_ACCZ          0x0720
-#define SMARTPORT_ID_CURR          0x0200
-#define SMARTPORT_ID_VFAS          0x0210  //Volt per Cell
-#define SMARTPORT_ID_CELLS         0x0300
-#define SMARTPORT_ID_GPS_LON_LAT   0x0800
-#define SMARTPORT_ID_GPS_ALT       0x0820
-#define SMARTPORT_ID_GPS_SPD       0x0830
-#define SMARTPORT_ID_GPS_CRS       0x0840
-#define SMARTPORT_ID_GPS_TIME      0x0850
-#define SMARTPORT_ID_DIY_FIRST     0x5000
-#define SMARTPORT_ID_DIY_LAST      0x50ff  //We have 256 possible ID's for custom values :)
-#define SMARTPORT_ID_DIY_NAVSTATE  0x5000
-#define SMARTPORT_ID_DIY_GPSFIX    0x5001
-
+#define PASSTROUGHT_ID_ROLLPITCH   0x5006		// roll, pitch, range
+#define PASSTROUGHT_ID_VELANDYAW   0x5005		// vertical speed, yaw
+#define PASSTROUGHT_ID_AP_STATUS   0x5001       // Flight mode, SimpleMode, LandComplete, statusArmed, battFailSafe, ekfFailSafe, failSafe, fencePresent, fenceBreached, throttle, imuTemp
+#define PASSTROUGHT_ID_GPS_STATUS  0x5002       // numSats, gpsStatus, HdopC, alt
+#define PASSTROUGHT_ID_BATT1       0x5003       // bat1Vol, bat1Current, bat1mah
+#define PASSTROUGHT_ID_BATT2       0x5008       // bat2Vol, bat2Current, bat2mah
+#define PASSTROUGHT_ID_HOME        0x5004       // homeDist, homeAlt, homeAngle
+#define PASSTROUGHT_ID_MESSAGES    0x5000
+#define PASSTROUGHT_ID_PARAMS      0x5007        // ParamID, paramValue
+#define PASSTROUGHT_ID_WAYPOINTS   0x5009        // wpNumber, wpDistance, wpXTError, wpBearing
+#define PASSTROUGHT_ID_RPM         0x500A        //RPM1, RPM2
+#define PASSTROUGHT_ID_TERRAIN     0x500B        // HeightAboveTerrain, TerrainUnhealty
+#define PASSTROUGHT_ID_RC_CHANNELS 0x50F1        // channels 1-32
+#define PASSTROUGHT_ID_VFR         0x50F2        // Airspeed, throttle, baro_alt_meter
 
 // Public functions
 bool sPort_init(void);
 void sPort_deinit(void);
 void sPort_update_topics(void);
-static void update_crc(uint16_t *crc, unsigned char b);
-static void sPort_send_byte(int uart, uint8_t value);
 void sPort_send_data(int uart, uint16_t id, uint32_t data);
 void sPort_send_BATV(int uart);
 void sPort_send_CUR(int uart);

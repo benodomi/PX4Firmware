@@ -67,6 +67,7 @@
 #include <math.h>	// NAN
 
 #include "sPort_data.h"
+#include "sPort_passtrought_data.h"
 #include "frsky_data.h"
 #include "common.h"
 
@@ -457,6 +458,8 @@ static int frsky_telemetry_thread_main(int argc, char *argv[])
 			usleep(500);
 
 			sPort_update_topics();
+
+
 
 			switch (sbuf[1]) {
 

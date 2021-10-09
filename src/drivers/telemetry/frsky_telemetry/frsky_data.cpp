@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2013-2017 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2013-2021 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -59,6 +59,7 @@
 #include <uORB/topics/vehicle_global_position.h>
 #include <uORB/topics/vehicle_gps_position.h>
 #include <uORB/topics/vehicle_status.h>
+#include <uORB/topics/rpm.h>
 
 #include <drivers/drv_hrt.h>
 
@@ -73,6 +74,7 @@ struct frsky_subscription_data_s {
 	uORB::SubscriptionData<vehicle_global_position_s> vehicle_global_position_sub{ORB_ID(vehicle_global_position)};
 	uORB::SubscriptionData<vehicle_gps_position_s> vehicle_gps_position_sub{ORB_ID(vehicle_gps_position)};
 	uORB::SubscriptionData<vehicle_status_s> vehicle_status_sub{ORB_ID(vehicle_status)};
+	uORB::SubscriptionData<rpm_s> rpm_sub{ORB_ID(rpm)};
 };
 
 static struct frsky_subscription_data_s *subscription_data = nullptr;
@@ -155,11 +157,12 @@ void frsky_update_topics()
 	subscription_data->vehicle_global_position_sub.update();
 	subscription_data->vehicle_gps_position_sub.update();
 	subscription_data->vehicle_status_sub.update();
+	subscription_data->rpm_sub.update();
 }
 
 /**
  * Sends frame 1 (every 200ms):
- *   acceleration values, barometer altitude, temperature, battery voltage & current
+ *   acceleration values, barometer altitude, temperature, battery voltage, current and RPM
  */
 void frsky_send_frame1(int uart)
 {
@@ -182,6 +185,9 @@ void frsky_send_frame1(int uart)
 
 	const vehicle_gps_position_s &gps = subscription_data->vehicle_gps_position_sub.get();
 	frsky_send_data(uart, FRSKY_ID_TEMP2, gps.satellites_used * 10 + gps.fix_type);
+
+	const rpm_s &rpm = subscription_data->rpm_sub.get();
+	frsky_send_data(uart, FRSKY_ID_RPM, (unsigned short) rpm.indicated_frequency_rpm * 60); //
 
 	frsky_send_startstop(uart);
 }

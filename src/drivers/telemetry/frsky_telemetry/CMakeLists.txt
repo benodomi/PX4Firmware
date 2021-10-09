@@ -37,8 +37,8 @@ px4_add_module(
 	SRCS
 		frsky_data.cpp
 		sPort_data.cpp
+		sPort_passtrought_data.cpp
 		frsky_telemetry.cpp
 	MODULE_CONFIG
 		module.yaml
 	)
-
