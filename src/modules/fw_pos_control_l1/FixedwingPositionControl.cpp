@@ -1346,7 +1346,7 @@ FixedwingPositionControl::control_takeoff(const hrt_abstime &now, const float dt
 		const float takeoff_pitch_max_deg = _autogyro_takeoff.getMaxPitch(_param_fw_p_lim_max.get());
 
 		tecs_update_pitch_throttle(now, pos_sp_curr.alt,
-					   calculate_target_airspeed(_autogyro_takeoff.getMinAirspeedScaling() * _param_fw_airspd_min.get(), ground_speed),
+					   calculate_target_airspeed(_autogyro_takeoff.getRequestedAirspeed(), ground_speed),
 					   radians(_param_fw_p_lim_min.get()),
 					   radians(takeoff_pitch_max_deg),
 					   _param_fw_thr_min.get(),
