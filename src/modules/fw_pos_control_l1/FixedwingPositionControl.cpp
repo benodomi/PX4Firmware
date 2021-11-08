@@ -1143,13 +1143,6 @@ FixedwingPositionControl::control_auto_loiter(const hrt_abstime &now, const Vect
 	}
 
 	float mission_airspeed = _param_fw_airspd_trim.get();
-// =======
-// 	/* Copy thrust output for publication */
-// 	if (_control_mode_current == FW_POSCTRL_MODE_AUTO && // launchdetector only available in auto
-// 	    pos_sp_curr.type == position_setpoint_s::SETPOINT_TYPE_TAKEOFF &&
-// 	    _launch_detection_state != LAUNCHDETECTION_RES_DETECTED_ENABLEMOTORS &&
-// 	    !_runway_takeoff.runwayTakeoffEnabled() && !_autogyro_takeoff.autogyroTakeoffEnabled()) {
-// >>>>>>> priprava na start
 
 	if (PX4_ISFINITE(pos_sp_curr.cruising_speed) &&
 	    pos_sp_curr.cruising_speed > 0.1f) {
