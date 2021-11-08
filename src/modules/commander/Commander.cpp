@@ -2275,7 +2275,7 @@ Commander::run()
 
 				if ((_param_takeoff_finished_action.get() == 1) && _status_flags.condition_auto_mission_available) {
 					main_state_transition(_status, commander_state_s::MAIN_STATE_AUTO_MISSION, _status_flags, _internal_state);
-				
+
 				} else {
 					main_state_transition(_status, commander_state_s::MAIN_STATE_AUTO_LOITER, _status_flags, _internal_state);
 				}
