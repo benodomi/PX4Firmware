@@ -2272,14 +2272,13 @@ Commander::run()
 			    && (_status.nav_state == vehicle_status_s::NAVIGATION_STATE_AUTO_TAKEOFF)
 			    && (mission_result.timestamp >= _status.nav_state_timestamp)
 			    && mission_result.finished) {
-//TF			        PX4_INFO("COMMANDER - ukoncuji takeoff a prepinam ....");
 
-				// if ((_param_takeoff_finished_action.get() == 1) && _status_flags.condition_auto_mission_available) {
-				// 	main_state_transition(_status, commander_state_s::MAIN_STATE_AUTO_MISSION, _status_flags, _internal_state);
-				//
-				// } else {
-				// 	main_state_transition(_status, commander_state_s::MAIN_STATE_AUTO_LOITER, _status_flags, _internal_state);
-				// }
+				if ((_param_takeoff_finished_action.get() == 1) && _status_flags.condition_auto_mission_available) {
+					main_state_transition(_status, commander_state_s::MAIN_STATE_AUTO_MISSION, _status_flags, _internal_state);
+				
+				} else {
+					main_state_transition(_status, commander_state_s::MAIN_STATE_AUTO_LOITER, _status_flags, _internal_state);
+				}
 			}
 		}
 
