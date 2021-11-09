@@ -2243,7 +2243,7 @@ FixedwingPositionControl::tecs_update_pitch_throttle(const hrt_abstime &now, flo
 					      || mode == tecs_status_s::TECS_MODE_LAND_THROTTLELIM));
 
 	/* tell TECS to update its state, but let it know when it cannot actually control the plane */
-	bool in_air_alt_control = (!_landed &&
+	bool in_air_use_tecs = (!_landed &&
 				   (_control_mode.flag_control_auto_enabled ||
 				    _control_mode.flag_control_velocity_enabled ||
 				    _control_mode.flag_control_altitude_enabled ||
