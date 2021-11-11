@@ -330,7 +330,8 @@ main_state_transition(const vehicle_status_s &status, const main_state_t new_mai
 	case commander_state_s::MAIN_STATE_AIRSPEED:
 
 		/* need at minimum airspeed estimate */
-		if (status_flags.condition_airspeed_valid) {
+		//if (status_flags.condition_airspeed_valid) {
+		if (1) {
 			ret = TRANSITION_CHANGED;
 		}
 
