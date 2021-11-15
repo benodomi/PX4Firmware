@@ -648,7 +648,7 @@ FixedwingPositionControl::in_takeoff_situation()
 	//        && (_current_altitude <= _takeoff_ground_alt + _param_fw_clmbout_diff.get())
 	//        && (!_autogyro_takeoff.isInitialized() || _autogyro_takeoff.climbout());
 
-    return (!_autogyro_takeoff.isInitialized() || _autogyro_takeoff.climbout());
+	return (!_autogyro_takeoff.isInitialized() || _autogyro_takeoff.climbout());
 
 	//return (_current_altitude <= _takeoff_ground_alt + _param_fw_clmbout_diff.get())
 	//       && (!_autogyro_takeoff.isInitialized() || _autogyro_takeoff.climbout());
