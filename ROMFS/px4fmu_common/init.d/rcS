@@ -46,6 +46,7 @@ set EXTRA_MIXER_MODE none
 set RC_INPUT_ARGS ""
 set SDCARD_AVAILABLE no
 set SDCARD_EXT_PATH /fs/microsd/ext_autostart
+set SDCARD_FORMAT no
 set SDCARD_MIXERS_PATH /fs/microsd/etc/mixers
 set STARTUP_TUNE 1
 set USE_IO no
@@ -62,24 +63,30 @@ ver all
 # REBOOTWORK this needs to start after the flight control loop.
 if mount -t vfat /dev/mmcsd0 /fs/microsd
 then
-	set PX4_INIT_TEST_FILE "/fs/microsd/.px4_init_test_file"
-	date >> $PX4_INIT_TEST_FILE
-
-	if [ -f $PX4_INIT_TEST_FILE ]
+	if [ -f "/fs/microsd/.format" ]
 	then
-		cat $PX4_INIT_TEST_FILE
-		rm $PX4_INIT_TEST_FILE
+		set SDCARD_FORMAT yes
+	else
+		set PX4_INIT_TEST_FILE "/fs/microsd/.px4_init_test_file"
+		date >> $PX4_INIT_TEST_FILE
 
-		if [ ! -f $PX4_INIT_TEST_FILE ]
+		if [ -f $PX4_INIT_TEST_FILE ]
 		then
-			set SDCARD_AVAILABLE yes
+			cat $PX4_INIT_TEST_FILE
+			rm $PX4_INIT_TEST_FILE
+
+			if [ ! -f $PX4_INIT_TEST_FILE ]
+			then
+				set SDCARD_AVAILABLE yes
+			fi
 		fi
 	fi
 fi
 
-if [ $SDCARD_AVAILABLE = no ]
+if [ $SDCARD_AVAILABLE = no -o $SDCARD_FORMAT = yes ]
 then
 	set STARTUP_TUNE 14 # tune 14 = SD_INIT
+
 	if mkfatfs -F 32 /dev/mmcsd0
 	then
 		if mount -t vfat /dev/mmcsd0 /fs/microsd
@@ -547,6 +554,7 @@ unset PWM_EXTRA_RATE
 unset RC_INPUT_ARGS
 unset SDCARD_AVAILABLE
 unset SDCARD_EXT_PATH
+unset SDCARD_FORMAT
 unset SDCARD_MIXERS_PATH
 unset STARTUP_TUNE
 unset USE_IO
