@@ -202,6 +202,8 @@
 
 #define DRV_HYGRO_DEVTYPE_SHT3X 0xB1
 
+#define DRV_SENS_DEVTYPE_SPS30 0xB0
+
 #define DRV_DEVTYPE_UNUSED		0xff
 
 #endif /* _DRV_SENSOR_H */
