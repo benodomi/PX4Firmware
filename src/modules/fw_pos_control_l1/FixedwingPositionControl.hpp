@@ -51,6 +51,7 @@
 #include "launchdetection/LaunchDetector.h"
 #include "runway_takeoff/RunwayTakeoff.h"
 #include "autogyro_takeoff/AutogyroTakeoff.h"
+#include "autogyro_landing/AutogyroLanding.h"
 
 #include <float.h>
 
@@ -102,6 +103,7 @@
 using namespace launchdetection;
 using namespace runwaytakeoff;
 using namespace autogyrotakeoff;
+using namespace autogyrolanding;
 using namespace time_literals;
 
 using matrix::Vector2d;
@@ -204,6 +206,9 @@ private:
 	position_setpoint_s _hdg_hold_curr_wp {};		///< position to which heading hold flies
 
 	hrt_abstime _control_position_last_called{0};		///< last call of control_position
+
+
+	AutogyroLanding _autogyro_landing;
 
 	bool _landed{true};
 

@@ -196,6 +196,7 @@ bool PreFlightCheck::preArmCheck(orb_advert_t *mavlink_log_pub, const vehicle_st
 		if (report_fail) {
 			mavlink_log_critical(mavlink_log_pub, "Arming denied, FW and AG takeoff eneabled together");
 		}
+
 		prearm_ok = false;
 	}
 
