@@ -169,8 +169,8 @@ bool Ekf::fuseVerticalPosition(const float innov, const float innov_gate, const 
 	if (innov_check_pass) {
 		_time_last_hgt_fuse = _time_last_imu;
 		_innov_check_fail_status.flags.reject_ver_pos = false;
+		//PX4_INFO("5. Fusing position.\n");
 		fuseVelPosHeight(innovation, innov_var, 5);
-
 		return true;
 
 	} else {
@@ -221,7 +221,9 @@ void Ekf::fuseVelPosHeight(const float innov, const float innov_var, const int o
 		fixCovarianceErrors(true);
 
 		// apply the state corrections
+		//PX4_INFO("6. Kalman filter start.\n");
 		fuse(Kfusion, innov);
+		//PX4_INFO("7. Fuse done\n");
 	}
 }
 

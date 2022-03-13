@@ -932,6 +932,7 @@ void EKF2::PublishLocalPosition(const hrt_abstime &timestamp)
 	lpos.dist_bottom = math::max(_ekf.getTerrainVertPos() - lpos.z, _param_ekf2_min_rng.get());
 	lpos.dist_bottom_valid = _ekf.isTerrainEstimateValid();
 	lpos.dist_bottom_sensor_bitfield = _ekf.getTerrainEstimateSensorBitfield();
+	lpos.aid_suitable = _ekf.getRangeAidSuitable();
 
 	if (!_had_valid_terrain) {
 		_had_valid_terrain = lpos.dist_bottom_valid;
